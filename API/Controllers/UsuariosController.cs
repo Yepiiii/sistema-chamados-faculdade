@@ -95,7 +95,18 @@ public class UsuariosController : ControllerBase
         // Gerar token JWT
         var token = _tokenService.GenerateToken(usuario);
 
-        return Ok(new LoginResponseDto { Token = token });
+        // Criar DTO do usuário
+        var usuarioDto = new UsuarioResponseDto
+        {
+            Id = usuario.Id,
+            NomeCompleto = usuario.NomeCompleto,
+            Email = usuario.Email,
+            TipoUsuario = usuario.TipoUsuario,
+            DataCadastro = usuario.DataCadastro,
+            Ativo = usuario.Ativo
+        };
+
+        return Ok(new LoginResponseDto { Token = token, Usuario = usuarioDto });
     }
 
     [HttpGet("perfil")]

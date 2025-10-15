@@ -1,0 +1,10 @@
+{
+  "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.useModernNet": true,
+  "dotnet.defaultSolution": "sistema-chamados-faculdade.sln",
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  }
+}
