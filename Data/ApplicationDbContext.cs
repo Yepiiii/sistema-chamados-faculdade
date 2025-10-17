@@ -33,6 +33,11 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.TipoUsuario).IsRequired();
             entity.Property(e => e.DataCadastro).IsRequired().HasDefaultValueSql("GETDATE()");
             entity.Property(e => e.Ativo).IsRequired().HasDefaultValue(true);
+
+        entity.HasOne(e => e.CategoriaEspecialidade)
+            .WithMany()
+            .HasForeignKey(e => e.CategoriaEspecialidadeId)
+            .OnDelete(DeleteBehavior.Restrict);
         });
         
         // Configuração da entidade AlunoPerfil
@@ -129,6 +134,13 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(c => c.TecnicoId)
             .OnDelete(DeleteBehavior.Restrict) // Impede que um técnico seja deletado se estiver associado a chamados
             .IsRequired(false); // Torna o relacionamento opcional
+
+        modelBuilder.Entity<Chamado>()
+            .HasOne(c => c.TecnicoAtribuido)
+            .WithMany()
+            .HasForeignKey(c => c.TecnicoAtribuidoId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
             
         // Configura o relacionamento do Chamado com Categoria
         modelBuilder.Entity<Chamado>()

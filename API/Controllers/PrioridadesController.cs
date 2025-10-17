@@ -19,6 +19,7 @@ public class PrioridadesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPrioridades()
     {
         var prioridades = await _context.Prioridades

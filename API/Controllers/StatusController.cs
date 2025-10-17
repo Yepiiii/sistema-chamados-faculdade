@@ -19,6 +19,7 @@ public class StatusController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetStatus()
     {
         var status = await _context.Status

@@ -12,6 +12,7 @@ public class Chamado
     // Chaves estrangeiras
     public int SolicitanteId { get; set; }
     public int? TecnicoId { get; set; }
+    public int? TecnicoAtribuidoId { get; set; }
     public int CategoriaId { get; set; }
     public int PrioridadeId { get; set; }
     public int StatusId { get; set; }
@@ -19,6 +20,7 @@ public class Chamado
     // Propriedades de navegação
     public virtual Usuario Solicitante { get; set; } = null!;
     public virtual Usuario? Tecnico { get; set; }
+    public virtual Usuario? TecnicoAtribuido { get; set; }
     public virtual Categoria Categoria { get; set; } = null!;
     public virtual Prioridade Prioridade { get; set; } = null!;
     public virtual Status Status { get; set; } = null!;

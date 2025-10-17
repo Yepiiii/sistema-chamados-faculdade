@@ -19,6 +19,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetCategorias()
     {
         var categorias = await _context.Categorias

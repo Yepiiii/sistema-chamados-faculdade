@@ -1,22 +1,45 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace SistemaChamados.Application.DTOs;
 
-public class CriarChamadoRequestDto
+public class CriarChamadoRequestDto : IValidatableObject
 {
-    [Required(ErrorMessage = "Título é obrigatório")]
     [StringLength(200, ErrorMessage = "Título deve ter no máximo 200 caracteres")]
-    public string Titulo { get; set; } = string.Empty;
+    public string? Titulo { get; set; }
 
     [Required(ErrorMessage = "Descrição é obrigatória")]
     [StringLength(2000, ErrorMessage = "Descrição deve ter no máximo 2000 caracteres")]
     public string Descricao { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Categoria é obrigatória")]
-    [Range(1, int.MaxValue, ErrorMessage = "ID da categoria deve ser maior que zero")]
-    public int CategoriaId { get; set; }
+    // Categoria e Prioridade são opcionais quando IA está habilitada
+    public int? CategoriaId { get; set; }
 
-    [Required(ErrorMessage = "Prioridade é obrigatória")]
-    [Range(1, int.MaxValue, ErrorMessage = "ID da prioridade deve ser maior que zero")]
-    public int PrioridadeId { get; set; }
+    public int? PrioridadeId { get; set; }
+
+    public bool? UsarAnaliseAutomatica { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var usarAnaliseAutomatica = UsarAnaliseAutomatica ?? true;
+
+        if (!usarAnaliseAutomatica)
+        {
+            if (!CategoriaId.HasValue || CategoriaId.Value <= 0)
+            {
+                yield return new ValidationResult(
+                    "CategoriaId é obrigatório quando UsarAnaliseAutomatica é false.",
+                    new[] { nameof(CategoriaId) }
+                );
+            }
+
+            if (!PrioridadeId.HasValue || PrioridadeId.Value <= 0)
+            {
+                yield return new ValidationResult(
+                    "PrioridadeId é obrigatório quando UsarAnaliseAutomatica é false.",
+                    new[] { nameof(PrioridadeId) }
+                );
+            }
+        }
+    }
 }

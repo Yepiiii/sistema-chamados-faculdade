@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaChamados.Core.Entities;
 
@@ -27,7 +28,10 @@ public class Usuario
     [Required]
     public bool Ativo { get; set; } = true;
 
-    public int? EspecialidadeCategoriaId { get; set; }
+    [Column("EspecialidadeCategoriaId")]
+    public int? CategoriaEspecialidadeId { get; set; }
+
+    public Categoria? CategoriaEspecialidade { get; set; }
     
     // Campos para reset de senha
     [MaxLength(128)]

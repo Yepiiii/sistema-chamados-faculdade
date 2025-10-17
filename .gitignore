@@ -372,5 +372,8 @@ FodyWeavers.xsd
 # Logs
 *.log
 
+# Environment files
+.env
+
 # Test files
 test-*.http

@@ -6,14 +6,14 @@ using System.Text.Json;
 
 namespace SistemaChamados.Services
 {
-    public class OpenAIService : IOpenAIService
+    public class GeminiService : IOpenAIService
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<OpenAIService> _logger;
+        private readonly ILogger<GeminiService> _logger;
 
-        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context, ILogger<OpenAIService> logger)
+        public GeminiService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context, ILogger<GeminiService> logger)
         {
             _httpClient = httpClient;
             _configuration = configuration;
@@ -23,57 +23,95 @@ namespace SistemaChamados.Services
 
         public async Task<AnaliseChamadoResponseDto?> AnalisarChamadoAsync(string descricaoProblema)
         {
-            var apiKey = _configuration["OpenAI:ApiKey"];
+            // Tentar pegar de variável de ambiente primeiro, depois de configuration
+            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
+                         ?? _configuration["GEMINI_API_KEY"];
+            
             if (string.IsNullOrEmpty(apiKey))
             {
-                _logger.LogError("Chave da API da OpenAI não configurada.");
+                _logger.LogError("Chave da API do Gemini não configurada. Verifique o arquivo .env");
                 return null;
             }
+            
+            _logger.LogInformation($"Usando chave do Gemini: {apiKey.Substring(0, 10)}...");
 
             try
             {
                 var prompt = await CriarPromptAnalise(descricaoProblema);
 
-                var requestBody = new OpenAIRequest
+                // Formato da requisição para o Gemini
+                var requestBody = new
                 {
-                    model = "gpt-3.5-turbo",
-                    messages = new List<OpenAIMessage>
+                    contents = new[]
                     {
-                        new OpenAIMessage { role = "system", content = "Você é um especialista em triagem de chamados de TI. Responda apenas com o formato JSON solicitado." },
-                        new OpenAIMessage { role = "user", content = prompt }
+                        new
+                        {
+                            parts = new[]
+                            {
+                                new { text = prompt }
+                            }
+                        }
                     },
-                    temperature = 0.2
+                    generationConfig = new
+                    {
+                        temperature = 0.2,
+                        topK = 1,
+                        topP = 1,
+                        maxOutputTokens = 2048
+                    }
                 };
 
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+                // URL da API do Gemini - usando modelo 2.5-flash (mais recente e estável)
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
 
-                var response = await _httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+                var response = await _httpClient.PostAsync(url, content);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogError($"Erro na API da OpenAI: {response.StatusCode} - {errorContent}");
+                    _logger.LogError($"Erro na API do Gemini: {response.StatusCode} - {errorContent}");
                     return null;
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var openAIResponse = JsonSerializer.Deserialize<OpenAIResponse>(responseContent);
+                _logger.LogInformation($"Resposta completa do Gemini: {responseContent}");
 
-                var resultText = openAIResponse?.choices?.FirstOrDefault()?.message?.content;
+                // Parse da resposta do Gemini
+                var geminiResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+                
+                var resultText = geminiResponse
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString();
 
                 if (string.IsNullOrWhiteSpace(resultText))
                 {
+                    _logger.LogWarning("Resposta vazia do Gemini");
                     return null;
                 }
 
-                var analise = JsonSerializer.Deserialize<AnaliseChamadoResponseDto>(resultText);
+                // Limpar markdown se houver
+                resultText = resultText.Trim();
+                if (resultText.StartsWith("```json"))
+                {
+                    resultText = resultText.Replace("```json", "").Replace("```", "").Trim();
+                }
+
+                _logger.LogInformation($"Texto extraído para parsing: {resultText}");
+
+                var analise = JsonSerializer.Deserialize<AnaliseChamadoResponseDto>(resultText, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
                 
                 if (analise != null)
                 {
-                    // Nova Lógica: Buscar técnico especialista
+                    // Buscar técnico especialista
                     var tecnicoEspecialista = await _context.Usuarios
                         .FirstOrDefaultAsync(u => u.TipoUsuario == 3 && u.CategoriaEspecialidadeId == analise.CategoriaId && u.Ativo);
                     
@@ -88,7 +126,8 @@ namespace SistemaChamados.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro inesperado ao se comunicar com a OpenAI.");
+                _logger.LogError(ex, $"Erro inesperado ao se comunicar com o Gemini. Mensagem: {ex.Message}");
+                _logger.LogError($"StackTrace: {ex.StackTrace}");
                 return null;
             }
         }
@@ -111,7 +150,7 @@ Categorias Disponíveis:
 Prioridades Disponíveis:
 {prioridadesTexto}
 
-Responda APENAS com um JSON no seguinte formato, sem texto adicional:
+Responda APENAS com um JSON válido no seguinte formato, sem texto adicional, sem markdown:
 {{
   ""CategoriaId"": <ID da categoria>,
   ""CategoriaNome"": ""<Nome da categoria>"",
