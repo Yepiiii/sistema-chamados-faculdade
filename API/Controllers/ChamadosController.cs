@@ -50,8 +50,18 @@ public class ChamadosController : ControllerBase
 
     var tipoUsuarioValor = User.FindFirst("TipoUsuario")?.Value;
     var isAdmin = tipoUsuarioValor == "3";
+    var tipoUsuario = int.TryParse(tipoUsuarioValor, out var tipo) ? tipo : 0;
 
     var usarAnaliseAutomatica = request.UsarAnaliseAutomatica ?? true;
+
+    // REGRA: Apenas Admin (tipo 3) pode criar chamados com classificação manual
+    if (!usarAnaliseAutomatica && tipoUsuario != 3)
+    {
+        _logger.LogWarning("Usuário tipo {TipoUsuario} tentou criar chamado com classificação manual.", tipoUsuario);
+        return StatusCode(StatusCodes.Status403Forbidden, 
+            "Apenas administradores podem criar chamados com classificação manual. Use a análise automática por IA.");
+    }
+
     var categoriaSelecionada = 0;
     var prioridadeSelecionada = 0;
     var tituloChamado = request.Titulo?.Trim();
@@ -86,7 +96,7 @@ public class ChamadosController : ControllerBase
         }
         else
         {
-            _logger.LogInformation("Criando chamado com classificação manual fornecida pelo usuário.");
+            _logger.LogInformation("Admin criando chamado com classificação manual fornecida.");
             categoriaSelecionada = request.CategoriaId!.Value;
             prioridadeSelecionada = request.PrioridadeId!.Value;
         }
