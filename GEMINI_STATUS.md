@@ -25,7 +25,7 @@
 
 ### 5. **Configuração `.env`**
 ```
-GEMINI_API_KEY="AIzaSyBcS7W8U_xIAYgnOTc9YyhrBTWKhsRj5eA"
+GEMINI_API_KEY="..."
 ```
 
 ### 6. **Registrado no `program.cs`**
