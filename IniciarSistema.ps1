@@ -13,6 +13,11 @@ Write-Host "  Sistema de Chamados - Inicializacao" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoPath = $scriptPath
+$solutionRoot = Split-Path -Parent $repoPath
+Set-Location $repoPath
+
 # Fechar processos anteriores (opcional)
 Write-Host "Verificando processos anteriores..." -ForegroundColor Yellow
 $apiProcess = Get-Process | Where-Object {$_.ProcessName -eq "SistemaChamados"}
@@ -25,7 +30,7 @@ if ($apiProcess) {
 # Iniciar API em background
 Write-Host "Iniciando API..." -ForegroundColor Green
 $apiJob = Start-Job -ScriptBlock {
-    Set-Location $using:PWD
+    Set-Location $using:repoPath
     dotnet run --project SistemaChamados.csproj --urls http://localhost:5246
 }
 
@@ -39,9 +44,14 @@ $apiOk = $false
 
 while ($tentativas -lt $maxTentativas -and -not $apiOk) {
     try {
-        $null = Invoke-WebRequest -Uri "http://localhost:5246/api/categorias" -Method GET -TimeoutSec 2 -ErrorAction Stop
-        Write-Host "[OK] API rodando em http://localhost:5246" -ForegroundColor Green
-        $apiOk = $true
+        $response = Invoke-WebRequest -Uri "http://localhost:5246/swagger/index.html" -Method GET -TimeoutSec 2 -ErrorAction Stop
+        if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+            Write-Host "[OK] API rodando em http://localhost:5246" -ForegroundColor Green
+            $apiOk = $true
+        }
+        else {
+            throw "Status code: $($response.StatusCode)"
+        }
     }
     catch {
         $tentativas++
@@ -65,7 +75,15 @@ Write-Host "Iniciando aplicativo mobile ($Plataforma)..." -ForegroundColor Green
 Write-Host ""
 
 # Iniciar mobile
-Set-Location "SistemaChamados.Mobile"
+Set-Location $repoPath
+$mobilePath = Join-Path $solutionRoot "SistemaChamados.Mobile"
+if (-not (Test-Path $mobilePath)) {
+    Write-Host "[ERRO] Pasta da aplicação mobile não encontrada em $mobilePath" -ForegroundColor Red
+    Stop-Job -Job $apiJob
+    Remove-Job -Job $apiJob
+    exit 1
+}
+Set-Location $mobilePath
 
 if ($Plataforma -eq "windows") {
     Write-Host "Executando: dotnet build -t:Run -f net8.0-windows10.0.19041.0" -ForegroundColor Cyan
@@ -90,7 +108,7 @@ elseif ($Plataforma -eq "android") {
     dotnet build -t:Run -f net8.0-android
 }
 
-Set-Location ..
+Set-Location $repoPath
 
 # Ao finalizar, perguntar se quer parar a API
 Write-Host ""
