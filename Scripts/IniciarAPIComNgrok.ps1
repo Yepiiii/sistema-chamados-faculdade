@@ -10,7 +10,20 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Verificar se ngrok está instalado
-$ngrokInstalled = Get-Command ngrok -ErrorAction SilentlyContinue
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ngrokLocal = Join-Path $scriptDir "ngrok.exe"
+$ngrokInstalled = $null
+
+if (Test-Path $ngrokLocal) {
+    $ngrokInstalled = $ngrokLocal
+    Write-Host "[OK] ngrok encontrado em: $ngrokLocal" -ForegroundColor Green
+} else {
+    $ngrokInstalled = Get-Command ngrok -ErrorAction SilentlyContinue
+    if ($ngrokInstalled) {
+        $ngrokLocal = $ngrokInstalled.Source
+        Write-Host "[OK] ngrok instalado no PATH" -ForegroundColor Green
+    }
+}
 
 if (-not $ngrokInstalled) {
     Write-Host "[ERRO] ngrok não está instalado!" -ForegroundColor Red
@@ -30,12 +43,13 @@ Write-Host "[OK] ngrok instalado" -ForegroundColor Green
 Write-Host ""
 
 # Detectar caminhos
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptDir
+
+# O backend está na pasta Backend
 $backendPath = Join-Path $repoRoot "Backend"
 
-if (-not (Test-Path $backendPath)) {
-    Write-Host "[ERRO] Backend não encontrado em: $backendPath" -ForegroundColor Red
+if (-not (Test-Path (Join-Path $backendPath "SistemaChamados.csproj"))) {
+    Write-Host "[ERRO] SistemaChamados.csproj não encontrado em: $backendPath" -ForegroundColor Red
     exit 1
 }
 
@@ -104,8 +118,9 @@ Write-Host ""
 Write-Host "[4/4] Criando túnel ngrok..." -ForegroundColor Yellow
 
 $ngrokJob = Start-Job -ScriptBlock {
-    ngrok http 5246 --log=stdout
-}
+    param($ngrokPath)
+    & $ngrokPath http 5246 --log=stdout
+} -ArgumentList $ngrokLocal
 
 Write-Host "[INFO] Aguardando túnel inicializar (3s)..." -ForegroundColor Cyan
 Start-Sleep -Seconds 3

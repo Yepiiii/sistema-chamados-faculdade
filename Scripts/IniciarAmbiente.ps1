@@ -17,10 +17,12 @@ Write-Host ""
 Write-Host "[1/2] Iniciando API Backend..." -ForegroundColor Yellow
 Write-Host "      Abrindo nova janela do PowerShell..." -ForegroundColor Gray
 
+$projectRoot = Split-Path -Parent $PSScriptRoot
+
 Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",
-    "cd '$PWD'; Write-Host '=== API Backend ===' -ForegroundColor Green; dotnet run --project SistemaChamados.csproj --urls http://localhost:5246"
+    "cd '$projectRoot'; Write-Host '=== API Backend ===' -ForegroundColor Green; dotnet run --project SistemaChamados.csproj --urls http://localhost:5246"
 )
 
 Write-Host "[OK] API iniciada em nova janela" -ForegroundColor Green
@@ -70,7 +72,8 @@ Write-Host ""
 
 # Verificar configuracao para Android
 if ($Plataforma -eq "android") {
-    $appsettings = Get-Content "SistemaChamados.Mobile\appsettings.json" -Raw
+    $appsettingsPath = Join-Path $projectRoot "Mobile\appsettings.json"
+    $appsettings = Get-Content $appsettingsPath -Raw
     if ($appsettings -match "localhost" -and $appsettings -notmatch "10\.0\.2\.2") {
         Write-Host "[AVISO] appsettings.json usa 'localhost'" -ForegroundColor Yellow
         Write-Host "        Para funcionar no Android Emulator, deve ser '10.0.2.2'" -ForegroundColor Yellow
@@ -78,7 +81,7 @@ if ($Plataforma -eq "android") {
         $fix = Read-Host "Corrigir automaticamente? (S/N)"
         if ($fix -eq "S" -or $fix -eq "s") {
             $appsettings = $appsettings -replace "localhost:5246", "10.0.2.2:5246"
-            $appsettings | Set-Content "SistemaChamados.Mobile\appsettings.json"
+            $appsettings | Set-Content $appsettingsPath
             Write-Host "[OK] Configuracao atualizada!" -ForegroundColor Green
             Write-Host ""
         }
@@ -86,7 +89,8 @@ if ($Plataforma -eq "android") {
 }
 
 # Iniciar mobile app
-Set-Location "SistemaChamados.Mobile"
+$mobilePath = Join-Path $projectRoot "Mobile"
+Set-Location $mobilePath
 
 if ($Plataforma -eq "windows") {
     Write-Host "Compilando e executando app Windows..." -ForegroundColor Cyan
@@ -99,7 +103,7 @@ elseif ($Plataforma -eq "android") {
     dotnet build -t:Run -f net8.0-android
 }
 
-Set-Location ..
+Set-Location $projectRoot
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
