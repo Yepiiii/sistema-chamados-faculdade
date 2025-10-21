@@ -1,6 +1,8 @@
 # Script para abrir o projeto no Visual Studio e preparar para execução
 
-$solutionPath = "c:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\sistema-chamados-faculdade.sln"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$solutionPath = Join-Path $repoRoot "sistema-chamados-faculdade.sln"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  ABRIR PROJETO NO VISUAL STUDIO" -ForegroundColor Cyan

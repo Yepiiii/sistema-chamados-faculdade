@@ -50,7 +50,7 @@ if ($gitStatus) {
 
 # Criar backup
 $backupDate = Get-Date -Format "yyyyMMdd_HHmmss"
-$backupPath = "c:\Users\opera\Backup_SistemaChamados_$backupDate"
+$backupPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "Backup_SistemaChamados_$backupDate"
 
 Write-Host "========================================" -ForegroundColor Yellow
 Write-Host "  PASSO 1: BACKUP" -ForegroundColor Yellow
@@ -67,7 +67,10 @@ if (!$DryRun) {
 Write-Host ""
 
 # Verificar se projeto mobile existe
-$mobileSourcePath = "c:\Users\opera\sistema-chamados-faculdade\SistemaChamados.Mobile"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$parentDir = Split-Path -Parent $scriptDir
+$mobileSourcePath = Join-Path $parentDir "SistemaChamados.Mobile"
+
 if (!(Test-Path $mobileSourcePath)) {
     Write-Host "[ERRO] Projeto mobile nao encontrado em:" -ForegroundColor Red
     Write-Host "       $mobileSourcePath" -ForegroundColor Yellow
