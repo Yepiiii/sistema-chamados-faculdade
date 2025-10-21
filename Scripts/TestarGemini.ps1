@@ -87,7 +87,7 @@ catch {
     Write-Host ""
     Write-Host "POSSÍVEIS CAUSAS:" -ForegroundColor Yellow
     Write-Host "1. API não está rodando" -ForegroundColor White
-    Write-Host "2. Chave do Gemini inválida no arquivo .env" -ForegroundColor White
+    Write-Host "2. Chave do Gemini inválida no arquivo Backend/appsettings.json" -ForegroundColor White
     Write-Host "3. Problema de conexão com a API do Gemini" -ForegroundColor White
     Write-Host ""
     Write-Host "Verifique os logs da janela da API para mais detalhes." -ForegroundColor Yellow
