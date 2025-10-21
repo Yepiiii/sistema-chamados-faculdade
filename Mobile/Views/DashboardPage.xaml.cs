@@ -25,16 +25,16 @@ public partial class DashboardPage : ContentPage
         App.Log("DashboardPage OnAppearing end");
     }
 
-    private async void OnChamadoSelected(object sender, SelectionChangedEventArgs e)
+    private async void OnChamadoTapped(object sender, EventArgs e)
     {
         try
         {
-            App.Log("DashboardPage OnChamadoSelected start");
-            if (e.CurrentSelection.FirstOrDefault() is ChamadoDto chamado)
+            App.Log("DashboardPage OnChamadoTapped start");
+            
+            // Obtém o chamado do BindingContext do Frame
+            if (sender is Frame frame && frame.BindingContext is ChamadoDto chamado)
             {
-                App.Log($"DashboardPage selected chamado {chamado.Id}");
-                // Limpa a seleção
-                ((CollectionView)sender).SelectedItem = null;
+                App.Log($"DashboardPage tapped chamado {chamado.Id}");
 
                 // Navega para detalhes usando navegação relativa modal
                 App.Log($"DashboardPage navigating to chamados/detail?id={chamado.Id}");
@@ -43,13 +43,12 @@ public partial class DashboardPage : ContentPage
             }
             else
             {
-                App.Log("DashboardPage OnChamadoSelected: no chamado selected");
+                App.Log($"DashboardPage OnChamadoTapped: sender type={sender?.GetType().Name}, BindingContext type={((Frame)sender)?.BindingContext?.GetType().Name}");
             }
         }
         catch (Exception ex)
         {
-            App.Log($"DashboardPage OnChamadoSelected FATAL: {ex}");
-            // Não propagar exceção, apenas logar
+            App.Log($"DashboardPage OnChamadoTapped FATAL: {ex}");
             await Application.Current?.MainPage?.DisplayAlert("Erro", "Não foi possível abrir o chamado. Tente novamente.", "OK");
         }
     }
