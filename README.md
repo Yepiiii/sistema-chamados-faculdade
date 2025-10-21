@@ -1,8 +1,302 @@
-# Sistema de Chamados - Faculdade# Sistema de Chamados - Faculdade# Sistema de Chamados - API
+# 🎓 Sistema de Chamados - Faculdade
 
+> Sistema completo de gerenciamento de chamados técnicos com backend .NET 8, app mobile multiplataforma (.NET MAUI) e IA integrada (Google Gemini).
 
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![C#](https://img.shields.io/badge/C%23-12.0-239120?logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
+[![MAUI](https://img.shields.io/badge/MAUI-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/apps/maui)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Sistema completo de gerenciamento de chamados técnicos com backend .NET 8 e aplicativo mobile multiplataforma (.NET MAUI).
+---
+
+## 📋 Índice
+
+- [Sobre o Projeto](#-sobre-o-projeto)
+- [Funcionalidades](#-funcionalidades)
+- [Tecnologias](#-tecnologias)
+- [Instalação Rápida](#-instalação-rápida)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Uso](#-uso)
+- [Documentação](#-documentação)
+- [Contribuindo](#-contribuindo)
+
+---
+
+## 🎯 Sobre o Projeto
+
+Sistema desenvolvido para gerenciar chamados técnicos em ambiente acadêmico, permitindo que alunos, professores e administradores reportem e acompanhem problemas de infraestrutura (hardware, software, rede).
+
+### ✨ Diferenciais
+
+- 🤖 **IA Integrada**: Classificação automática de chamados usando Google Gemini AI
+- 📱 **Cross-platform**: App mobile para Android, iOS e Windows
+- 🔐 **Autenticação JWT**: Sistema seguro de autenticação e autorização
+- 📊 **Dashboard Interativo**: Visualização de estatísticas em tempo real
+- 🔔 **Notificações**: Sistema de notificações push para atualizações
+
+---
+
+## ⚡ Funcionalidades
+
+### Para Alunos
+- ✅ Criar chamados com descrição do problema
+- ✅ Classificação automática por IA (categoria + prioridade)
+- ✅ Acompanhar status dos chamados
+- ✅ Receber notificações de atualizações
+
+### Para Professores
+- ✅ Todas as funcionalidades de alunos
+- ✅ Atribuição automática como técnico (baseado em especialidade)
+- ✅ Atualizar status de chamados atribuídos
+
+### Para Administradores
+- ✅ Visualizar todos os chamados do sistema
+- ✅ Atribuir técnicos manualmente
+- ✅ Encerrar chamados
+- ✅ Gerenciar categorias e prioridades
+- ✅ Dashboard com estatísticas completas
+
+---
+
+## 🛠️ Tecnologias
+
+### Backend
+- **.NET 8** - Framework principal
+- **ASP.NET Core Web API** - API RESTful
+- **Entity Framework Core** - ORM
+- **SQL Server LocalDB** - Banco de dados
+- **JWT Bearer** - Autenticação
+- **BCrypt.Net** - Hash de senhas
+- **Google Gemini AI** - Classificação inteligente
+- **Swagger/OpenAPI** - Documentação da API
+
+### Mobile
+- **.NET MAUI** - Framework multiplataforma
+- **MVVM Pattern** - Arquitetura
+- **CommunityToolkit.Mvvm** - Helpers MVVM
+- **HttpClient** - Comunicação com API
+- **Android Notifications** - Notificações nativas
+
+### DevOps
+- **PowerShell** - Scripts de automação
+- **Git** - Controle de versão
+- **GitHub Actions** - CI/CD (em desenvolvimento)
+
+---
+
+## 🚀 Instalação Rápida
+
+### Pré-requisitos
+
+| Software | Versão | Link |
+|----------|--------|------|
+| .NET SDK | 8.0+ | https://dotnet.microsoft.com/download |
+| SQL Server LocalDB | 2019+ | Incluído no Visual Studio |
+| PowerShell | 5.1+ | Incluído no Windows |
+
+### Instalação em 5 Comandos
+
+```powershell
+# 1. Clonar repositório
+git clone https://github.com/Yepiiii/sistema-chamados-faculdade.git
+cd sistema-chamados-faculdade\sistema-chamados-faculdade
+
+# 2. Configurar chave Gemini AI
+cd Backend
+# Edite appsettings.json e adicione sua chave Gemini em "GeminiAI.ApiKey"
+
+# 3. Criar banco de dados
+dotnet ef database update
+
+# 4. Popular dados iniciais
+cd ..\Scripts
+.\SetupUsuariosTeste.ps1
+
+# 5. Iniciar sistema
+.\IniciarSistema.ps1
+```
+
+**📖 Guia Completo:** [GUIA_INSTALACAO.md](GUIA_INSTALACAO.md)
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+sistema-chamados-faculdade/
+├── Backend/                    # 🔧 API .NET 8
+│   ├── API/                   # Controllers REST
+│   ├── Application/           # Services e DTOs
+│   ├── Core/                  # Entities do domínio
+│   ├── Data/                  # DbContext e Migrations
+│   └── appsettings.json       # Configurações (não versionado)
+│
+├── Mobile/                     # 📱 App MAUI
+│   ├── Helpers/               # Constants.cs (configuração de IP)
+│   ├── Models/                # DTOs e Entities
+│   ├── Services/              # Clients da API
+│   ├── ViewModels/            # MVVM ViewModels
+│   ├── Views/                 # Telas XAML
+│   └── Platforms/             # Código específico de plataforma
+│       └── Android/           # NotificationService.cs
+│
+├── Scripts/                    # ⚙️ Automação PowerShell
+│   ├── ConfigurarIP.ps1       # ⭐ Detectar IP local automaticamente
+│   ├── GerarAPK.ps1           # ⭐ Gerar APK Android
+│   ├── IniciarAPI.ps1         # Iniciar backend
+│   ├── IniciarAPIMobile.ps1   # ⭐ Iniciar API para rede local
+│   ├── IniciarSistema.ps1     # Iniciar tudo de uma vez
+│   └── SetupUsuariosTeste.ps1 # Criar usuários de teste
+│
+├── docs/                       # 📚 Documentação técnica
+│   ├── SETUP_PORTABILIDADE.md
+│   └── SOLUCAO_IP_REDE.md
+│
+├── APK/                        # 📦 APKs gerados (não versionado)
+│
+├── GUIA_INSTALACAO.md         # 📖 Guia completo de instalação
+├── CREDENCIAIS_TESTE.md       # 🔐 Usuários de teste
+└── README.md                  # Este arquivo
+```
+
+---
+
+## 💻 Uso
+
+### Desenvolvimento Local (Windows)
+
+```powershell
+# Iniciar backend e app Windows
+.\Scripts\IniciarSistemaWindows.ps1
+
+# Ou separadamente
+.\Scripts\IniciarAPI.ps1        # Backend em http://localhost:5246
+.\Scripts\IniciarApp.ps1        # App Windows
+```
+
+### Gerar APK para Android
+
+```powershell
+# 1. Detectar IP local automaticamente
+.\Scripts\ConfigurarIP.ps1
+
+# 2. Gerar APK assinado
+.\Scripts\GerarAPK.ps1
+
+# 3. Iniciar API em modo rede
+.\Scripts\IniciarAPIMobile.ps1
+
+# 4. Instalar APK no celular
+# APK estará em: APK/SistemaChamados-v1.0.apk
+```
+
+### Usuários de Teste
+
+| Tipo | Email | Senha |
+|------|-------|-------|
+| Aluno | aluno@sistema.com | Aluno@123 |
+| Professor | professor@sistema.com | Prof@123 |
+| Admin | admin@sistema.com | Admin@123 |
+
+**📄 Detalhes:** [CREDENCIAIS_TESTE.md](CREDENCIAIS_TESTE.md)
+
+---
+
+## 📚 Documentação
+
+### Guias Principais
+- **[GUIA_INSTALACAO.md](GUIA_INSTALACAO.md)** - Instalação completa passo a passo
+- **[CREDENCIAIS_TESTE.md](CREDENCIAIS_TESTE.md)** - Usuários e permissões
+- **[docs/SETUP_PORTABILIDADE.md](docs/SETUP_PORTABILIDADE.md)** - Portabilidade entre PCs
+
+### API
+- **Swagger UI:** http://localhost:5246/swagger
+- **Endpoints:** Documentados no Swagger
+- **Autenticação:** JWT Bearer Token
+
+### Scripts PowerShell
+
+| Script | Descrição |
+|--------|-----------|
+| `ConfigurarIP.ps1` | Detecta IP local e atualiza Constants.cs |
+| `GerarAPK.ps1` | Gera APK Android assinado |
+| `IniciarAPI.ps1` | Inicia backend em localhost |
+| `IniciarAPIMobile.ps1` | Inicia backend para rede (0.0.0.0) |
+| `IniciarSistema.ps1` | Inicia backend + mobile Windows |
+| `SetupUsuariosTeste.ps1` | Cria 3 usuários de teste |
+| `CriarChamadosDemoCorrigido.ps1` | Cria chamados de exemplo |
+
+---
+
+## 🔧 Configuração Avançada
+
+### Chave Gemini AI
+
+1. Obtenha uma chave em: https://makersuite.google.com/app/apikey
+2. Edite `Backend/appsettings.json`:
+
+```json
+{
+  "GeminiAI": {
+    "ApiKey": "SUA_CHAVE_AQUI"
+  }
+}
+```
+
+### IP para Android Físico
+
+O sistema detecta automaticamente o IP local. Se precisar ajustar manualmente:
+
+```powershell
+# Detectar IP
+ipconfig | Select-String "IPv4"
+
+# Configurar automaticamente
+.\Scripts\ConfigurarIP.ps1
+```
+
+---
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Para contribuir:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/NovaFuncionalidade`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/NovaFuncionalidade`)
+5. Abra um Pull Request
+
+---
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## 👥 Autores
+
+- **Opera** - *Desenvolvimento inicial* - [Yepiiii](https://github.com/Yepiiii)
+
+---
+
+## 🙏 Agradecimentos
+
+- Google Gemini AI pela API de classificação inteligente
+- Comunidade .NET MAUI
+- Contribuidores open-source
+
+---
+
+**⭐ Se este projeto te ajudou, considere dar uma estrela!**
+
+---
+
+**Última atualização:** Outubro 2025  
+**Versão:** 1.0.0  
+**Status:** ✅ Em produção
+
 
 
 
