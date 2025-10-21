@@ -52,15 +52,23 @@ Write-Host "           Sistema de Chamados - APK Mobile" -ForegroundColor White
 Write-Host "                    Versão 1.0" -ForegroundColor Gray
 Write-Host ""
 
+# Detectar caminhos relativos
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$backendPath = Join-Path $repoRoot "Backend"
+$apkFolder = Join-Path $repoRoot "APK"
+$scriptsPath = $scriptDir
+
 # Caminho do projeto
-$projectPath = "c:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade"
+$projectPath = $backendPath
 Set-Location $projectPath
 
 # Executar ações
 switch ($Acao) {
     "validar" {
         Show-Header "VALIDAR CONFIGURAÇÃO"
-        .\ValidarConfigAPK.ps1
+        $validateScript = Join-Path $scriptDir "ValidarConfigAPK.ps1"
+        & $validateScript
         $validationCode = $LASTEXITCODE
         
         if ($validationCode -eq 0) {
@@ -75,7 +83,8 @@ switch ($Acao) {
         Show-Header "GERAR APK ANDROID"
         
         Show-Step "Verificando configuração..."
-        .\ValidarConfigAPK.ps1
+        $validateScript = Join-Path $scriptDir "ValidarConfigAPK.ps1"
+        & $validateScript
         
         if ($LASTEXITCODE -ne 0) {
             Show-Error "Validação falhou! Corrija os erros antes de gerar APK."
@@ -86,7 +95,8 @@ switch ($Acao) {
         Show-Step "Iniciando geração do APK..."
         Write-Host ""
         
-        .\GerarAPK.ps1
+        $gerarScript = Join-Path $scriptDir "GerarAPK.ps1"
+        & $gerarScript
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host ""
@@ -100,7 +110,7 @@ switch ($Acao) {
         Show-Header "INICIAR API PARA MOBILE"
         
         Show-Step "Verificando APK..."
-        $apkPath = "c:\Users\opera\sistema-chamados-faculdade\APK\SistemaChamados-v1.0.apk"
+        $apkPath = Join-Path $apkFolder "SistemaChamados-v1.0.apk"
         
         if (-not (Test-Path $apkPath)) {
             Show-Error "APK não encontrado!"
@@ -114,7 +124,8 @@ switch ($Acao) {
         Show-Step "Iniciando API..."
         Write-Host ""
         
-        .\IniciarAPIMobile.ps1
+        $iniciarScript = Join-Path $scriptDir "IniciarAPIMobile.ps1"
+        & $iniciarScript
     }
     
     "tudo" {
@@ -131,7 +142,8 @@ switch ($Acao) {
         
         # 1. Validar
         Show-Header "ETAPA 1/3 - VALIDAÇÃO"
-        .\ValidarConfigAPK.ps1
+        $validateScript = Join-Path $scriptDir "ValidarConfigAPK.ps1"
+        & $validateScript
         
         if ($LASTEXITCODE -ne 0) {
             Show-Error "Validação falhou! Corrija os erros antes de continuar."
@@ -144,7 +156,7 @@ switch ($Acao) {
         
         # 2. Verificar se APK existe
         Show-Header "ETAPA 2/3 - VERIFICAR APK"
-        $apkPath = "c:\Users\opera\sistema-chamados-faculdade\APK\SistemaChamados-v1.0.apk"
+        $apkPath = Join-Path $apkFolder "SistemaChamados-v1.0.apk"
         
         if (Test-Path $apkPath) {
             Show-Success "APK já existe"
@@ -155,7 +167,8 @@ switch ($Acao) {
             if ($resposta -eq "s" -or $resposta -eq "S") {
                 Write-Host ""
                 Show-Step "Gerando novo APK..."
-                .\GerarAPK.ps1
+                $gerarScript = Join-Path $scriptDir "GerarAPK.ps1"
+                & $gerarScript
                 
                 if ($LASTEXITCODE -ne 0) {
                     Show-Error "Falha ao gerar APK!"
@@ -164,7 +177,8 @@ switch ($Acao) {
             }
         } else {
             Show-Info "APK não encontrado, gerando..."
-            .\GerarAPK.ps1
+            $gerarScript = Join-Path $scriptDir "GerarAPK.ps1"
+            & $gerarScript
             
             if ($LASTEXITCODE -ne 0) {
                 Show-Error "Falha ao gerar APK!"
@@ -184,7 +198,8 @@ switch ($Acao) {
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         Write-Host ""
         
-        .\IniciarAPIMobile.ps1
+        $iniciarScript = Join-Path $scriptDir "IniciarAPIMobile.ps1"
+        & $iniciarScript
     }
 }
 

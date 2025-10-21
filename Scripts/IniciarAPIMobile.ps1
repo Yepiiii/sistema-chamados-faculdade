@@ -59,8 +59,14 @@ if (-not $firewallRule) {
 }
 Write-Host ""
 
+# Detectar caminhos relativos
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$backendPath = Join-Path $repoRoot "Backend"
+$mobilePath = Join-Path $repoRoot "Mobile"
+
 # Caminho do projeto
-$projectPath = "c:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade"
+$projectPath = $backendPath
 
 if (-not (Test-Path $projectPath)) {
     Write-Host "[ERRO] Projeto não encontrado em: $projectPath" -ForegroundColor Red
@@ -123,7 +129,7 @@ Write-Host "========================================" -ForegroundColor Yellow
 Write-Host ""
 
 # Verificar se o IP no Constants.cs está correto
-$constantsPath = "c:\Users\opera\sistema-chamados-faculdade\SistemaChamados.Mobile\Helpers\Constants.cs"
+$constantsPath = Join-Path $mobilePath "Helpers\Constants.cs"
 if (Test-Path $constantsPath) {
     $constantsContent = Get-Content $constantsPath -Raw
     if ($constantsContent -notmatch $localIP.Replace(".", "\.")) {

@@ -7,9 +7,13 @@ Write-Host "  Gerador de APK - Sistema de Chamados" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Detectar caminhos relativos
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+
 # Caminho do projeto mobile
-$projectPath = "c:\Users\opera\sistema-chamados-faculdade\SistemaChamados.Mobile"
-$outputPath = "c:\Users\opera\sistema-chamados-faculdade\APK"
+$projectPath = Join-Path $repoRoot "Mobile"
+$outputPath = Join-Path $repoRoot "APK"
 
 # Verificar se projeto existe
 if (!(Test-Path $projectPath)) {

@@ -2,12 +2,18 @@
 Clear-Host
 Write-Host "Testando API..." -ForegroundColor Cyan
 
+# Detectar caminhos relativos
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$backendPath = Join-Path $repoRoot "Backend"
+
 # Iniciar API em background
 Write-Host "Iniciando API..." -ForegroundColor Green
 $apiJob = Start-Job -ScriptBlock {
-    Set-Location "c:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade"
+    param($path)
+    Set-Location $path
     dotnet run --urls http://localhost:5246
-}
+} -ArgumentList $backendPath
 
 Write-Host "Aguardando API inicializar..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10

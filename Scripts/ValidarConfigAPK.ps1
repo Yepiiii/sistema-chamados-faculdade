@@ -9,12 +9,19 @@ Write-Host "  Validação de Configuração - APK Mobile" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Detectar caminhos relativos
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$backendPath = Join-Path $repoRoot "Backend"
+$mobilePath = Join-Path $repoRoot "Mobile"
+$apkFolder = Join-Path $repoRoot "APK"
+
 $errorsFound = 0
 $warningsFound = 0
 
 # 1. Verificar se APK existe
 Write-Host "[1/8] Verificando APK..." -ForegroundColor Yellow
-$apkPath = "c:\Users\opera\sistema-chamados-faculdade\APK\SistemaChamados-v1.0.apk"
+$apkPath = Join-Path $apkFolder "SistemaChamados-v1.0.apk"
 
 if (Test-Path $apkPath) {
     $apkSize = [math]::Round((Get-Item $apkPath).Length / 1MB, 2)
@@ -47,7 +54,7 @@ Write-Host ""
 
 # 3. Verificar Constants.cs
 Write-Host "[3/8] Verificando Constants.cs..." -ForegroundColor Yellow
-$constantsPath = "c:\Users\opera\sistema-chamados-faculdade\SistemaChamados.Mobile\Helpers\Constants.cs"
+$constantsPath = Join-Path $mobilePath "Helpers\Constants.cs"
 
 if (Test-Path $constantsPath) {
     $constantsContent = Get-Content $constantsPath -Raw
@@ -81,7 +88,7 @@ Write-Host ""
 
 # 5. Verificar se API está compilando
 Write-Host "[5/8] Verificando compilação da API..." -ForegroundColor Yellow
-$projectPath = "c:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade"
+$projectPath = $backendPath
 
 if (Test-Path "$projectPath\SistemaChamados.csproj") {
     Set-Location $projectPath
