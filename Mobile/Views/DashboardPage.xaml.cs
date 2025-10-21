@@ -1,5 +1,4 @@
 using SistemaChamados.Mobile.Helpers;
-using SistemaChamados.Mobile.Models.DTOs;
 using SistemaChamados.Mobile.ViewModels;
 using System;
 
@@ -23,34 +22,6 @@ public partial class DashboardPage : ContentPage
         App.Log("DashboardPage OnAppearing start");
         await _viewModel.LoadDataCommand.ExecuteAsync(null);
         App.Log("DashboardPage OnAppearing end");
-    }
-
-    private async void OnChamadoTapped(object sender, EventArgs e)
-    {
-        try
-        {
-            App.Log("DashboardPage OnChamadoTapped start");
-            
-            // Obtém o chamado do BindingContext do Frame
-            if (sender is Frame frame && frame.BindingContext is ChamadoDto chamado)
-            {
-                App.Log($"DashboardPage tapped chamado {chamado.Id}");
-
-                // Navega para detalhes usando navegação relativa modal
-                App.Log($"DashboardPage navigating to chamados/detail?id={chamado.Id}");
-                await Shell.Current.GoToAsync($"chamados/detail?id={chamado.Id}");
-                App.Log("DashboardPage navigation complete");
-            }
-            else
-            {
-                App.Log($"DashboardPage OnChamadoTapped: sender type={sender?.GetType().Name}, BindingContext type={((Frame)sender)?.BindingContext?.GetType().Name}");
-            }
-        }
-        catch (Exception ex)
-        {
-            App.Log($"DashboardPage OnChamadoTapped FATAL: {ex}");
-            await Application.Current?.MainPage?.DisplayAlert("Erro", "Não foi possível abrir o chamado. Tente novamente.", "OK");
-        }
     }
 
     private async void OnNovoChamadoClicked(object sender, EventArgs e)

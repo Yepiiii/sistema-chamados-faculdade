@@ -1,4 +1,4 @@
-namespace SistemaChamados.Mobile.Helpers;
+﻿namespace SistemaChamados.Mobile.Helpers;
 
 public static class Constants
 {
@@ -9,16 +9,17 @@ public static class Constants
     public static string BaseUrlAndroidEmulator => "http://10.0.2.2:5246/api/";
     
     // Para Dispositivo Físico - IP da máquina na rede local
-    // IP atual detectado: 192.168.0.18
-    public static string BaseUrlPhysicalDevice => "http://192.168.0.18:5246/api/";
+    // IMPORTANTE: Execute .\Scripts\ConfigurarIP.ps1 antes de gerar o APK
+    // O script detectará automaticamente seu IP local
+    public static string BaseUrlPhysicalDevice => "http://SEU_IP_LOCAL:5246/api/";
     
-    // BaseUrl dinâmica baseada na plataforma
+    // BaseUrl dinÃ¢mica baseada na plataforma
     public static string BaseUrl
     {
         get
         {
 #if ANDROID
-            // Usando dispositivo físico (celular real)
+            // Usando dispositivo fÃ­sico (celular real)
             return BaseUrlPhysicalDevice;
 #elif WINDOWS
             return BaseUrlWindows;
@@ -30,3 +31,4 @@ public static class Constants
         }
     }
 }
+

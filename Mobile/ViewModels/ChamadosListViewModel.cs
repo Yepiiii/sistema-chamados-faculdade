@@ -162,25 +162,37 @@ public class ChamadosListViewModel : BaseViewModel
         Debug.WriteLine("[ChamadosListViewModel] Polling configurado e evento subscrito.");
     }
 
-    private void TestarNotificacao()
+    private async void TestarNotificacao()
     {
         try
         {
             Debug.WriteLine("[ChamadosListViewModel] 🔔 TESTE: Simulando atualizações mock...");
-            PollingService.SimularAtualizacao(); // Método estático
+            
+            // Simula atualizações
+            PollingService.SimularAtualizacao();
+            
+            // Força verificação imediata
+            var resultado = await _pollingService.VerificarAtualizacoesAsync();
             
             // Feedback visual
             MainThread.BeginInvokeOnMainThread(async () =>
             {
-                await Application.Current.MainPage.DisplayAlert(
+                await Application.Current?.MainPage?.DisplayAlert(
                     "🔔 Teste de Notificação",
-                    "Atualizações simuladas! Verifique a barra de notificações do Android.",
+                    $"✅ {resultado.TotalAtualizacoes} atualizações simuladas!\nVerifique a barra de notificações.",
                     "OK");
             });
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[ChamadosListViewModel] Erro ao testar notificação: {ex.Message}");
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                await Application.Current?.MainPage?.DisplayAlert(
+                    "Erro",
+                    $"Erro ao testar notificação: {ex.Message}",
+                    "OK");
+            });
         }
     }
 

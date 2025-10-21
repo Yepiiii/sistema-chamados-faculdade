@@ -39,13 +39,24 @@ public partial class ChamadoDetailPage : ContentPage
                 if (int.TryParse(value, out var id))
                 {
                     App.Log($"ChamadoDetailPage calling Load({id})");
-                    _ = _vm.Load(id);
+                    MainThread.BeginInvokeOnMainThread(async () =>
+                    {
+                        try
+                        {
+                            await _vm.Load(id);
+                        }
+                        catch (Exception ex)
+                        {
+                            App.Log($"ChamadoDetailPage Load FATAL: {ex}");
+                            await DisplayAlert("Erro", $"Erro ao carregar chamado: {ex.Message}", "OK");
+                            await Shell.Current.GoToAsync("..");
+                        }
+                    });
                 }
             }
             catch (Exception ex)
             {
                 App.Log($"ChamadoDetailPage ChamadoId setter FATAL: {ex}");
-                throw;
             }
         }
     }

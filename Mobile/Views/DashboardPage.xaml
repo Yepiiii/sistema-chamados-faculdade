@@ -149,9 +149,11 @@
                                Margin="0,0,0,12"
                                HasShadow="False"
                                BorderColor="{StaticResource Gray200}">
-                            <Frame.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnChamadoTapped" />
-                            </Frame.GestureRecognizers>
+                                                 <Frame.GestureRecognizers>
+                                                        <TapGestureRecognizer
+                                                               Command="{Binding BindingContext.AbrirChamadoCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                                               CommandParameter="{Binding .}" />
+                                                 </Frame.GestureRecognizers>
                             <Grid ColumnDefinitions="4,*,Auto" ColumnSpacing="12">
                                 <!-- Border colorido por prioridade -->
                                 <BoxView Grid.Column="0"

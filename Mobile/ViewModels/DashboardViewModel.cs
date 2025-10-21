@@ -111,4 +111,23 @@ public partial class DashboardViewModel : ObservableObject
     {
         await Shell.Current.GoToAsync("//chamados");
     }
+
+    [RelayCommand]
+    private async Task AbrirChamado(ChamadoDto chamado)
+    {
+        if (chamado == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await Shell.Current.GoToAsync($"///chamados/detail?id={chamado.Id}");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Erro ao abrir chamado: {ex.Message}";
+            await Application.Current.MainPage.DisplayAlert("Erro", ErrorMessage, "OK");
+        }
+    }
 }
