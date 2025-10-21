@@ -17,19 +17,40 @@ if ($existingProcess) {
     Start-Sleep -Seconds 2
 }
 
-# Obter IP da máquina na rede local
+# Obter IP da máquina na rede local (FILTRANDO ADAPTERS VIRTUAIS)
 Write-Host "[1/5] Detectando IP da máquina na rede..." -ForegroundColor Yellow
+
+# Lista todos adapters para diagnóstico
+$allAdapters = Get-NetAdapter | Where-Object Status -eq 'Up'
+Write-Host "[DEBUG] Adapters ativos detectados:" -ForegroundColor DarkGray
+foreach ($adapter in $allAdapters) {
+    $isVirtual = $adapter.Name -match "Virtual|VMware|VirtualBox|Hyper-V|vEthernet"
+    $tag = if ($isVirtual) { "[VIRTUAL]" } else { "[FISICA]" }
+    Write-Host "  $tag $($adapter.Name)" -ForegroundColor DarkGray
+}
+Write-Host ""
+
+# Detecta IP filtrando adapters virtuais
 $localIP = Get-NetIPAddress -AddressFamily IPv4 | 
     Where-Object { 
         $_.IPAddress -notlike "127.*" -and 
         $_.IPAddress -notlike "169.*" -and
-        ($_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*" -or $_.IPAddress -like "172.*")
+        $_.IPAddress -notlike "192.168.56.*" -and  # VirtualBox Host-Only
+        $_.IPAddress -notlike "192.168.137.*" -and # Mobile Hotspot
+        ($_.IPAddress -like "192.168.0.*" -or 
+         $_.IPAddress -like "192.168.1.*" -or 
+         $_.IPAddress -like "10.0.0.*" -or 
+         $_.IPAddress -like "10.0.1.*" -or 
+         $_.IPAddress -like "172.16.*" -or 
+         $_.IPAddress -like "172.17.*") -and
+        $_.InterfaceAlias -notmatch "Virtual|VMware|VirtualBox|Hyper-V|vEthernet"
     } | 
     Select-Object -First 1 -ExpandProperty IPAddress
 
 if (-not $localIP) {
-    Write-Host "[ERRO] Não foi possível detectar IP da rede local!" -ForegroundColor Red
-    Write-Host "[INFO] Certifique-se de estar conectado a uma rede Wi-Fi" -ForegroundColor Yellow
+    Write-Host "[ERRO] Não foi possível detectar IP da rede física!" -ForegroundColor Red
+    Write-Host "[INFO] Certifique-se de estar conectado a uma rede Wi-Fi ou Ethernet" -ForegroundColor Yellow
+    Write-Host "[INFO] IPs virtuais (VirtualBox, VMware) foram ignorados" -ForegroundColor Yellow
     exit 1
 }
 
