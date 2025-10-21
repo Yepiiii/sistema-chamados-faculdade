@@ -185,9 +185,8 @@ http://SEU_IP:5246/swagger
 }
 
 - **[🚀 Guia de Portabilidade](docs/SETUP_PORTABILIDADE.md)** - Setup para qualquer PC/Android
-
-- **[🔑 Credenciais de Teste](docs/CREDENCIAIS_TESTE.md)** - Usuários para testes## 📱 Gerar APK Android```
-
+- **[🌐 Acesso Remoto](docs/ACESSO_REMOTO.md)** - Usar app de qualquer lugar (4G, internet)
+- **[🔑 Credenciais de Teste](docs/CREDENCIAIS_TESTE.md)** - Usuários para testes
 - **[📱 Overview Mobile](docs/OVERVIEW_MOBILE_UI_UX.md)** - Design e funcionalidades
 
 
