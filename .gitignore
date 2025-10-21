@@ -374,6 +374,29 @@ FodyWeavers.xsd
 
 # Environment files
 .env
+*.env
+
+# Dados sensíveis locais (NÃO COMMITAR!)
+DADOS_SENSIVEIS.txt
+
+# Configurações sensíveis (IMPORTANTE: appsettings.json SEM dados sensíveis pode ser commitado)
+# Backend/appsettings.json - Commitado com valores padrão
+# Mobile/appsettings.json - Não commitado (IP específico da máquina)
+**/Mobile/appsettings.json
+
+# Certificados e keystores
+*.keystore
+*.pfx
+*.p12
+
+# IP local configurado
+**/Constants.cs.backup
+
+# APKs gerados (muito grandes para git)
+*.apk
+
+# Ngrok executável (grande)
+ngrok.exe
 
 # Test files
 test-*.http
