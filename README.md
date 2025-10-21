@@ -1,110 +1,217 @@
-# Sistema de Chamados - API
+# Sistema de Chamados - Faculdade# Sistema de Chamados - API
 
-API desenvolvida em ASP.NET Core 8 para gerenciamento de chamados de suporte técnico em ambiente acadêmico.
 
-## 🏗️ Arquitetura
 
-O projeto segue uma arquitetura limpa com separação de responsabilidades:
+Sistema completo de gerenciamento de chamados técnicos com backend .NET 8 e aplicativo mobile multiplataforma (.NET MAUI).API desenvolvida em ASP.NET Core 8 para gerenciamento de chamados de suporte técnico em ambiente acadêmico.
 
-```
-SistemaChamados/
-├── Core/
-│   └── Entities/          # Entidades do domínio
-├── Application/
-│   └── DTOs/              # Data Transfer Objects
-├── API/
+
+
+## 📁 Estrutura do Projeto## 🏗️ Arquitetura
+
+
+
+```O projeto segue uma arquitetura limpa com separação de responsabilidades:
+
+sistema-chamados-faculdade/
+
+├── Backend/              # API REST ASP.NET Core 8```
+
+├── Mobile/               # App mobile .NET MAUI (Android, iOS, Windows)SistemaChamados/
+
+├── Scripts/              # Scripts PowerShell de automação├── Core/
+
+├── Docs/                 # Documentação técnica completa│   └── Entities/          # Entidades do domínio
+
+├── APK/                  # Builds Android (gitignored)├── Application/
+
+└── SistemaChamados.sln  # Solution com ambos os projetos│   └── DTOs/              # Data Transfer Objects
+
+```├── API/
+
 │   └── Controllers/       # Controllers da API
-└── Data/                  # Contexto do Entity Framework
+
+## 🚀 Início Rápido└── Data/                  # Contexto do Entity Framework
+
 ```
+
+### Pré-requisitos
 
 ## 🚀 Tecnologias Utilizadas
 
-- **ASP.NET Core 8** - Framework web
-- **Entity Framework Core** - ORM para acesso a dados
-- **SQL Server** - Banco de dados
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) ou [VS Code](https://code.visualstudio.com/)- **ASP.NET Core 8** - Framework web
+
+- [SQL Server LocalDB](https://learn.microsoft.com/sql/database-engine/configure-windows/sql-server-express-localdb)- **Entity Framework Core** - ORM para acesso a dados
+
+- Para mobile: [Android SDK](https://developer.android.com/studio)- **SQL Server** - Banco de dados
+
 - **BCrypt.Net** - Hash seguro de senhas
-- **Swagger/OpenAPI** - Documentação da API
 
-## 📋 Funcionalidades Implementadas
+### Instalação (6 Passos)- **Swagger/OpenAPI** - Documentação da API
 
-### ✅ Registro de Usuário Admin
+
+
+```bash## 📋 Funcionalidades Implementadas
+
+# 1. Clone o repositório
+
+git clone https://github.com/Yepiiii/sistema-chamados-faculdade.git### ✅ Registro de Usuário Admin
+
+cd sistema-chamados-faculdade
 
 - **Endpoint**: `POST /api/usuarios/registrar-admin`
-- **Descrição**: Registra um novo usuário do tipo Administrador
-- **Validações**:
+
+# 2. Restaure dependências- **Descrição**: Registra um novo usuário do tipo Administrador
+
+dotnet restore- **Validações**:
+
   - Email único no sistema
-  - Campos obrigatórios
+
+# 3. Configure connection string (Backend/appsettings.json)  - Campos obrigatórios
+
   - Formato de email válido
-  - Senha com mínimo de 6 caracteres
-- **Segurança**: Senha criptografada com BCrypt
 
-#### Exemplo de Requisição:
+# 4. Execute migrations  - Senha com mínimo de 6 caracteres
+
+cd Backend- **Segurança**: Senha criptografada com BCrypt
+
+dotnet ef database update
+
+cd ..#### Exemplo de Requisição:
+
 ```json
-{
-  "nomeCompleto": "Administrador do Sistema",
-  "email": "admin@faculdade.edu.br",
-  "senha": "Admin123!"
+
+# 5. Inicie o sistema{
+
+cd Scripts  "nomeCompleto": "Administrador do Sistema",
+
+.\IniciarSistema.ps1 -Plataforma windows  "email": "admin@faculdade.edu.br",
+
+```  "senha": "Admin123!"
+
 }
-```
 
-#### Exemplo de Resposta (201 Created):
-```json
-{
-  "id": 1,
+## 📱 Gerar APK Android```
+
+
+
+```powershell#### Exemplo de Resposta (201 Created):
+
+cd Scripts```json
+
+.\GerarAPK.ps1{
+
+```  "id": 1,
+
   "nomeCompleto": "Administrador do Sistema",
-  "email": "admin@faculdade.edu.br",
+
+APK gerado em: `APK/SistemaChamados-v1.0.apk`  "email": "admin@faculdade.edu.br",
+
   "tipoUsuario": 3,
-  "dataCadastro": "2025-09-16T02:45:00.000Z",
+
+## 📚 Documentação  "dataCadastro": "2025-09-16T02:45:00.000Z",
+
   "ativo": true
-}
-```
 
-## 🗄️ Banco de Dados
+- **[Guia de Inicialização](Docs/GUIA_INICIAR_SISTEMA.md)**}
 
-### Script de Criação
+- **[Credenciais de Teste](Docs/CREDENCIAIS_TESTE.md)**```
+
+- **[Overview Mobile](Docs/OVERVIEW_MOBILE_UI_UX.md)**
+
+- **[Estrutura do Repositório](ESTRUTURA_REPOSITORIO.md)**## 🗄️ Banco de Dados
+
+
+
+## 🎯 Funcionalidades### Script de Criação
+
 Execute o script `Scripts/CreateDatabase.sql` no SQL Server para criar todas as tabelas necessárias.
 
-### Estrutura das Tabelas
+### Backend
 
-O projeto utiliza as seguintes entidades principais:
+- ✅ Autenticação JWT### Estrutura das Tabelas
+
+- ✅ CRUD de chamados
+
+- ✅ Classificação IA (Gemini)O projeto utiliza as seguintes entidades principais:
+
+- ✅ API REST documentada (Swagger)
 
 1. **Usuarios**: Informações básicas dos usuários do sistema
-2. **AlunoPerfil**: Perfil específico para alunos (relacionamento 1:1 com Usuarios)
-3. **ProfessorPerfil**: Perfil específico para professores (relacionamento 1:1 com Usuarios)
-4. **Categorias**: Categorias para classificação dos chamados
-5. **Chamados**: Chamados de suporte técnico
-6. **HistoricoChamado**: Histórico de alterações nos chamados
 
-### Tipos de Usuário:
+### Mobile2. **AlunoPerfil**: Perfil específico para alunos (relacionamento 1:1 com Usuarios)
+
+- ✅ Android, iOS, Windows3. **ProfessorPerfil**: Perfil específico para professores (relacionamento 1:1 com Usuarios)
+
+- ✅ Material Design4. **Categorias**: Categorias para classificação dos chamados
+
+- ✅ Filtros avançados5. **Chamados**: Chamados de suporte técnico
+
+- ✅ Pull-to-refresh6. **HistoricoChamado**: Histórico de alterações nos chamados
+
+- ✅ Bottom navigation
+
+- ✅ Timezone UTC → Local### Tipos de Usuário:
+
 - `1` - Aluno
-- `2` - Professor  
+
+## 🛠️ Tecnologias- `2` - Professor  
+
 - `3` - Administrador
 
-### Relacionamentos:
-- Usuario 1:1 AlunoPerfil (opcional)
-- Usuario 1:1 ProfessorPerfil (opcional)
-- Usuario 1:N Chamados (como solicitante)
-- Usuario 1:N Chamados (como atribuído)
-- Categoria 1:N Chamados
-- Chamado 1:N HistoricoChamado
+**Backend:** ASP.NET Core 8 • EF Core 8 • SQL Server • JWT • Gemini API  
 
-## ⚙️ Configuração
+**Mobile:** .NET MAUI 8 • MVVM • HttpClient### Relacionamentos:
+
+- Usuario 1:1 AlunoPerfil (opcional)
+
+## 📦 Scripts- Usuario 1:1 ProfessorPerfil (opcional)
+
+- Usuario 1:N Chamados (como solicitante)
+
+| Script | Descrição |- Usuario 1:N Chamados (como atribuído)
+
+|--------|-----------|- Categoria 1:N Chamados
+
+| `IniciarSistema.ps1` | Inicia API + Mobile |- Chamado 1:N HistoricoChamado
+
+| `GerarAPK.ps1` | Gera APK Android |
+
+| `TestarAPI.ps1` | Testa endpoints |## ⚙️ Configuração
+
+| `CriarAdmin.ps1` | Cria usuário Admin |
 
 ### Pré-requisitos:
-- .NET 8 SDK
+
+## 🐛 Troubleshooting- .NET 8 SDK
+
 - SQL Server (LocalDB ou instância completa)
 
-### String de Conexão:
-Configure no `appsettings.json`:
+**API não inicia:** Verifique connection string  
+
+**Mobile não conecta:** Configure IP em `Mobile/appsettings.json`  ### String de Conexão:
+
+**Timezone errado:** Sistema corrige UTC → Local automaticamenteConfigure no `appsettings.json`:
+
 ```json
-{
+
+## 📄 Licença{
+
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=SistemaChamados;Trusted_Connection=true;TrustServerCertificate=true;"
+
+MIT License    "DefaultConnection": "Server=localhost;Database=SistemaChamados;Trusted_Connection=true;TrustServerCertificate=true;"
+
   }
-}
+
+---}
+
 ```
 
-### Executar o Projeto:
+**Desenvolvido com ❤️ usando .NET 8**  
+
+**Última atualização:** 21/10/2025 | **Versão:** 1.0.0### Executar o Projeto:
+
 ```bash
 dotnet run
 ```

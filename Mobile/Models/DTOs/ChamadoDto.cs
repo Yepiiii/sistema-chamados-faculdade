@@ -1,0 +1,30 @@
+using System;
+using System.Collections.Generic;
+
+namespace SistemaChamados.Mobile.Models.DTOs;
+
+public class ChamadoDto
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public string Descricao { get; set; } = string.Empty;
+    public DateTime DataAbertura { get; set; }
+    public DateTime? DataUltimaAtualizacao { get; set; }
+    public DateTime? DataFechamento { get; set; }
+    public CategoriaDto? Categoria { get; set; }
+    public PrioridadeDto? Prioridade { get; set; }
+    public StatusDto? Status { get; set; }
+    public UsuarioResumoDto? Solicitante { get; set; }
+    public UsuarioResumoDto? Tecnico { get; set; }
+    
+    // Histórico de atualizações
+    public List<HistoricoItemDto>? Historico { get; set; }
+
+    // Convenience helpers for UI bindings.
+    public bool HasSolicitante => Solicitante != null;
+    public string SolicitanteDisplay => Solicitante is null
+        ? string.Empty
+        : $"{Solicitante.NomeCompleto} ({Solicitante.Email})";
+    
+    public bool HasHistorico => Historico != null && Historico.Count > 0;
+}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:SistemaChamados.Mobile.Views"
+    x:Class="SistemaChamados.Mobile.AppShell"
+    FlyoutBehavior="Disabled"
+    Shell.TabBarBackgroundColor="White"
+    Shell.TabBarForegroundColor="{StaticResource Primary}"
+    Shell.TabBarUnselectedColor="{StaticResource Gray500}"
+    Shell.TabBarTitleColor="{StaticResource Primary}">
+
+    <TabBar>
+        <!-- Tab 1: Início (Dashboard) -->
+        <ShellContent
+            Title="Início"
+            Route="dashboard"
+            ContentTemplate="{DataTemplate views:DashboardPage}" />
+
+        <!-- Tab 2: Chamados (Lista) -->
+        <ShellContent
+            Title="Chamados"
+            Route="chamados"
+            ContentTemplate="{DataTemplate views:ChamadosListPage}" />
+
+        <!-- Tab 3: Perfil -->
+        <ShellContent
+            Title="Perfil"
+            Route="perfil"
+            ContentTemplate="{DataTemplate views:PerfilPage}" />
+    </TabBar>
+
+</Shell>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SistemaChamados.Mobile.ViewModels"
+             x:Class="SistemaChamados.Mobile.Views.PerfilPage"
+             x:DataType="viewmodels:PerfilViewModel"
+             Title="Perfil"
+             Shell.NavBarIsVisible="True">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Header com foto e info do usuário -->
+            <Frame BackgroundColor="{StaticResource Primary}"
+                   CornerRadius="20"
+                   Padding="24"
+                   HasShadow="False">
+                <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                    <!-- Avatar -->
+                    <Frame CornerRadius="60"
+                           WidthRequest="120"
+                           HeightRequest="120"
+                           Padding="0"
+                           HasShadow="False"
+                           BackgroundColor="White"
+                           HorizontalOptions="Center">
+                        <Label Text="{Binding IniciaisNome}"
+                               FontSize="48"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                    </Frame>
+
+                    <!-- Nome -->
+                    <Label Text="{Binding NomeCompleto}"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center" />
+
+                    <!-- Email -->
+                    <Label Text="{Binding Email}"
+                           FontSize="14"
+                           TextColor="White"
+                           Opacity="0.9"
+                           HorizontalOptions="Center" />
+
+                    <!-- Tipo de usuário -->
+                    <Frame BackgroundColor="White"
+                           CornerRadius="16"
+                           Padding="12,6"
+                           HasShadow="False"
+                           HorizontalOptions="Center">
+                        <Label Text="{Binding TipoUsuario}"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}" />
+                    </Frame>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Meus Dados -->
+            <Label Text="👤 Meus Dados"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Gray900}" />
+
+            <Frame BackgroundColor="White"
+                   CornerRadius="16"
+                   Padding="0"
+                   HasShadow="False"
+                   BorderColor="{StaticResource Gray200}">
+                <VerticalStackLayout Spacing="0">
+                    <Grid Padding="16" ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="📧" FontSize="20" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="Email" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding Email}" FontSize="14" TextColor="{StaticResource Gray900}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" />
+
+                    <Grid Padding="16" ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="🆔" FontSize="20" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="ID" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding UsuarioId}" FontSize="14" TextColor="{StaticResource Gray900}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" 
+                             IsVisible="{Binding MostrarDadosExtras}" />
+
+                    <Grid Padding="16" ColumnDefinitions="Auto,*" ColumnSpacing="12"
+                          IsVisible="{Binding MostrarDadosExtras}">
+                        <Label Grid.Column="0" Text="🎓" FontSize="20" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="Curso" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding Curso}" FontSize="14" TextColor="{StaticResource Gray900}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Estatísticas -->
+            <Label Text="📊 Estatísticas"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Gray900}" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Frame Grid.Column="0"
+                       BackgroundColor="White"
+                       CornerRadius="16"
+                       Padding="16"
+                       HasShadow="False"
+                       BorderColor="{StaticResource Gray200}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="{Binding TotalChamadosAbertos}"
+                               FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"
+                               HorizontalOptions="Center" />
+                        <Label Text="Abertos"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray600}"
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Grid.Column="1"
+                       BackgroundColor="White"
+                       CornerRadius="16"
+                       Padding="16"
+                       HasShadow="False"
+                       BorderColor="{StaticResource Gray200}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="{Binding TotalChamadosEncerrados}"
+                               FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Success}"
+                               HorizontalOptions="Center" />
+                        <Label Text="Encerrados"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray600}"
+                               HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </Frame>
+            </Grid>
+
+            <!-- Configurações -->
+            <Label Text="⚙️ Configurações"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Gray900}"
+                   Margin="0,10,0,0" />
+
+            <Frame BackgroundColor="White"
+                   CornerRadius="16"
+                   Padding="0"
+                   HasShadow="False"
+                   BorderColor="{StaticResource Gray200}">
+                <VerticalStackLayout Spacing="0">
+                    <!-- Notificações -->
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="🔔" FontSize="20" />
+                        <Label Grid.Column="1" Text="Notificações" FontSize="15" TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+                        <Switch Grid.Column="2" IsToggled="{Binding NotificacoesAtivas}" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" />
+
+                    <!-- Tema -->
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="🌓" FontSize="20" />
+                        <Label Grid.Column="1" Text="Tema Escuro" FontSize="15" TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+                        <Switch Grid.Column="2" IsToggled="{Binding TemaEscuro}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Sobre -->
+            <Label Text="ℹ️ Sobre"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Gray900}"
+                   Margin="0,10,0,0" />
+
+            <Frame BackgroundColor="White"
+                   CornerRadius="16"
+                   Padding="0"
+                   HasShadow="False"
+                   BorderColor="{StaticResource Gray200}">
+                <VerticalStackLayout Spacing="0">
+                    <!-- Versão -->
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="📱" FontSize="20" />
+                        <Label Grid.Column="1" Text="Versão do App" FontSize="15" TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="{Binding VersaoApp}" FontSize="13" TextColor="{StaticResource Gray600}" VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" />
+
+                    <!-- Ajuda -->
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="❓" FontSize="20" />
+                        <Label Grid.Column="1" Text="Ajuda / FAQ" FontSize="15" TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="›" FontSize="24" TextColor="{StaticResource Gray400}" VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" />
+
+                    <!-- Termos -->
+                    <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Label Grid.Column="0" Text="📄" FontSize="20" />
+                        <Label Grid.Column="1" Text="Termos de Uso" FontSize="15" TextColor="{StaticResource Gray900}" VerticalOptions="Center" />
+                        <Label Grid.Column="2" Text="›" FontSize="24" TextColor="{StaticResource Gray400}" VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Botão Sair -->
+            <Button Text="Sair"
+                    Command="{Binding LogoutCommand}"
+                    BackgroundColor="{StaticResource Danger}"
+                    TextColor="White"
+                    CornerRadius="12"
+                    HeightRequest="50"
+                    Margin="0,20,0,40" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

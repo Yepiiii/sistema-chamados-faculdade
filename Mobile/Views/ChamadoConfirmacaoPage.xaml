@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SistemaChamados.Mobile.Views.ChamadoConfirmacaoPage"
+             Title="Chamado criado">
+  <ScrollView>
+    <VerticalStackLayout Padding="24" Spacing="24">
+      <VerticalStackLayout Spacing="8">
+        <Label Text="Chamado registrado"
+               FontSize="28"
+               FontAttributes="Bold"
+               TextColor="{DynamicResource PrimaryDarkText}" />
+        <Label Text="Um analista irá assumir o chamado em breve. Você pode acompanhar os detalhes abaixo."
+               FontSize="14"
+               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+      </VerticalStackLayout>
+
+      <Border StrokeShape="RoundRectangle 24"
+              StrokeThickness="1"
+              Stroke="{AppThemeBinding Light={StaticResource Gray100Brush}, Dark={StaticResource Gray400Brush}}"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+              Padding="20,24"
+              IsVisible="{Binding TemChamado}">
+        <VerticalStackLayout Spacing="18">
+          <VerticalStackLayout Spacing="4">
+            <Label Text="Protocolo" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+            <Label Text="{Binding ProtocoloDisplay}" FontSize="24" FontAttributes="Bold" TextColor="{DynamicResource PrimaryDarkText}" />
+          </VerticalStackLayout>
+
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" ColumnSpacing="16" RowSpacing="14">
+            <Label Grid.Row="0" Grid.Column="0" Text="Título" FontAttributes="Bold" TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Grid.Row="0" Grid.Column="1" Text="{Binding TituloDisplay}" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray200}}" />
+
+            <Label Grid.Row="1" Grid.Column="0" Text="Categoria" FontAttributes="Bold" TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Grid.Row="1" Grid.Column="1" Text="{Binding CategoriaDisplay}" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray200}}" />
+
+            <Label Grid.Row="2" Grid.Column="0" Text="Prioridade" FontAttributes="Bold" TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Grid.Row="2" Grid.Column="1" Text="{Binding PrioridadeDisplay}" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray200}}" />
+
+            <Label Grid.Row="3" Grid.Column="0" Text="Status" FontAttributes="Bold" TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Grid.Row="3" Grid.Column="1" Text="{Binding StatusDisplay}" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray200}}" />
+          </Grid>
+        </VerticalStackLayout>
+      </Border>
+
+      <Button Text="Ver detalhes"
+              Command="{Binding VerDetalhesCommand}"
+              HeightRequest="52"
+              CornerRadius="12" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

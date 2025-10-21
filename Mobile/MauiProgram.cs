@@ -1,0 +1,91 @@
+using System;
+using System.Net.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.Controls.Hosting;
+using Microsoft.Maui.Hosting;
+using SistemaChamados.Mobile.Helpers;
+using SistemaChamados.Mobile.Services.Auth;
+using SistemaChamados.Mobile.Services.Api;
+using SistemaChamados.Mobile.Services.Chamados;
+using SistemaChamados.Mobile.Services.Categorias;
+using SistemaChamados.Mobile.Services.Prioridades;
+using SistemaChamados.Mobile.Services.Status;
+using SistemaChamados.Mobile.Services.Comentarios;
+using SistemaChamados.Mobile.Services.Anexos;
+using SistemaChamados.Mobile.Services.Polling;
+using SistemaChamados.Mobile.Services.Notifications;
+using SistemaChamados.Mobile.ViewModels;
+
+namespace SistemaChamados.Mobile;
+
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder
+            .UseMauiApp<App>()
+            .ConfigureFonts(fonts => { })
+            ;
+
+        // Configuration from appsettings.json
+        var a = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        builder.Configuration.AddConfiguration(a);
+
+        // Shared HttpClient so auth header updates propagate to every service instance
+        builder.Services.AddSingleton(new HttpClient
+        {
+            BaseAddress = new Uri(Constants.BaseUrl),
+            Timeout = TimeSpan.FromSeconds(30)
+        });
+        builder.Services.AddSingleton<IApiService, ApiService>();
+
+        // Auth and domain services
+        builder.Services.AddSingleton<IAuthService, AuthService>();
+        builder.Services.AddSingleton<IChamadoService, ChamadoService>();
+        builder.Services.AddSingleton<ICategoriaService, CategoriaService>();
+        builder.Services.AddSingleton<IPrioridadeService, PrioridadeService>();
+        builder.Services.AddSingleton<IStatusService, StatusService>();
+        builder.Services.AddSingleton<ComentarioService>();
+        builder.Services.AddSingleton<AnexoService>();
+        builder.Services.AddSingleton<PollingService>();
+
+        var notificationService = DependencyService.Get<INotificationService>();
+        if (notificationService is not null)
+        {
+            builder.Services.AddSingleton(notificationService);
+        }
+        else
+        {
+            builder.Services.AddSingleton<INotificationService, NoOpNotificationService>();
+        }
+
+        // ViewModels
+        builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<MainViewModel>();
+        builder.Services.AddTransient<DashboardViewModel>();
+        builder.Services.AddTransient<ChamadosListViewModel>();
+        builder.Services.AddTransient<ChamadoDetailViewModel>();
+        builder.Services.AddTransient<NovoChamadoViewModel>();
+        builder.Services.AddTransient<ChamadoConfirmacaoViewModel>();
+        builder.Services.AddTransient<PerfilViewModel>();
+
+        // Pages
+        builder.Services.AddTransient<AppShell>();
+        builder.Services.AddTransient<Views.Auth.LoginPage>();
+        builder.Services.AddTransient<Views.MainPage>();
+        builder.Services.AddTransient<Views.DashboardPage>();
+        builder.Services.AddTransient<Views.ChamadosListPage>();
+        builder.Services.AddTransient<Views.ChamadoDetailPage>();
+        builder.Services.AddTransient<Views.NovoChamadoPage>();
+        builder.Services.AddTransient<Views.ChamadoConfirmacaoPage>();
+        builder.Services.AddTransient<Views.PerfilPage>();
+
+        return builder.Build();
+    }
+}
