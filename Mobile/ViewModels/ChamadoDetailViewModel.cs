@@ -18,7 +18,9 @@ public class ChamadoDetailViewModel : BaseViewModel
     {
         _chamadoService = chamadoService;
         _authService = authService;
-        CloseChamadoCommand = new Command(async () => await CloseChamadoAsync(), () => !IsBusy && ShowCloseButton);
+        
+        // Comando simplificado - controle de habilitação feito no XAML
+        CloseChamadoCommand = new Command(async () => await CloseChamadoAsync());
     }
 
     public int Id { get; private set; }
@@ -75,9 +77,28 @@ public class ChamadoDetailViewModel : BaseViewModel
 
     private async Task CloseChamadoAsync()
     {
-        if (Chamado == null) return;
+        // Proteção contra execução dupla
+        if (IsBusy)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - Already busy, skipping");
+            return;
+        }
+
+        if (Chamado == null)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - No chamado loaded");
+            return;
+        }
+
+        if (IsChamadoEncerrado)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - Already closed");
+            return;
+        }
 
         if (Application.Current?.MainPage == null) return;
+
+        System.Diagnostics.Debug.WriteLine($"ChamadoDetailViewModel.CloseChamadoAsync - Starting for Chamado ID: {Chamado.Id}");
 
         bool confirm = await Application.Current.MainPage.DisplayAlert(
             "Confirmar Encerramento",
@@ -85,15 +106,23 @@ public class ChamadoDetailViewModel : BaseViewModel
             "Sim, Encerrar",
             "Cancelar");
 
-        if (!confirm) return;
+        if (!confirm)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - User cancelled");
+            return;
+        }
 
         IsBusy = true;
         try
         {
+            System.Diagnostics.Debug.WriteLine($"ChamadoDetailViewModel.CloseChamadoAsync - Calling API to close {Chamado.Id}");
             await _chamadoService.Close(Chamado.Id);
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - API call successful");
             
             // Recarrega os detalhes do chamado para mostrar status atualizado
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - Reloading details");
             await LoadChamadoAsync(Chamado.Id);
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - Details reloaded");
             
             await Application.Current.MainPage.DisplayAlert(
                 "Sucesso", 
@@ -103,6 +132,7 @@ public class ChamadoDetailViewModel : BaseViewModel
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"ChamadoDetailViewModel.CloseChamadoAsync ERROR: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"ChamadoDetailViewModel.CloseChamadoAsync STACK: {ex.StackTrace}");
             if (Application.Current?.MainPage != null)
             {
                 await Application.Current.MainPage.DisplayAlert(
@@ -114,6 +144,7 @@ public class ChamadoDetailViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            System.Diagnostics.Debug.WriteLine("ChamadoDetailViewModel.CloseChamadoAsync - Finished");
         }
     }
 }
