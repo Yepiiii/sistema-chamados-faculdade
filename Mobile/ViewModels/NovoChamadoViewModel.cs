@@ -50,6 +50,31 @@ public class NovoChamadoViewModel : BaseViewModel
         }
     }
 
+    // Propriedades para controle de IA
+    private bool _usarAnaliseAutomatica = true;
+    public bool UsarAnaliseAutomatica
+    {
+        get => _usarAnaliseAutomatica;
+        set
+        {
+            if (_usarAnaliseAutomatica == value) return;
+            _usarAnaliseAutomatica = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ExibirClassificacaoManual));
+        }
+    }
+
+    public bool PodeUsarClassificacaoManual => true; // Sempre true para Admin/Técnico
+    
+    public bool ExibirClassificacaoManual => !UsarAnaliseAutomatica && PodeUsarClassificacaoManual;
+
+    public bool HasCategorias => Categorias.Any();
+    public bool IsCategoriasEmpty => !HasCategorias;
+    public bool HasPrioridades => Prioridades.Any();
+    public bool IsPrioridadesEmpty => !HasPrioridades;
+
+    public string DescricaoHeader => "Preencha os campos abaixo para criar um novo chamado";
+
     public ICommand CriarCommand { get; }
 
     public NovoChamadoViewModel(
@@ -80,6 +105,8 @@ public class NovoChamadoViewModel : BaseViewModel
                     Categorias.Add(cat);
                 }
             }
+            OnPropertyChanged(nameof(HasCategorias));
+            OnPropertyChanged(nameof(IsCategoriasEmpty));
 
             var prioridades = await _prioridadeService.GetAll();
             Prioridades.Clear();
@@ -90,10 +117,12 @@ public class NovoChamadoViewModel : BaseViewModel
                     Prioridades.Add(pri);
                 }
             }
+            OnPropertyChanged(nameof(HasPrioridades));
+            OnPropertyChanged(nameof(IsPrioridadesEmpty));
         }
         catch (System.Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar dados: {ex.Message}", "OK");
+            await Application.Current?.MainPage?.DisplayAlert("Erro", $"Erro ao carregar dados: {ex.Message}", "OK");
         }
         finally
         {
@@ -103,28 +132,26 @@ public class NovoChamadoViewModel : BaseViewModel
 
     private async Task CriarChamadoAsync()
     {
-        if (string.IsNullOrWhiteSpace(Titulo))
-        {
-            await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, informe o título do chamado.", "OK");
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(Descricao))
         {
-            await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, informe a descrição do chamado.", "OK");
+            await Application.Current?.MainPage?.DisplayAlert("Atenção", "Por favor, informe a descrição do chamado.", "OK");
             return;
         }
 
-        if (!CategoriaId.HasValue)
+        // Se IA desativada, validar seleção manual
+        if (!UsarAnaliseAutomatica)
         {
-            await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, selecione uma categoria.", "OK");
-            return;
-        }
+            if (!CategoriaId.HasValue)
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Atenção", "Por favor, selecione uma categoria.", "OK");
+                return;
+            }
 
-        if (!PrioridadeId.HasValue)
-        {
-            await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, selecione uma prioridade.", "OK");
-            return;
+            if (!PrioridadeId.HasValue)
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Atenção", "Por favor, selecione uma prioridade.", "OK");
+                return;
+            }
         }
 
         IsBusy = true;
@@ -132,22 +159,22 @@ public class NovoChamadoViewModel : BaseViewModel
         {
             var dto = new CriarChamadoRequestDto
             {
-                Titulo = Titulo,
+                Titulo = string.IsNullOrWhiteSpace(Titulo) ? "Chamado sem título" : Titulo,
                 Descricao = Descricao,
-                CategoriaId = CategoriaId.Value,
-                PrioridadeId = PrioridadeId.Value
+                CategoriaId = CategoriaId ?? 1, // Valor padrão se IA ativada
+                PrioridadeId = PrioridadeId ?? 1 // Valor padrão se IA ativada
             };
 
             var chamado = await _chamadoService.Create(dto);
             if (chamado != null)
             {
-                await Application.Current.MainPage.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
+                await Application.Current?.MainPage?.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
                 await Shell.Current.GoToAsync("..");
             }
         }
         catch (System.Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao criar chamado: {ex.Message}", "OK");
+            await Application.Current?.MainPage?.DisplayAlert("Erro", $"Erro ao criar chamado: {ex.Message}", "OK");
         }
         finally
         {
