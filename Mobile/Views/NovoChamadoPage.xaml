@@ -67,213 +67,61 @@
           </VerticalStackLayout>
         </VerticalStackLayout>
 
-        <!-- Botão de Opções Avançadas (Apenas para Técnicos/Admins) -->
-        <!-- Botão de Opções Avançadas (Apenas para Técnicos/Admins) -->
-        <Button Text="{Binding ToggleOpcoesAvancadasTexto}"
-                Command="{Binding ToggleOpcoesAvancadasCommand}"
-                CornerRadius="12"
-                HeightRequest="44"
-                IsVisible="{Binding PodeUsarClassificacaoManual}" />
-
-        <!-- Opções Avançadas (Apenas para Técnicos/Admins) -->
-        <VerticalStackLayout Spacing="20" IsVisible="{Binding ExibirOpcoesAvancadas}">
-          <Label Text="Opções avançadas" Style="{StaticResource SectionTitleStyle}" />
-
-          <!-- Título (Opcional) -->
-          <VerticalStackLayout>
-            <Label Text="Título (opcional)" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
-            <Border Style="{StaticResource FormFieldContainerStyle}">
-              <Entry Placeholder="Ex: Falha no acesso ao sistema"
-                     Text="{Binding Titulo}"
-                     PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}" />
-            </Border>
-          </VerticalStackLayout>
-
-          <!-- Switch de IA (Apenas para Técnicos/Admins) -->
-          <VerticalStackLayout IsVisible="{Binding PodeUsarClassificacaoManual}">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Padding="0,8,0,0">
-              <Label Grid.Column="0"
-                     Text="Classificar automaticamente com IA"
-                     Style="{StaticResource FormLabelStyle}"
-                     Margin="0,0,0,0"
-                     VerticalOptions="Center" />
-              <Switch Grid.Column="1"
-                      IsToggled="{Binding UsarAnaliseAutomatica}"
-                      VerticalOptions="Center" />
-            </Grid>
-            <Label Text="Desative para escolher categoria e prioridade manualmente."
-                   Style="{StaticResource FormLabelStyle}"
-                   FontAttributes="None"
-                   Margin="0,4,0,0"
-                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
-          </VerticalStackLayout>
-
-          <!-- Classificação Manual (Apenas se IA desativada E Técnico/Admin) -->
-          <VerticalStackLayout Spacing="16" IsVisible="{Binding ExibirClassificacaoManual}">
-            <!-- Categoria -->
-            <VerticalStackLayout>
-              <Label Text="Categoria" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
-              <Border Style="{StaticResource FormFieldContainerStyle}">
-                <Grid>
-                  <Picker x:Name="CategoriaPicker"
-                          IsVisible="{Binding HasCategorias}"
-                          HorizontalOptions="Fill"
-                          VerticalOptions="Center"
-                          Title="Selecione uma categoria"
-      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
-                          ItemsSource="{Binding Categorias}"
-                          ItemDisplayBinding="{Binding Nome}"
-                          SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
-                          SelectedIndexChanged="OnCategoriaChanged" />
-
-                  <Label Text="Nenhuma categoria disponível"
-                         Style="{StaticResource EmptyStateLabelStyle}"
-                         IsVisible="{Binding IsCategoriasEmpty}" />
-                </Grid>
-              </Border>
-            </VerticalStackLayout>
-
-            <!-- Prioridade -->
-            <VerticalStackLayout>
-              <Label Text="Prioridade" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
-              <Border Style="{StaticResource FormFieldContainerStyle}">
-                <Grid>
-                  <Picker x:Name="PrioridadePicker"
-                          IsVisible="{Binding HasPrioridades}"
-                          HorizontalOptions="Fill"
-                          VerticalOptions="Center"
-                          Title="Selecione a prioridade"
-      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
-                          ItemsSource="{Binding Prioridades}"
-                          ItemDisplayBinding="{Binding Nome}"
-                          SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
-                          SelectedIndexChanged="OnPrioridadeChanged" />
-
-                  <Label Text="Nenhuma prioridade disponível"
-                         Style="{StaticResource EmptyStateLabelStyle}"
-                         IsVisible="{Binding IsPrioridadesEmpty}" />
-                </Grid>
-              </Border>
-            </VerticalStackLayout>
-          </VerticalStackLayout>
+        <!-- Título -->
+        <VerticalStackLayout>
+          <Label Text="Título" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+          <Border Style="{StaticResource FormFieldContainerStyle}">
+            <Entry Placeholder="Ex: Falha no acesso ao sistema"
+                   Text="{Binding Titulo}"
+                   PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}" />
+          </Border>
         </VerticalStackLayout>
-      </VerticalStackLayout>
 
-      <!-- Seção de Anexos -->
-      <VerticalStackLayout Spacing="12" Margin="0,8,0,0">
-        <Label Text="📎 Anexos (Opcional)"
-               FontSize="16"
-               FontAttributes="Bold"
-               TextColor="{DynamicResource PrimaryDarkText}" />
-        
-        <Label Text="Adicione imagens para ajudar a explicar o problema"
-               FontSize="13"
-               TextColor="{DynamicResource Gray600}"
-               Margin="0,0,0,8" />
+        <!-- Categoria -->
+        <VerticalStackLayout>
+          <Label Text="Categoria" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+          <Border Style="{StaticResource FormFieldContainerStyle}">
+            <Grid>
+              <Picker x:Name="CategoriaPicker"
+                      IsVisible="{Binding HasCategorias}"
+                      HorizontalOptions="Fill"
+                      VerticalOptions="Center"
+                      Title="Selecione uma categoria"
+                      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                      ItemsSource="{Binding Categorias}"
+                      ItemDisplayBinding="{Binding Nome}"
+                      SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
+                      SelectedIndexChanged="OnCategoriaChanged" />
 
-        <!-- Botões de Anexar -->
-        <HorizontalStackLayout Spacing="12">
-          <Button Text="📷 Tirar Foto"
-                  Command="{Binding TirarFotoCommand}"
-                  BackgroundColor="{DynamicResource Primary}"
-                  TextColor="White"
-                  FontSize="14"
-                  Padding="16,10"
-                  CornerRadius="8"
-                  HorizontalOptions="Start" />
-          
-          <Button Text="🖼️ Galeria"
-                  Command="{Binding SelecionarImagemCommand}"
-                  BackgroundColor="{DynamicResource Secondary}"
-                  TextColor="White"
-                  FontSize="14"
-                  Padding="16,10"
-                  CornerRadius="8"
-                  HorizontalOptions="Start" />
-        </HorizontalStackLayout>
+              <Label Text="Nenhuma categoria disponível"
+                     Style="{StaticResource EmptyStateLabelStyle}"
+                     IsVisible="{Binding IsCategoriasEmpty}" />
+            </Grid>
+          </Border>
+        </VerticalStackLayout>
 
-        <!-- Lista de Anexos -->
-        <CollectionView ItemsSource="{Binding AnexosTemporarios}"
-                        SelectionMode="None"
-                        IsVisible="{Binding HasAnexos}">
-          <CollectionView.ItemsLayout>
-            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
-          </CollectionView.ItemsLayout>
-          
-          <CollectionView.ItemTemplate>
-            <DataTemplate>
-              <Frame Padding="12"
-                     CornerRadius="8"
-                     BackgroundColor="{DynamicResource Gray50}"
-                     BorderColor="{DynamicResource Gray200}"
-                     HasShadow="False">
-                <Grid ColumnDefinitions="Auto,*,Auto"
-                      ColumnSpacing="12">
-                  
-                  <!-- Thumbnail da imagem -->
-                  <Frame Grid.Column="0"
-                         WidthRequest="60"
-                         HeightRequest="60"
-                         Padding="0"
-                         CornerRadius="8"
-                         IsClippedToBounds="True"
-                         HasShadow="False"
-                         BorderColor="{DynamicResource Gray300}">
-                    <Image Source="{Binding ImageSource}"
-                           Aspect="AspectFill" />
-                  </Frame>
+        <!-- Prioridade -->
+        <VerticalStackLayout>
+          <Label Text="Prioridade" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+          <Border Style="{StaticResource FormFieldContainerStyle}">
+            <Grid>
+              <Picker x:Name="PrioridadePicker"
+                      IsVisible="{Binding HasPrioridades}"
+                      HorizontalOptions="Fill"
+                      VerticalOptions="Center"
+                      Title="Selecione a prioridade"
+                      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                      ItemsSource="{Binding Prioridades}"
+                      ItemDisplayBinding="{Binding Nome}"
+                      SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
+                      SelectedIndexChanged="OnPrioridadeChanged" />
 
-                  <!-- Informações do arquivo -->
-                  <VerticalStackLayout Grid.Column="1"
-                                       Spacing="4"
-                                       VerticalOptions="Center">
-                    <Label Text="{Binding NomeArquivo}"
-                           FontSize="14"
-                           FontAttributes="Bold"
-                           TextColor="{DynamicResource Gray900}"
-                           LineBreakMode="TailTruncation"
-                           MaxLines="1" />
-                    
-                    <HorizontalStackLayout Spacing="8">
-                      <Label Text="{Binding IconeArquivo}"
-                             FontSize="12" />
-                      <Label Text="{Binding ExtensaoArquivo}"
-                             FontSize="12"
-                             TextColor="{DynamicResource Gray600}" />
-                      <Label Text="•"
-                             FontSize="12"
-                             TextColor="{DynamicResource Gray400}" />
-                      <Label Text="{Binding TamanhoFormatado}"
-                             FontSize="12"
-                             TextColor="{DynamicResource Gray600}" />
-                    </HorizontalStackLayout>
-                  </VerticalStackLayout>
-
-                  <!-- Botão remover -->
-                  <Button Grid.Column="2"
-                          Text="🗑️"
-                          Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:NovoChamadoViewModel}}, Path=RemoverAnexoCommand}"
-                          CommandParameter="{Binding .}"
-                          BackgroundColor="{DynamicResource Danger}"
-                          TextColor="White"
-                          FontSize="16"
-                          WidthRequest="40"
-                          HeightRequest="40"
-                          CornerRadius="20"
-                          Padding="0"
-                          VerticalOptions="Center" />
-                </Grid>
-              </Frame>
-            </DataTemplate>
-          </CollectionView.ItemTemplate>
-        </CollectionView>
-
-        <!-- Contador de anexos -->
-        <Label Text="{Binding AnexosTemporarios.Count, StringFormat='{0} arquivo(s) anexado(s)'}"
-               FontSize="12"
-               TextColor="{DynamicResource Gray500}"
-               IsVisible="{Binding HasAnexos}"
-               Margin="0,4,0,0" />
+              <Label Text="Nenhuma prioridade disponível"
+                     Style="{StaticResource EmptyStateLabelStyle}"
+                     IsVisible="{Binding IsPrioridadesEmpty}" />
+            </Grid>
+          </Border>
+        </VerticalStackLayout>
       </VerticalStackLayout>
 
       <Button Text="Criar Chamado"

@@ -13,14 +13,14 @@ public static class Constants
     // O script detectará automaticamente seu IP local
     public static string BaseUrlPhysicalDevice => "http://SEU_IP_LOCAL:5246/api/";
     
-    // BaseUrl dinÃ¢mica baseada na plataforma
+    // BaseUrl dinâmica baseada na plataforma
     public static string BaseUrl
     {
         get
         {
 #if ANDROID
-            // Usando dispositivo fÃ­sico (celular real)
-            return BaseUrlPhysicalDevice;
+            // Usando EMULADOR Android (10.0.2.2 aponta para localhost do host)
+            return BaseUrlAndroidEmulator;
 #elif WINDOWS
             return BaseUrlWindows;
 #elif IOS || MACCATALYST
