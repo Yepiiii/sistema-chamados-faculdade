@@ -156,6 +156,8 @@ public class ChamadosListViewModel : BaseViewModel
 
     public async Task Load()
     {
+        System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - START (IsBusy={IsBusy}, _isLoading={_isLoading})");
+        
         // Controle de reentrada - evita múltiplas execuções simultâneas
         if (_isLoading) 
         {
@@ -163,18 +165,29 @@ public class ChamadosListViewModel : BaseViewModel
             return;
         }
 
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Already busy, skipping");
+            return;
+        }
 
         _isLoading = true;
         IsBusy = true;
         try
         {
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Loading chamados from API...");
+            
             // Load Chamados
             var chamados = await _chamadoService.GetMeusChamados();
             _allChamados.Clear();
             if (chamados != null)
             {
                 _allChamados.AddRange(chamados);
+                System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - Loaded {chamados.Count()} chamados");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - No chamados returned from API");
             }
 
             // Load Filter Options (only once)
@@ -193,7 +206,9 @@ public class ChamadosListViewModel : BaseViewModel
                 await LoadPrioridadesAsync();
             }
 
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Applying filters...");
             ApplyFilters();
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - Filters applied, {Chamados.Count} chamados visible");
         }
         catch (Exception ex)
         {
@@ -208,14 +223,48 @@ public class ChamadosListViewModel : BaseViewModel
             IsBusy = false;
             IsRefreshing = false; // Sempre resetar IsRefreshing
             _isLoading = false;
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - COMPLETE (IsBusy={IsBusy}, _isLoading={_isLoading})");
         }
     }
 
-    // Método separado para RefreshView - evita conflito com Load()
+    // Método separado para RefreshView - força reload completo
     private async Task RefreshAsync()
     {
-        System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.RefreshAsync() - Pull to refresh triggered");
-        await Load();
+        System.Diagnostics.Debug.WriteLine("========================================");
+        System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.RefreshAsync() - PULL TO REFRESH");
+        System.Diagnostics.Debug.WriteLine("========================================");
+        
+        // Não verifica _isLoading aqui - queremos forçar o refresh
+        if (IsBusy)
+        {
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - Already busy, skipping");
+            IsRefreshing = false;
+            return;
+        }
+
+        try
+        {
+            // Limpa cache local antes de recarregar
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - Clearing local cache");
+            _allChamados.Clear();
+            Chamados.Clear();
+            
+            // Force reload from API
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - Calling Load()");
+            await Load();
+            
+            System.Diagnostics.Debug.WriteLine($"RefreshAsync - Complete! {Chamados.Count} chamados loaded");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RefreshAsync ERROR: {ex.Message}");
+        }
+        finally
+        {
+            // Garante que IsRefreshing seja resetado
+            IsRefreshing = false;
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - IsRefreshing set to false");
+        }
     }
 
     private async Task LoadCategoriasAsync()
@@ -341,6 +390,8 @@ public class ChamadosListViewModel : BaseViewModel
 
     private void ApplyFilters()
     {
+        System.Diagnostics.Debug.WriteLine($"ApplyFilters() - START: _allChamados.Count={_allChamados.Count}");
+        
         var filtered = _allChamados.AsEnumerable();
 
         // Search Term Filter
@@ -350,33 +401,39 @@ public class ChamadosListViewModel : BaseViewModel
             filtered = filtered.Where(c =>
                 (c.Titulo?.ToLowerInvariant().Contains(term) ?? false) ||
                 (c.Descricao?.ToLowerInvariant().Contains(term) ?? false));
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After SearchTerm: {filtered.Count()} chamados");
         }
 
         // Categoria Filter
         if (SelectedCategoria != null)
         {
             filtered = filtered.Where(c => c.Categoria?.Id == SelectedCategoria.Id);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After Categoria: {filtered.Count()} chamados");
         }
 
         // Status Filter
         if (SelectedStatus != null)
         {
             filtered = filtered.Where(c => c.Status?.Id == SelectedStatus.Id);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After Status: {filtered.Count()} chamados");
         }
 
         // Prioridade Filter
         if (SelectedPrioridade != null)
         {
             filtered = filtered.Where(c => c.Prioridade?.Id == SelectedPrioridade.Id);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After Prioridade: {filtered.Count()} chamados");
         }
 
         Chamados.Clear();
         foreach (var chamado in filtered.OrderByDescending(c => c.DataAbertura))
         {
             Chamados.Add(chamado);
+            System.Diagnostics.Debug.WriteLine($"  - Chamado #{chamado.Id}: {chamado.Titulo} (Status: {chamado.Status?.Nome})");
         }
 
         OnPropertyChanged(nameof(Chamados));
+        System.Diagnostics.Debug.WriteLine($"ApplyFilters() - COMPLETE: Chamados.Count={Chamados.Count}");
     }
 
     private async Task OpenDetail(ChamadoDto chamado)

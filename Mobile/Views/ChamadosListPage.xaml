@@ -9,6 +9,8 @@
     <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
     <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
     <converters:PluralSuffixConverter x:Key="PluralSuffixConverter" />
+    <converters:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+    <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
     
     <LinearGradientBrush x:Key="ListHeaderGradient" StartPoint="0,0" EndPoint="1,1">
       <GradientStop Color="#2A5FDF" Offset="0" />

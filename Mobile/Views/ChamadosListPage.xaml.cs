@@ -23,6 +23,9 @@ public partial class ChamadosListPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        System.Diagnostics.Debug.WriteLine("========================================");
+        System.Diagnostics.Debug.WriteLine("ChamadosListPage.OnAppearing() - FIRED");
+        System.Diagnostics.Debug.WriteLine("========================================");
         App.Log("ChamadosListPage OnAppearing - Loading data");
         _ = _vm.Load();
     }
