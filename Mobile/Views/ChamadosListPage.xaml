@@ -323,7 +323,7 @@
     <!-- RefreshView with Pull-to-Refresh -->
     <RefreshView Grid.Row="2"
                  Command="{Binding RefreshCommand}"
-                 IsRefreshing="{Binding IsBusy}"
+                 IsRefreshing="{Binding IsRefreshing}"
                  RefreshColor="{StaticResource Primary}">
       <CollectionView ItemsSource="{Binding Chamados}"
                       SelectionMode="Single"

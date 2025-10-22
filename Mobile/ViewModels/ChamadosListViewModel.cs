@@ -23,6 +23,8 @@ public class ChamadosListViewModel : BaseViewModel
     private readonly List<ChamadoDto> _allChamados = new();
     private string _searchTerm = string.Empty;
     private bool _showAdvancedFilters = false;
+    private bool _isRefreshing = false;
+    private bool _isLoading = false; // Flag para evitar reentrada
 
     // Collections
     public ObservableCollection<ChamadoDto> Chamados { get; } = new();
@@ -86,6 +88,18 @@ public class ChamadosListViewModel : BaseViewModel
         }
     }
 
+    // IsRefreshing - Separado de IsBusy para evitar loop infinito
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        set
+        {
+            if (_isRefreshing == value) return;
+            _isRefreshing = value;
+            OnPropertyChanged();
+        }
+    }
+
     // Active Filters Count
     private int _activeFiltersCount;
     public int ActiveFiltersCount
@@ -131,7 +145,7 @@ public class ChamadosListViewModel : BaseViewModel
         _prioridadeService = prioridadeService;
         _statusService = statusService;
 
-        RefreshCommand = new Command(async () => await Load());
+        RefreshCommand = new Command(async () => await RefreshAsync());
         ItemTappedCommand = new Command<ChamadoDto>(async c => await OpenDetail(c));
         ToggleAdvancedFiltersCommand = new Command(ToggleAdvancedFilters);
         SelectCategoriaCommand = new Command<CategoriaDto>(SelectCategoria);
@@ -142,8 +156,16 @@ public class ChamadosListViewModel : BaseViewModel
 
     public async Task Load()
     {
+        // Controle de reentrada - evita múltiplas execuções simultâneas
+        if (_isLoading) 
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Already loading, skipping");
+            return;
+        }
+
         if (IsBusy) return;
 
+        _isLoading = true;
         IsBusy = true;
         try
         {
@@ -175,12 +197,25 @@ public class ChamadosListViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar chamados: {ex.Message}", "OK");
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() ERROR: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar chamados: {ex.Message}", "OK");
+            }
         }
         finally
         {
             IsBusy = false;
+            IsRefreshing = false; // Sempre resetar IsRefreshing
+            _isLoading = false;
         }
+    }
+
+    // Método separado para RefreshView - evita conflito com Load()
+    private async Task RefreshAsync()
+    {
+        System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.RefreshAsync() - Pull to refresh triggered");
+        await Load();
     }
 
     private async Task LoadCategoriasAsync()
