@@ -125,9 +125,22 @@ public class ApiService : IApiService
             {
                 var errorBytes = await resp.Content.ReadAsByteArrayAsync();
                 var errorContent = System.Text.Encoding.UTF8.GetString(errorBytes);
-                Debug.WriteLine($"[ApiService] Erro: {errorContent}");
-                HandleError(resp.StatusCode);
-                return default;
+                Debug.WriteLine($"[ApiService] Erro HTTP {(int)resp.StatusCode}: {errorContent}");
+                
+                // Extrai mensagem de erro do JSON se possível
+                string errorMessage = errorContent;
+                try
+                {
+                    var errorJson = JObject.Parse(errorContent);
+                    if (errorJson["message"] != null)
+                        errorMessage = errorJson["message"]?.ToString() ?? errorContent;
+                    else if (errorJson["title"] != null)
+                        errorMessage = errorJson["title"]?.ToString() ?? errorContent;
+                }
+                catch { /* Se não for JSON, usa o conteúdo bruto */ }
+                
+                // Lança exceção com a mensagem de erro da API
+                throw new HttpRequestException($"{resp.StatusCode}: {errorMessage}");
             }
             
             var jsonBytes = await resp.Content.ReadAsByteArrayAsync();
@@ -145,9 +158,14 @@ public class ApiService : IApiService
             
             return result;
         }
+        catch (HttpRequestException)
+        {
+            // Re-lança HttpRequestException para preservar a mensagem de erro da API
+            throw;
+        }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ApiService] EXCE��O: {ex.GetType().Name} - {ex.Message}");
+            Debug.WriteLine($"[ApiService] EXCEÇÃO: {ex.GetType().Name} - {ex.Message}");
             Debug.WriteLine($"[ApiService] StackTrace: {ex.StackTrace}");
             throw;
         }
