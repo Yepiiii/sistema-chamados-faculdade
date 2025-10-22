@@ -133,8 +133,20 @@ using (var scope = app.Services.CreateScope())
         context.Status.AddRange(
             new Status { Nome = "Aberto", Descricao = "Chamado recém criado" },
             new Status { Nome = "Em andamento", Descricao = "Equipe trabalhando na solicitação" },
-            new Status { Nome = "Resolvido", Descricao = "Chamado encerrado" }
+            new Status { Nome = "Resolvido", Descricao = "Chamado resolvido pela equipe" },
+            new Status { Nome = "Fechado", Descricao = "Chamado encerrado pelo administrador" }
         );
+    }
+    else if (!context.Status.Any(s => s.Nome == "Fechado"))
+    {
+        // Adiciona status "Fechado" se não existir (importante para /fechar endpoint)
+        context.Status.Add(new Status 
+        { 
+            Nome = "Fechado", 
+            Descricao = "Chamado encerrado pelo administrador" 
+        });
+        context.SaveChanges();
+        Console.WriteLine("[INFO] Status 'Fechado' adicionado ao banco!");
     }
 
     context.SaveChanges();
