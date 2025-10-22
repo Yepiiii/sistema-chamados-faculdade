@@ -38,16 +38,16 @@ public partial class ChamadoDetailPage : ContentPage
                 App.Log($"ChamadoDetailPage ChamadoId setter: {value}");
                 if (int.TryParse(value, out var id))
                 {
-                    App.Log($"ChamadoDetailPage calling Load({id})");
+                    App.Log($"ChamadoDetailPage calling LoadChamadoAsync({id})");
                     MainThread.BeginInvokeOnMainThread(async () =>
                     {
                         try
                         {
-                            await _vm.Load(id);
+                            await _vm.LoadChamadoAsync(id);
                         }
                         catch (Exception ex)
                         {
-                            App.Log($"ChamadoDetailPage Load FATAL: {ex}");
+                            App.Log($"ChamadoDetailPage LoadChamadoAsync FATAL: {ex}");
                             await DisplayAlert("Erro", $"Erro ao carregar chamado: {ex.Message}", "OK");
                             await Shell.Current.GoToAsync("..");
                         }
@@ -64,8 +64,6 @@ public partial class ChamadoDetailPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        App.Log("ChamadoDetailPage OnDisappearing - clearing data");
-        // Limpa os dados ao sair da página para evitar cache
-        _vm.ClearData();
+        App.Log("ChamadoDetailPage OnDisappearing");
     }
 }

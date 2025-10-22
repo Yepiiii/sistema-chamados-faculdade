@@ -17,7 +17,6 @@ public partial class AppShell : Shell
     {
         // Rotas modais (push) - não são parte do TabBar
         Routing.RegisterRoute("chamados/detail", typeof(Views.ChamadoDetailPage));
-        Routing.RegisterRoute("chamados/confirmacao", typeof(Views.ChamadoConfirmacaoPage));
         Routing.RegisterRoute("chamados/novo", typeof(Views.NovoChamadoPage));
         Routing.RegisterRoute("login", typeof(Views.Auth.LoginPage));
     }

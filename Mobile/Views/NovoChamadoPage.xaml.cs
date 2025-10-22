@@ -35,9 +35,9 @@ public partial class NovoChamadoPage : ContentPage
 
         if ((!ViewModel.Categorias.Any() || !ViewModel.Prioridades.Any()) && !ViewModel.IsBusy)
         {
-            App.Log("NovoChamadoPage calling Init");
-            await ViewModel.Init();
-            App.Log("NovoChamadoPage Init complete");
+            App.Log("NovoChamadoPage calling LoadDataAsync");
+            await ViewModel.LoadDataAsync();
+            App.Log("NovoChamadoPage LoadDataAsync complete");
         }
         
         App.Log("NovoChamadoPage OnAppearing end");
