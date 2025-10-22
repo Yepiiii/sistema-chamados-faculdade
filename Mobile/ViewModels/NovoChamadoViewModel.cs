@@ -132,7 +132,10 @@ public class NovoChamadoViewModel : BaseViewModel
         }
         catch (System.Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert("Erro", $"Erro ao carregar dados: {ex.Message}", "OK");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar dados: {ex.Message}", "OK");
+            }
         }
         finally
         {
@@ -144,7 +147,10 @@ public class NovoChamadoViewModel : BaseViewModel
     {
         if (string.IsNullOrWhiteSpace(Descricao))
         {
-            await Application.Current?.MainPage?.DisplayAlert("Atenção", "Por favor, informe a descrição do chamado.", "OK");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, informe a descrição do chamado.", "OK");
+            }
             return;
         }
 
@@ -153,13 +159,19 @@ public class NovoChamadoViewModel : BaseViewModel
         {
             if (!CategoriaId.HasValue)
             {
-                await Application.Current?.MainPage?.DisplayAlert("Atenção", "Por favor, selecione uma categoria.", "OK");
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, selecione uma categoria.", "OK");
+                }
                 return;
             }
 
             if (!PrioridadeId.HasValue)
             {
-                await Application.Current?.MainPage?.DisplayAlert("Atenção", "Por favor, selecione uma prioridade.", "OK");
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, selecione uma prioridade.", "OK");
+                }
                 return;
             }
         }
@@ -167,32 +179,42 @@ public class NovoChamadoViewModel : BaseViewModel
         IsBusy = true;
         try
         {
-            // Gera título automaticamente se não foi preenchido
-            string tituloFinal = Titulo;
-            if (string.IsNullOrWhiteSpace(tituloFinal))
+            // Se UsarAnaliseAutomatica = true, deixa o Backend/IA gerar o título
+            // Se UsarAnaliseAutomatica = false (admin), usa o título informado manualmente
+            string? tituloFinal = Titulo?.Trim();
+            
+            // Se não tem título E análise automática está DESATIVADA, gera título local
+            // (quando IA está ativada, o backend que gera o título via Gemini)
+            if (string.IsNullOrWhiteSpace(tituloFinal) && !UsarAnaliseAutomatica)
             {
-                // Usa primeiras palavras da descrição (máximo 50 caracteres)
                 tituloFinal = GerarTituloAutomatico(Descricao);
             }
 
             var dto = new CriarChamadoRequestDto
             {
-                Titulo = tituloFinal,
+                Titulo = tituloFinal ?? "", // Envia vazio para IA gerar
                 Descricao = Descricao,
                 CategoriaId = CategoriaId ?? 1, // Valor padrão se IA ativada
-                PrioridadeId = PrioridadeId ?? 1 // Valor padrão se IA ativada
+                PrioridadeId = PrioridadeId ?? 1, // Valor padrão se IA ativada
+                UsarAnaliseAutomatica = UsarAnaliseAutomatica
             };
 
             var chamado = await _chamadoService.Create(dto);
             if (chamado != null)
             {
-                await Application.Current?.MainPage?.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
+                }
                 await Shell.Current.GoToAsync("..");
             }
         }
         catch (System.Exception ex)
         {
-            await Application.Current?.MainPage?.DisplayAlert("Erro", $"Erro ao criar chamado: {ex.Message}", "OK");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao criar chamado: {ex.Message}", "OK");
+            }
         }
         finally
         {
