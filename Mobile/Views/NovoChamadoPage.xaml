@@ -67,9 +67,9 @@
           </VerticalStackLayout>
         </VerticalStackLayout>
 
-        <!-- Título -->
+        <!-- Título (Opcional) -->
         <VerticalStackLayout>
-          <Label Text="Título" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+          <Label Text="Título (opcional)" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
           <Border Style="{StaticResource FormFieldContainerStyle}">
             <Entry Placeholder="Ex: Falha no acesso ao sistema"
                    Text="{Binding Titulo}"
@@ -77,50 +77,72 @@
           </Border>
         </VerticalStackLayout>
 
-        <!-- Categoria -->
-        <VerticalStackLayout>
-          <Label Text="Categoria" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
-          <Border Style="{StaticResource FormFieldContainerStyle}">
-            <Grid>
-              <Picker x:Name="CategoriaPicker"
-                      IsVisible="{Binding HasCategorias}"
-                      HorizontalOptions="Fill"
-                      VerticalOptions="Center"
-                      Title="Selecione uma categoria"
-                      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
-                      ItemsSource="{Binding Categorias}"
-                      ItemDisplayBinding="{Binding Nome}"
-                      SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
-                      SelectedIndexChanged="OnCategoriaChanged" />
-
-              <Label Text="Nenhuma categoria disponível"
-                     Style="{StaticResource EmptyStateLabelStyle}"
-                     IsVisible="{Binding IsCategoriasEmpty}" />
-            </Grid>
-          </Border>
+        <!-- Switch de IA (Para Técnicos/Admins) -->
+        <VerticalStackLayout IsVisible="{Binding PodeUsarClassificacaoManual}" Spacing="8">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <Label Grid.Column="0"
+                   Text="Classificar automaticamente com IA"
+                   Style="{StaticResource FormLabelStyle}"
+                   Margin="0"
+                   VerticalOptions="Center" />
+            <Switch Grid.Column="1"
+                    IsToggled="{Binding UsarAnaliseAutomatica}"
+                    VerticalOptions="Center" />
+          </Grid>
+          <Label Text="Desative para escolher categoria e prioridade manualmente."
+                 FontSize="12"
+                 FontAttributes="None"
+                 Margin="0,0,0,8"
+                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
         </VerticalStackLayout>
 
-        <!-- Prioridade -->
-        <VerticalStackLayout>
-          <Label Text="Prioridade" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
-          <Border Style="{StaticResource FormFieldContainerStyle}">
-            <Grid>
-              <Picker x:Name="PrioridadePicker"
-                      IsVisible="{Binding HasPrioridades}"
-                      HorizontalOptions="Fill"
-                      VerticalOptions="Center"
-                      Title="Selecione a prioridade"
-                      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
-                      ItemsSource="{Binding Prioridades}"
-                      ItemDisplayBinding="{Binding Nome}"
-                      SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
-                      SelectedIndexChanged="OnPrioridadeChanged" />
+        <!-- Classificação Manual (Apenas se IA desativada E Técnico/Admin) -->
+        <VerticalStackLayout Spacing="16" IsVisible="{Binding ExibirClassificacaoManual}">
+          <!-- Categoria -->
+          <VerticalStackLayout>
+            <Label Text="Categoria" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+            <Border Style="{StaticResource FormFieldContainerStyle}">
+              <Grid>
+                <Picker x:Name="CategoriaPicker"
+                        IsVisible="{Binding HasCategorias}"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Center"
+                        Title="Selecione uma categoria"
+                        TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                        ItemsSource="{Binding Categorias}"
+                        ItemDisplayBinding="{Binding Nome}"
+                        SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
+                        SelectedIndexChanged="OnCategoriaChanged" />
 
-              <Label Text="Nenhuma prioridade disponível"
-                     Style="{StaticResource EmptyStateLabelStyle}"
-                     IsVisible="{Binding IsPrioridadesEmpty}" />
-            </Grid>
-          </Border>
+                <Label Text="Nenhuma categoria disponível"
+                       Style="{StaticResource EmptyStateLabelStyle}"
+                       IsVisible="{Binding IsCategoriasEmpty}" />
+              </Grid>
+            </Border>
+          </VerticalStackLayout>
+
+          <!-- Prioridade -->
+          <VerticalStackLayout>
+            <Label Text="Prioridade" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+            <Border Style="{StaticResource FormFieldContainerStyle}">
+              <Grid>
+                <Picker x:Name="PrioridadePicker"
+                        IsVisible="{Binding HasPrioridades}"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Center"
+                        Title="Selecione a prioridade"
+                        TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                        ItemsSource="{Binding Prioridades}"
+                        ItemDisplayBinding="{Binding Nome}"
+                        SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
+                        SelectedIndexChanged="OnPrioridadeChanged" />
+
+                <Label Text="Nenhuma prioridade disponível"
+                       Style="{StaticResource EmptyStateLabelStyle}"
+                       IsVisible="{Binding IsPrioridadesEmpty}" />
+              </Grid>
+            </Border>
+          </VerticalStackLayout>
         </VerticalStackLayout>
       </VerticalStackLayout>
 
