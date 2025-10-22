@@ -40,6 +40,21 @@
       <Setter Property="HorizontalOptions" Value="Center" />
       <Setter Property="VerticalOptions" Value="Center" />
     </Style>
+
+    <Style TargetType="Label" x:Key="EmptyStateIconStyle">
+      <Setter Property="FontSize" Value="32" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="VerticalOptions" Value="Center" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="RetryLabelStyle">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{StaticResource Primary}" />
+      <Setter Property="FontAttributes" Value="Bold" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="Margin" Value="0,8,0,0" />
+    </Style>
   </ContentPage.Resources>
 
   <ScrollView>
@@ -112,11 +127,40 @@
                         ItemsSource="{Binding Categorias}"
                         ItemDisplayBinding="{Binding Nome}"
                         SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
-                        SelectedIndexChanged="OnCategoriaChanged" />
+                        SelectedIndexChanged="OnCategoriaChanged"
+                        AutomationProperties.Name="Seletor de categoria do chamado"
+                        AutomationProperties.HelpText="Selecione a categoria que melhor descreve o problema" />
 
-                <Label Text="Nenhuma categoria disponível"
-                       Style="{StaticResource EmptyStateLabelStyle}"
-                       IsVisible="{Binding IsCategoriasEmpty}" />
+                <!-- Empty State para Categorias -->
+                <VerticalStackLayout IsVisible="{Binding IsCategoriasEmpty}"
+                                     Padding="16"
+                                     Spacing="4">
+                  <Label Text="{Binding EmptyCategoriasIcon}"
+                         Style="{StaticResource EmptyStateIconStyle}"
+                         AutomationProperties.IsInAccessibleTree="False" />
+                  
+                  <Label Text="{Binding EmptyCategoriasText}"
+                         Style="{StaticResource EmptyStateLabelStyle}"
+                         AutomationProperties.Name="Nenhuma categoria disponível" />
+
+                  <HorizontalStackLayout HorizontalOptions="Center"
+                                         Spacing="6">
+                    <HorizontalStackLayout.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding RetryLoadCommand}" />
+                    </HorizontalStackLayout.GestureRecognizers>
+
+                    <Label Text="{Binding RetryIcon}"
+                           FontSize="16"
+                           TextColor="{StaticResource Primary}"
+                           VerticalOptions="Center" />
+                    
+                    <Label Text="{Binding RetryText}"
+                           Style="{StaticResource RetryLabelStyle}"
+                           Margin="0"
+                           AutomationProperties.Name="Tentar carregar categorias novamente"
+                           AutomationProperties.IsInAccessibleTree="True" />
+                  </HorizontalStackLayout>
+                </VerticalStackLayout>
               </Grid>
             </Border>
           </VerticalStackLayout>
@@ -135,11 +179,40 @@
                         ItemsSource="{Binding Prioridades}"
                         ItemDisplayBinding="{Binding Nome}"
                         SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
-                        SelectedIndexChanged="OnPrioridadeChanged" />
+                        SelectedIndexChanged="OnPrioridadeChanged"
+                        AutomationProperties.Name="Seletor de prioridade do chamado"
+                        AutomationProperties.HelpText="Selecione a urgência do problema" />
 
-                <Label Text="Nenhuma prioridade disponível"
-                       Style="{StaticResource EmptyStateLabelStyle}"
-                       IsVisible="{Binding IsPrioridadesEmpty}" />
+                <!-- Empty State para Prioridades -->
+                <VerticalStackLayout IsVisible="{Binding IsPrioridadesEmpty}"
+                                     Padding="16"
+                                     Spacing="4">
+                  <Label Text="{Binding EmptyPrioridadesIcon}"
+                         Style="{StaticResource EmptyStateIconStyle}"
+                         AutomationProperties.IsInAccessibleTree="False" />
+                  
+                  <Label Text="{Binding EmptyPrioridadesText}"
+                         Style="{StaticResource EmptyStateLabelStyle}"
+                         AutomationProperties.Name="Nenhuma prioridade disponível" />
+
+                  <HorizontalStackLayout HorizontalOptions="Center"
+                                         Spacing="6">
+                    <HorizontalStackLayout.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding RetryLoadCommand}" />
+                    </HorizontalStackLayout.GestureRecognizers>
+
+                    <Label Text="{Binding RetryIcon}"
+                           FontSize="16"
+                           TextColor="{StaticResource Primary}"
+                           VerticalOptions="Center" />
+                    
+                    <Label Text="{Binding RetryText}"
+                           Style="{StaticResource RetryLabelStyle}"
+                           Margin="0"
+                           AutomationProperties.Name="Tentar carregar prioridades novamente"
+                           AutomationProperties.IsInAccessibleTree="True" />
+                  </HorizontalStackLayout>
+                </VerticalStackLayout>
               </Grid>
             </Border>
           </VerticalStackLayout>

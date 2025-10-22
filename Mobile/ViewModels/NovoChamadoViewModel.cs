@@ -73,9 +73,18 @@ public class NovoChamadoViewModel : BaseViewModel
     public bool HasPrioridades => Prioridades.Any();
     public bool IsPrioridadesEmpty => !HasPrioridades;
 
+    // Propriedades para Empty State com recursos localizáveis
+    public string EmptyCategoriasText => "Nenhuma categoria disponível";
+    public string EmptyCategoriasIcon => "📋";
+    public string EmptyPrioridadesText => "Nenhuma prioridade disponível";
+    public string EmptyPrioridadesIcon => "⚠️";
+    public string RetryIcon => "🔄";
+    public string RetryText => "Tentar novamente";
+
     public string DescricaoHeader => "Preencha os campos abaixo para criar um novo chamado";
 
     public ICommand CriarCommand { get; }
+    public ICommand RetryLoadCommand { get; }
 
     public NovoChamadoViewModel(
         IChamadoService chamadoService,
@@ -87,6 +96,7 @@ public class NovoChamadoViewModel : BaseViewModel
         _prioridadeService = prioridadeService;
 
         CriarCommand = new Command(async () => await CriarChamadoAsync());
+        RetryLoadCommand = new Command(async () => await LoadDataAsync());
     }
 
     public async Task LoadDataAsync()
