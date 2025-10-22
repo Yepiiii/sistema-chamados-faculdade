@@ -28,16 +28,56 @@
 
       <Frame Padding="24" CornerRadius="20" BackgroundColor="{DynamicResource White}" BorderColor="{DynamicResource Gray200}">
         <VerticalStackLayout Spacing="20">
-          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-            <Border Grid.Row="0" Grid.Column="0" BackgroundColor="{DynamicResource Secondary}" StrokeThickness="0" StrokeShape="RoundRectangle 12" Padding="12,6">
-              <Label Text="{Binding Chamado.Status.Nome}" TextColor="{DynamicResource PrimaryDarkText}" FontAttributes="Bold" />
+          <!-- Badges de Status e Prioridade com indicador de encerramento -->
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+            
+            <!-- Status Badge -->
+            <Border Grid.Row="0" Grid.Column="0" 
+                    BackgroundColor="{DynamicResource Secondary}" 
+                    StrokeThickness="0" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="12,6">
+              <Label Text="{Binding Chamado.Status.Nome}" 
+                     TextColor="{DynamicResource PrimaryDarkText}" 
+                     FontAttributes="Bold" 
+                     HorizontalTextAlignment="Center" />
             </Border>
-            <Border Grid.Row="0" Grid.Column="1" Stroke="{DynamicResource Primary}" StrokeThickness="1" StrokeShape="RoundRectangle 12" Padding="12,6">
-              <Label Text="{Binding Chamado.Prioridade.Nome}" TextColor="{DynamicResource Primary}" FontAttributes="Bold" />
+            
+            <!-- Prioridade Badge -->
+            <Border Grid.Row="0" Grid.Column="1" 
+                    Stroke="{DynamicResource Primary}" 
+                    StrokeThickness="1" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="12,6">
+              <Label Text="{Binding Chamado.Prioridade.Nome}" 
+                     TextColor="{DynamicResource Primary}" 
+                     FontAttributes="Bold" 
+                     HorizontalTextAlignment="Center" />
+            </Border>
+
+            <!-- Banner de Chamado Encerrado -->
+            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                    IsVisible="{Binding IsChamadoEncerrado}"
+                    BackgroundColor="{DynamicResource Success}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16,10">
+              <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                <Label Text="✓" 
+                       FontSize="20" 
+                       TextColor="White" 
+                       FontAttributes="Bold" 
+                       VerticalOptions="Center" />
+                <Label Text="Chamado Encerrado" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       TextColor="White" 
+                       VerticalOptions="Center" />
+              </HorizontalStackLayout>
             </Border>
 
             <!-- Data de Abertura -->
-            <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8">
+            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8">
               <Label Text="📅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
                 <Label Text="Abertura" 
@@ -51,7 +91,7 @@
             </HorizontalStackLayout>
 
             <!-- Data de Encerramento -->
-            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+            <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
                                     IsVisible="{Binding HasFechamento}">
               <Label Text="✅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">

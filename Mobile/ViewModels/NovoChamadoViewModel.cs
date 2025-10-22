@@ -167,9 +167,17 @@ public class NovoChamadoViewModel : BaseViewModel
         IsBusy = true;
         try
         {
+            // Gera título automaticamente se não foi preenchido
+            string tituloFinal = Titulo;
+            if (string.IsNullOrWhiteSpace(tituloFinal))
+            {
+                // Usa primeiras palavras da descrição (máximo 50 caracteres)
+                tituloFinal = GerarTituloAutomatico(Descricao);
+            }
+
             var dto = new CriarChamadoRequestDto
             {
-                Titulo = string.IsNullOrWhiteSpace(Titulo) ? "Chamado sem título" : Titulo,
+                Titulo = tituloFinal,
                 Descricao = Descricao,
                 CategoriaId = CategoriaId ?? 1, // Valor padrão se IA ativada
                 PrioridadeId = PrioridadeId ?? 1 // Valor padrão se IA ativada
@@ -190,5 +198,37 @@ public class NovoChamadoViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Gera um título automático baseado na descrição do chamado
+    /// Extrai as primeiras palavras significativas da descrição
+    /// </summary>
+    private string GerarTituloAutomatico(string descricao)
+    {
+        if (string.IsNullOrWhiteSpace(descricao))
+        {
+            return "Chamado sem título";
+        }
+
+        // Remove quebras de linha e espaços extras
+        string texto = descricao.Replace("\n", " ").Replace("\r", " ").Trim();
+        
+        // Limita a 60 caracteres
+        const int maxLength = 60;
+        if (texto.Length <= maxLength)
+        {
+            return texto;
+        }
+
+        // Corta no último espaço antes de 60 caracteres para não quebrar palavras
+        int lastSpace = texto.LastIndexOf(' ', maxLength);
+        if (lastSpace > 0)
+        {
+            return texto.Substring(0, lastSpace) + "...";
+        }
+
+        // Se não encontrou espaço, corta direto e adiciona reticências
+        return texto.Substring(0, maxLength) + "...";
     }
 }

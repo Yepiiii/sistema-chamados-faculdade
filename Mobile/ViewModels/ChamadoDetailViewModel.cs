@@ -32,10 +32,19 @@ public class ChamadoDetailViewModel : BaseViewModel
             _chamado = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShowCloseButton));
+            OnPropertyChanged(nameof(HasFechamento));
+            OnPropertyChanged(nameof(IsChamadoEncerrado));
         }
     }
 
-    public bool ShowCloseButton => Chamado != null && Chamado.Status?.Id != 3;
+    // Indica se o chamado está encerrado (Status = "Fechado" ou DataFechamento preenchida)
+    public bool IsChamadoEncerrado => Chamado?.DataFechamento != null || Chamado?.Status?.Id == 3;
+
+    // Indica se há data de fechamento para exibir
+    public bool HasFechamento => Chamado?.DataFechamento != null;
+
+    // Mostra botão apenas se NÃO estiver encerrado
+    public bool ShowCloseButton => Chamado != null && !IsChamadoEncerrado;
 
     public ICommand CloseChamadoCommand { get; }
 
@@ -52,7 +61,11 @@ public class ChamadoDetailViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar chamado: {ex.Message}", "OK");
+            System.Diagnostics.Debug.WriteLine($"ChamadoDetailViewModel.LoadChamadoAsync ERROR: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar chamado: {ex.Message}", "OK");
+            }
         }
         finally
         {
@@ -64,11 +77,13 @@ public class ChamadoDetailViewModel : BaseViewModel
     {
         if (Chamado == null) return;
 
+        if (Application.Current?.MainPage == null) return;
+
         bool confirm = await Application.Current.MainPage.DisplayAlert(
-            "Confirmar",
-            "Deseja realmente fechar este chamado?",
-            "Sim",
-            "Não");
+            "Confirmar Encerramento",
+            "Deseja realmente encerrar este chamado? Esta ação não poderá ser desfeita.",
+            "Sim, Encerrar",
+            "Cancelar");
 
         if (!confirm) return;
 
@@ -76,12 +91,25 @@ public class ChamadoDetailViewModel : BaseViewModel
         try
         {
             await _chamadoService.Close(Chamado.Id);
-            await Application.Current.MainPage.DisplayAlert("Sucesso", "Chamado fechado com sucesso!", "OK");
-            await Shell.Current.GoToAsync("..");
+            
+            // Recarrega os detalhes do chamado para mostrar status atualizado
+            await LoadChamadoAsync(Chamado.Id);
+            
+            await Application.Current.MainPage.DisplayAlert(
+                "Sucesso", 
+                "Chamado encerrado com sucesso!", 
+                "OK");
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao fechar chamado: {ex.Message}", "OK");
+            System.Diagnostics.Debug.WriteLine($"ChamadoDetailViewModel.CloseChamadoAsync ERROR: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert(
+                    "Erro", 
+                    $"Erro ao encerrar chamado: {ex.Message}", 
+                    "OK");
+            }
         }
         finally
         {
