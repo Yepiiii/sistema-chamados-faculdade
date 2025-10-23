@@ -1,4 +1,4 @@
-# 🎓 Sistema de Chamados - Faculdade
+﻿# 🎓 Sistema de Chamados - Faculdade
 
 > Sistema completo de gerenciamento de chamados técnicos com backend .NET 8, app mobile multiplataforma (.NET MAUI) e IA integrada (Google Gemini).
 
@@ -116,7 +116,7 @@ cd ..\Scripts
 .\IniciarSistema.ps1
 ```
 
-**📖 Guia Completo:** [GUIA_INSTALACAO.md](GUIA_INSTALACAO.md)
+**📖 Guia Completo:** [](WORKFLOWS.md)
 
 ---
 
@@ -198,16 +198,16 @@ sistema-chamados-faculdade/
 | Professor | professor@sistema.com | Prof@123 |
 | Admin | admin@sistema.com | Admin@123 |
 
-**📄 Detalhes:** [CREDENCIAIS_TESTE.md](CREDENCIAIS_TESTE.md)
+**📄 Detalhes:** [](docs/INDEX.md)
 
 ---
 
 ## 📚 Documentação
 
 ### Guias Principais
-- **[GUIA_INSTALACAO.md](GUIA_INSTALACAO.md)** - Instalação completa passo a passo
-- **[CREDENCIAIS_TESTE.md](CREDENCIAIS_TESTE.md)** - Usuários e permissões
-- **[docs/SETUP_PORTABILIDADE.md](docs/SETUP_PORTABILIDADE.md)** - Portabilidade entre PCs
+- **[](WORKFLOWS.md)** - Instalação completa passo a passo
+- **[](docs/INDEX.md)** - Usuários e permissões
+- **[](docs/INDEX.md)** - Portabilidade entre PCs
 
 ### API
 - **Swagger UI:** http://localhost:5246/swagger
@@ -454,7 +454,7 @@ http://SEU_IP:5246/swagger
 
 - ✅ **Se abrir o Swagger** → Conexão OK! Instale o APKcd ..#### Exemplo de Requisição:
 
-- ❌ **Se não abrir** → Veja [Guia de Portabilidade](docs/SETUP_PORTABILIDADE.md)
+- ❌ **Se não abrir** → Veja [](docs/INDEX.md)
 
 ```json
 
@@ -478,10 +478,10 @@ http://SEU_IP:5246/swagger
 
 }
 
-- **[🚀 Guia de Portabilidade](docs/SETUP_PORTABILIDADE.md)** - Setup para qualquer PC/Android
-- **[🌐 Acesso Remoto](docs/ACESSO_REMOTO.md)** - Usar app de qualquer lugar (4G, internet)
-- **[🔑 Credenciais de Teste](docs/CREDENCIAIS_TESTE.md)** - Usuários para testes
-- **[📱 Overview Mobile](docs/OVERVIEW_MOBILE_UI_UX.md)** - Design e funcionalidades
+- **[](docs/INDEX.md)** - Setup para qualquer PC/Android
+- **[](docs/INDEX.md)** - Usar app de qualquer lugar (4G, internet)
+- **[](docs/INDEX.md)** - Usuários para testes
+- **[](docs/Mobile/README.md)** - Design e funcionalidades
 
 
 
@@ -489,13 +489,13 @@ http://SEU_IP:5246/swagger
 
 ```powershell#### Exemplo de Resposta (201 Created):
 
-- **[Estrutura do Repositório](ESTRUTURA_REPOSITORIO.md)**
+- **[](docs/Desenvolvimento/EstruturaRepositorio.md)**
 
-- **[Correção de Fuso Horário](docs/CORRECAO_FUSO_HORARIO.md)**cd Scripts```json
+- **[](docs/Database/README.md)**cd Scripts```json
 
-- **[Guia de Gerar APK](docs/GUIA_GERAR_APK.md)**
+- **[](docs/Mobile/GerarAPK.md)**
 
-- **[Status Mobile](docs/STATUS_MOBILE.md)**.\GerarAPK.ps1{
+- **[](docs/Mobile/README.md)**.\GerarAPK.ps1{
 
 
 
@@ -523,7 +523,7 @@ http://SEU_IP:5246/swagger
 
 - ✅ API REST documentada (Swagger)
 
-- ✅ Correção automática de timezone (UTC → Local)- **[Guia de Inicialização](Docs/GUIA_INICIAR_SISTEMA.md)**}
+- ✅ Correção automática de timezone (UTC → Local)- **[](WORKFLOWS.md)**}
 
 
 
@@ -535,7 +535,7 @@ http://SEU_IP:5246/swagger
 
 - ✅ **Material Design 3** com tema escuro
 
-- ✅ **Bottom Navigation** (Dashboard, Chamados, Perfil)- **[Estrutura do Repositório](ESTRUTURA_REPOSITORIO.md)**## 🗄️ Banco de Dados
+- ✅ **Bottom Navigation** (Dashboard, Chamados, Perfil)- **[](docs/Desenvolvimento/EstruturaRepositorio.md)**## 🗄️ Banco de Dados
 
 - ✅ **Pull-to-refresh** em todas as listas
 
@@ -807,7 +807,7 @@ Aluno: aluno@sistema.com / Aluno@123
 Prof:  professor@sistema.com / Prof@123
 ```
 
-Veja mais em: [docs/CREDENCIAIS_TESTE.md](docs/CREDENCIAIS_TESTE.md)
+Veja mais em: [](docs/INDEX.md)
 
 ## 📈 Status do Projeto
 
@@ -828,8 +828,8 @@ MIT License
 
 ## 🔗 Links Rápidos
 
-- [🚀 Setup Completo](docs/SETUP_PORTABILIDADE.md)
-- [📱 Gerar APK](docs/GUIA_GERAR_APK.md)
-- [🔑 Credenciais](docs/CREDENCIAIS_TESTE.md)
-- [🎨 UI/UX Mobile](docs/OVERVIEW_MOBILE_UI_UX.md)
-- [📝 Estrutura](ESTRUTURA_REPOSITORIO.md)
+- [](docs/INDEX.md)
+- [](docs/Mobile/GerarAPK.md)
+- [](docs/INDEX.md)
+- [](docs/Mobile/README.md)
+- [](docs/Desenvolvimento/EstruturaRepositorio.md)
