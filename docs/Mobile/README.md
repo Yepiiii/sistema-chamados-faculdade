@@ -1,4 +1,4 @@
-# 📱 Sistema de Chamados - Mobile App
+﻿# 📱 Sistema de Chamados - Mobile App
 
 ## ✅ STATUS: FUNCIONAL - Build Limpo
 
@@ -196,9 +196,9 @@ dotnet clean
 
 ## 📖 Documentação Adicional
 
-- [COMO_TESTAR_MOBILE.md](COMO_TESTAR_MOBILE.md) - Guia completo
-- [STATUS_MOBILE.md](STATUS_MOBILE.md) - Status do projeto
-- [IniciarSistema.ps1](IniciarSistema.ps1) - Script automático
+- [](docs/Mobile/ComoTestar.md) - Guia completo
+- [](docs/Mobile/README.md) - Status do projeto
+- [](Scripts/API/IniciarAPI.ps1) - Script automático
 
 ---
 
