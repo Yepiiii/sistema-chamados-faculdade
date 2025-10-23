@@ -40,8 +40,8 @@
             <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8">
               <Label Text="📅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
-                <Label Text="Abertura" 
-                       FontSize="12" 
+                <Label Text="Abertura"
+                       FontSize="12"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource Gray600}" />
                 <Label Text="{Binding Chamado.DataAbertura, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
@@ -55,8 +55,8 @@
                                     IsVisible="{Binding HasFechamento}">
               <Label Text="✅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
-                <Label Text="Encerramento" 
-                       FontSize="12" 
+                <Label Text="Encerramento"
+                       FontSize="12"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource Success}" />
                 <Label Text="{Binding Chamado.DataFechamento, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
@@ -215,7 +215,7 @@
                 <Grid Padding="0,8"
                       ColumnDefinitions="40,*"
                       RowDefinitions="Auto,Auto">
-                  
+
                   <!-- Avatar do usuário -->
                   <Frame Grid.Column="0"
                          Grid.Row="0"
@@ -251,7 +251,7 @@
                                FontAttributes="Bold"
                                TextColor="{DynamicResource Gray900}"
                                VerticalOptions="Center" />
-                        
+
                         <Frame Padding="4,2"
                                CornerRadius="4"
                                HasShadow="False"
@@ -276,7 +276,7 @@
                              FontSize="11"
                              TextColor="{DynamicResource Gray500}"
                              Margin="0,4,0,0" />
-                      
+
                       <!-- Indicador de comentário interno -->
                       <Frame Padding="6,3"
                              CornerRadius="4"
