@@ -10,7 +10,7 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
-            
+
             <!-- Header com boas-vindas -->
             <Frame BackgroundColor="{StaticResource Primary}"
                    CornerRadius="16"
@@ -169,7 +169,7 @@
                                            TextColor="{StaticResource Gray900}"
                                            LineBreakMode="TailTruncation"
                                            MaxLines="2" />
-                                    
+
                                     <HorizontalStackLayout Spacing="8">
                                         <Frame BackgroundColor="{Binding Status.CorHexadecimal}"
                                                CornerRadius="12"

@@ -215,7 +215,7 @@
                 <Grid Padding="0,8"
                       ColumnDefinitions="40,*"
                       RowDefinitions="Auto,Auto">
-                  
+
                   <!-- Avatar do usuário -->
                   <Frame Grid.Column="0"
                          Grid.Row="0"
@@ -251,7 +251,7 @@
                                FontAttributes="Bold"
                                TextColor="{DynamicResource Gray900}"
                                VerticalOptions="Center" />
-                        
+
                         <Frame Padding="4,2"
                                CornerRadius="4"
                                HasShadow="False"
@@ -276,7 +276,7 @@
                              FontSize="11"
                              TextColor="{DynamicResource Gray500}"
                              Margin="0,4,0,0" />
-                      
+
                       <!-- Indicador de comentário interno -->
                       <Frame Padding="6,3"
                              CornerRadius="4"
