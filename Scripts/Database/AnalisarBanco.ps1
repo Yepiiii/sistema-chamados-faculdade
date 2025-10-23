@@ -34,9 +34,9 @@ USE SistemaChamados;
 
 SELECT 'Usuarios' as Tabela, COUNT(*) as Total FROM Usuarios
 UNION ALL
-SELECT 'AlunoPerfis', COUNT(*) FROM AlunoPerfis
+SELECT 'ColaboradorPerfis', COUNT(*) FROM ColaboradorPerfis
 UNION ALL
-SELECT 'ProfessorPerfis', COUNT(*) FROM ProfessorPerfis
+SELECT 'TecnicoTIPerfis', COUNT(*) FROM TecnicoTIPerfis
 UNION ALL
 SELECT 'Chamados', COUNT(*) FROM Chamados  
 UNION ALL
@@ -111,3 +111,4 @@ finally {
 }
 
 Write-Host ""
+

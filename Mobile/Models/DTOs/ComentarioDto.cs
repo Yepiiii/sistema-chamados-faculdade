@@ -59,13 +59,13 @@ public class ComentarioDto
         get
         {
             if (Usuario?.TipoUsuario == 3) return "#8B5CF6"; // Admin - Roxo
-            if (Usuario?.TipoUsuario == 2) return "#2A5FDF"; // Técnico - Azul
-            return "#10B981"; // Aluno - Verde
+            if (Usuario?.TipoUsuario == 2) return "#2A5FDF"; // Técnico TI - Azul
+            return "#10B981"; // Colaborador - Verde
         }
     }
     
-    public bool IsAluno => Usuario?.TipoUsuario == 1;
-    public bool IsTecnico => Usuario?.TipoUsuario == 2;
+    public bool IsColaborador => Usuario?.TipoUsuario == 1;
+    public bool IsTecnicoTI => Usuario?.TipoUsuario == 2;
     public bool IsAdmin => Usuario?.TipoUsuario == 3;
     
     // Badge do tipo de usuário
@@ -74,8 +74,8 @@ public class ComentarioDto
         get
         {
             if (IsAdmin) return "👑 Admin";
-            if (IsTecnico) return "🔧 Técnico";
-            return "🎓 Aluno";
+            if (IsTecnicoTI) return "🔧 Técnico TI";
+            return "💼 Colaborador";
         }
     }
 }

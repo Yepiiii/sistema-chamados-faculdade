@@ -1,6 +1,6 @@
-﻿# 🎓 Sistema de Chamados - Faculdade
+﻿# � Sistema de Suporte Técnico - Empresa
 
-> Sistema completo de gerenciamento de chamados técnicos com backend .NET 8, app mobile multiplataforma (.NET MAUI) e IA integrada (Google Gemini).
+> Sistema completo de gerenciamento de suporte técnico de TI com backend .NET 8, app mobile multiplataforma (.NET MAUI) e IA integrada (Google Gemini).
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![C#](https://img.shields.io/badge/C%23-12.0-239120?logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
@@ -24,7 +24,7 @@
 
 ## 🎯 Sobre o Projeto
 
-Sistema desenvolvido para gerenciar chamados técnicos em ambiente acadêmico, permitindo que alunos, professores e administradores reportem e acompanhem problemas de infraestrutura (hardware, software, rede).
+Sistema desenvolvido para centralizar e otimizar o suporte técnico de TI empresarial, permitindo que colaboradores, técnicos de TI e administradores reportem e acompanhem problemas de infraestrutura (hardware, software, rede).
 
 ### ✨ Diferenciais
 
@@ -38,16 +38,17 @@ Sistema desenvolvido para gerenciar chamados técnicos em ambiente acadêmico, p
 
 ## ⚡ Funcionalidades
 
-### Para Alunos
-- ✅ Criar chamados com descrição do problema
+### Para Colaboradores
+- ✅ Criar chamados com descrição do problema técnico
 - ✅ Classificação automática por IA (categoria + prioridade)
 - ✅ Acompanhar status dos chamados
 - ✅ Receber notificações de atualizações
 
-### Para Professores
-- ✅ Todas as funcionalidades de alunos
-- ✅ Atribuição automática como técnico (baseado em especialidade)
+### Para Técnicos de TI
+- ✅ Todas as funcionalidades de colaboradores
+- ✅ Atribuição automática de chamados (baseado em área de atuação)
 - ✅ Atualizar status de chamados atribuídos
+- ✅ Gerenciar fila de atendimentos
 
 ### Para Administradores
 - ✅ Visualizar todos os chamados do sistema
