@@ -90,7 +90,7 @@
                         </VerticalStackLayout>
                     </Grid>
 
-                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" 
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0"
                              IsVisible="{Binding MostrarDadosExtras}" />
 
                     <Grid Padding="16" ColumnDefinitions="Auto,*" ColumnSpacing="12"

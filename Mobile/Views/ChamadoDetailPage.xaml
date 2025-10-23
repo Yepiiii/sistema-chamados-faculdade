@@ -40,8 +40,8 @@
             <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8">
               <Label Text="📅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
-                <Label Text="Abertura" 
-                       FontSize="12" 
+                <Label Text="Abertura"
+                       FontSize="12"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource Gray600}" />
                 <Label Text="{Binding Chamado.DataAbertura, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
@@ -55,8 +55,8 @@
                                     IsVisible="{Binding HasFechamento}">
               <Label Text="✅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
-                <Label Text="Encerramento" 
-                       FontSize="12" 
+                <Label Text="Encerramento"
+                       FontSize="12"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource Success}" />
                 <Label Text="{Binding Chamado.DataFechamento, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"

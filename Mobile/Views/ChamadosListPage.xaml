@@ -140,8 +140,8 @@
                   <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource ChipButtonStyle}">
                       <Style.Triggers>
-                        <DataTrigger TargetType="Border" 
-                                     Binding="{Binding Id}" 
+                        <DataTrigger TargetType="Border"
+                                     Binding="{Binding Id}"
                                      Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
                           <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
                           <Setter Property="StrokeThickness" Value="0" />
@@ -149,12 +149,12 @@
                       </Style.Triggers>
                     </Style>
                   </Border.Style>
-                  
+
                   <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCategoriaCommand}"
                                           CommandParameter="{Binding}" />
                   </Border.GestureRecognizers>
-                  
+
                   <Label>
                     <Label.Style>
                       <Style TargetType="Label">
@@ -162,8 +162,8 @@
                         <Setter Property="FontSize" Value="14" />
                         <Setter Property="FontAttributes" Value="Bold" />
                         <Style.Triggers>
-                          <DataTrigger TargetType="Label" 
-                                       Binding="{Binding Id}" 
+                          <DataTrigger TargetType="Label"
+                                       Binding="{Binding Id}"
                                        Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
                             <Setter Property="TextColor" Value="White" />
                           </DataTrigger>
@@ -182,12 +182,12 @@
 
         <!-- Status Chip Buttons -->
         <VerticalStackLayout Spacing="8">
-          <Label Text="📊 Status" 
-                 FontSize="14" 
-                 FontAttributes="Bold" 
+          <Label Text="📊 Status"
+                 FontSize="14"
+                 FontAttributes="Bold"
                  TextColor="{DynamicResource Gray700}" />
-          
-          <FlexLayout Wrap="Wrap" 
+
+          <FlexLayout Wrap="Wrap"
                       JustifyContent="Start"
                       BindableLayout.ItemsSource="{Binding Statuses}">
             <BindableLayout.ItemTemplate>
@@ -196,8 +196,8 @@
                   <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource ChipButtonStyle}">
                       <Style.Triggers>
-                        <DataTrigger TargetType="Border" 
-                                     Binding="{Binding Id}" 
+                        <DataTrigger TargetType="Border"
+                                     Binding="{Binding Id}"
                                      Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
                           <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
                           <Setter Property="StrokeThickness" Value="0" />
@@ -205,12 +205,12 @@
                       </Style.Triggers>
                     </Style>
                   </Border.Style>
-                  
+
                   <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectStatusCommand}"
                                           CommandParameter="{Binding}" />
                   </Border.GestureRecognizers>
-                  
+
                   <Label>
                     <Label.Style>
                       <Style TargetType="Label">
@@ -218,8 +218,8 @@
                         <Setter Property="FontSize" Value="14" />
                         <Setter Property="FontAttributes" Value="Bold" />
                         <Style.Triggers>
-                          <DataTrigger TargetType="Label" 
-                                       Binding="{Binding Id}" 
+                          <DataTrigger TargetType="Label"
+                                       Binding="{Binding Id}"
                                        Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
                             <Setter Property="TextColor" Value="White" />
                           </DataTrigger>
@@ -238,12 +238,12 @@
 
         <!-- Prioridades Chip Buttons -->
         <VerticalStackLayout Spacing="8">
-          <Label Text="⚡ Prioridade" 
-                 FontSize="14" 
-                 FontAttributes="Bold" 
+          <Label Text="⚡ Prioridade"
+                 FontSize="14"
+                 FontAttributes="Bold"
                  TextColor="{DynamicResource Gray700}" />
-          
-          <FlexLayout Wrap="Wrap" 
+
+          <FlexLayout Wrap="Wrap"
                       JustifyContent="Start"
                       BindableLayout.ItemsSource="{Binding Prioridades}">
             <BindableLayout.ItemTemplate>
@@ -252,8 +252,8 @@
                   <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource ChipButtonStyle}">
                       <Style.Triggers>
-                        <DataTrigger TargetType="Border" 
-                                     Binding="{Binding Id}" 
+                        <DataTrigger TargetType="Border"
+                                     Binding="{Binding Id}"
                                      Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
                           <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
                           <Setter Property="StrokeThickness" Value="0" />
@@ -261,12 +261,12 @@
                       </Style.Triggers>
                     </Style>
                   </Border.Style>
-                  
+
                   <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectPrioridadeCommand}"
                                           CommandParameter="{Binding}" />
                   </Border.GestureRecognizers>
-                  
+
                   <Label>
                     <Label.Style>
                       <Style TargetType="Label">
@@ -274,8 +274,8 @@
                         <Setter Property="FontSize" Value="14" />
                         <Setter Property="FontAttributes" Value="Bold" />
                         <Style.Triggers>
-                          <DataTrigger TargetType="Label" 
-                                       Binding="{Binding Id}" 
+                          <DataTrigger TargetType="Label"
+                                       Binding="{Binding Id}"
                                        Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
                             <Setter Property="TextColor" Value="White" />
                           </DataTrigger>
@@ -324,14 +324,14 @@
                        WidthRequest="4"
                        HeightRequest="110"
                        VerticalOptions="Fill" />
-              
+
               <!-- Conteúdo do card -->
-              <Grid Grid.Column="1" 
-                    RowDefinitions="Auto,Auto,Auto" 
-                    ColumnDefinitions="*,Auto" 
+              <Grid Grid.Column="1"
+                    RowDefinitions="Auto,Auto,Auto"
+                    ColumnDefinitions="*,Auto"
                     RowSpacing="8"
                     Padding="14,12,14,12">
-                
+
                 <!-- Row 0: Título -->
                 <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                        Text="{Binding Titulo}"
@@ -347,8 +347,8 @@
                           Padding="8,3"
                           BackgroundColor="{DynamicResource Secondary}"
                           StrokeThickness="0">
-                    <Label Text="{Binding Status.Nome}" 
-                           TextColor="{DynamicResource PrimaryDarkText}" 
+                    <Label Text="{Binding Status.Nome}"
+                           TextColor="{DynamicResource PrimaryDarkText}"
                            FontSize="11"
                            FontAttributes="Bold" />
                   </Border>
@@ -367,7 +367,7 @@
                   <Label Text="{Binding DataAbertura, Converter={StaticResource UtcToLocalConverter}, StringFormat='📅 {0:dd/MM/yy HH:mm}'}"
                          TextColor="{DynamicResource Gray500}"
                          FontSize="11" />
-                  
+
                   <Label Text="{Binding DataFechamento, Converter={StaticResource UtcToLocalConverter}, StringFormat='✅ {0:dd/MM/yy}'}"
                          TextColor="{DynamicResource Success}"
                          FontSize="11"
@@ -396,7 +396,7 @@
       <Border.GestureRecognizers>
         <TapGestureRecognizer Command="{Binding TestarNotificacaoCommand}" />
       </Border.GestureRecognizers>
-      
+
       <Label Text="🔔"
              FontSize="28"
              TextColor="White"
@@ -418,7 +418,7 @@
       <Border.GestureRecognizers>
         <TapGestureRecognizer Tapped="OnNovoClicked" />
       </Border.GestureRecognizers>
-      
+
       <Label Text="+"
              FontSize="32"
              FontAttributes="Bold"
