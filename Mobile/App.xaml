@@ -10,7 +10,7 @@
         <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
         <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
       </ResourceDictionary.MergedDictionaries>
-      
+
       <!-- Conversores -->
       <helpers:InvertedBoolConverter x:Key="InvertedBoolConverter" />
       <helpers:IsNotNullConverter x:Key="IsNotNullConverter" />

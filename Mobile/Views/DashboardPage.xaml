@@ -34,11 +34,11 @@
                    FontAttributes="Bold"
                    TextColor="{StaticResource Gray900}" />
 
-            <Grid ColumnDefinitions="*,*" 
+            <Grid ColumnDefinitions="*,*"
                   RowDefinitions="Auto,Auto"
                   ColumnSpacing="12"
                   RowSpacing="12">
-                
+
                 <!-- Card: Abertos -->
                 <Frame Grid.Row="0" Grid.Column="0"
                        BackgroundColor="White"
@@ -149,11 +149,11 @@
                                Margin="0,0,0,12"
                                HasShadow="False"
                                BorderColor="{StaticResource Gray200}">
-                                                 <Frame.GestureRecognizers>
-                                                        <TapGestureRecognizer
-                                                               Command="{Binding BindingContext.AbrirChamadoCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
-                                                               CommandParameter="{Binding .}" />
-                                                 </Frame.GestureRecognizers>
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding BindingContext.AbrirChamadoCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                    CommandParameter="{Binding .}" />
+                            </Frame.GestureRecognizers>
                             <Grid ColumnDefinitions="4,*,Auto" ColumnSpacing="12">
                                 <!-- Border colorido por prioridade -->
                                 <BoxView Grid.Column="0"
@@ -180,7 +180,7 @@
                                                    TextColor="White"
                                                    FontAttributes="Bold" />
                                         </Frame>
-                                        
+
                                         <Label Text="{Binding Categoria.Nome}"
                                                FontSize="12"
                                                TextColor="{StaticResource Gray600}"

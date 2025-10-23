@@ -46,7 +46,7 @@
     <VerticalStackLayout Padding="24" Spacing="28">
       <VerticalStackLayout Spacing="4">
         <Label Text="Novo chamado" Style="{StaticResource PageHeadlineStyle}" />
-        <Label Text="{Binding DescricaoHeader}" 
+        <Label Text="{Binding DescricaoHeader}"
                TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
       </VerticalStackLayout>
 
@@ -67,7 +67,6 @@
           </VerticalStackLayout>
         </VerticalStackLayout>
 
-        <!-- Botão de Opções Avançadas (Apenas para Técnicos/Admins) -->
         <!-- Botão de Opções Avançadas (Apenas para Técnicos/Admins) -->
         <Button Text="{Binding ToggleOpcoesAvancadasTexto}"
                 Command="{Binding ToggleOpcoesAvancadasCommand}"
@@ -120,7 +119,7 @@
                           HorizontalOptions="Fill"
                           VerticalOptions="Center"
                           Title="Selecione uma categoria"
-      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                          TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
                           ItemsSource="{Binding Categorias}"
                           ItemDisplayBinding="{Binding Nome}"
                           SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
@@ -143,7 +142,7 @@
                           HorizontalOptions="Fill"
                           VerticalOptions="Center"
                           Title="Selecione a prioridade"
-      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                          TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
                           ItemsSource="{Binding Prioridades}"
                           ItemDisplayBinding="{Binding Nome}"
                           SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
@@ -165,7 +164,7 @@
                FontSize="16"
                FontAttributes="Bold"
                TextColor="{DynamicResource PrimaryDarkText}" />
-        
+
         <Label Text="Adicione imagens para ajudar a explicar o problema"
                FontSize="13"
                TextColor="{DynamicResource Gray600}"
@@ -181,7 +180,7 @@
                   Padding="16,10"
                   CornerRadius="8"
                   HorizontalOptions="Start" />
-          
+
           <Button Text="🖼️ Galeria"
                   Command="{Binding SelecionarImagemCommand}"
                   BackgroundColor="{DynamicResource Secondary}"
@@ -199,7 +198,7 @@
           <CollectionView.ItemsLayout>
             <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
           </CollectionView.ItemsLayout>
-          
+
           <CollectionView.ItemTemplate>
             <DataTemplate>
               <Frame Padding="12"
@@ -209,7 +208,7 @@
                      HasShadow="False">
                 <Grid ColumnDefinitions="Auto,*,Auto"
                       ColumnSpacing="12">
-                  
+
                   <!-- Thumbnail da imagem -->
                   <Frame Grid.Column="0"
                          WidthRequest="60"
@@ -233,7 +232,7 @@
                            TextColor="{DynamicResource Gray900}"
                            LineBreakMode="TailTruncation"
                            MaxLines="1" />
-                    
+
                     <HorizontalStackLayout Spacing="8">
                       <Label Text="{Binding IconeArquivo}"
                              FontSize="12" />
