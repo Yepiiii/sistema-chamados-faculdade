@@ -10,8 +10,8 @@ public class ApplicationDbContext : DbContext
     }
     
     public DbSet<Usuario> Usuarios { get; set; }
-    public DbSet<AlunoPerfil> AlunoPerfis { get; set; }
-    public DbSet<ProfessorPerfil> ProfessorPerfis { get; set; }
+    public DbSet<ColaboradorPerfil> ColaboradorPerfis { get; set; }
+    public DbSet<TecnicoTIPerfil> TecnicoTIPerfis { get; set; }
     public DbSet<Chamado> Chamados { get; set; }
     public DbSet<Categoria> Categorias { get; set; }
     public DbSet<Prioridade> Prioridades { get; set; }
@@ -40,8 +40,8 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
         });
         
-        // Configuração da entidade AlunoPerfil
-        modelBuilder.Entity<AlunoPerfil>(entity =>
+        // Configuração da entidade ColaboradorPerfil
+        modelBuilder.Entity<ColaboradorPerfil>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
@@ -49,26 +49,28 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.UsuarioId).IsUnique();
             entity.Property(e => e.Matricula).IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.Matricula).IsUnique();
-            entity.Property(e => e.Curso).HasMaxLength(100);
+            entity.Property(e => e.Departamento).HasMaxLength(100);
+            entity.Property(e => e.DataAdmissao).IsRequired().HasDefaultValueSql("GETDATE()");
             
             entity.HasOne(e => e.Usuario)
-                  .WithOne(u => u.AlunoPerfil)
-                  .HasForeignKey<AlunoPerfil>(e => e.UsuarioId)
+                  .WithOne(u => u.ColaboradorPerfil)
+                  .HasForeignKey<ColaboradorPerfil>(e => e.UsuarioId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
         
-        // Configuração da entidade ProfessorPerfil
-        modelBuilder.Entity<ProfessorPerfil>(entity =>
+        // Configuração da entidade TecnicoTIPerfil
+        modelBuilder.Entity<TecnicoTIPerfil>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.UsuarioId).IsRequired();
             entity.HasIndex(e => e.UsuarioId).IsUnique();
-            entity.Property(e => e.CursoMinistrado).HasMaxLength(100);
+            entity.Property(e => e.AreaAtuacao).HasMaxLength(50);
+            entity.Property(e => e.DataContratacao).IsRequired().HasDefaultValueSql("GETDATE()");
             
             entity.HasOne(e => e.Usuario)
-                  .WithOne(u => u.ProfessorPerfil)
-                  .HasForeignKey<ProfessorPerfil>(e => e.UsuarioId)
+                  .WithOne(u => u.TecnicoTIPerfil)
+                  .HasForeignKey<TecnicoTIPerfil>(e => e.UsuarioId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
         

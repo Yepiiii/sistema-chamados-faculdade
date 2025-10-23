@@ -20,7 +20,7 @@ public class Usuario
     public string SenhaHash { get; set; } = string.Empty;
     
     [Required]
-    public int TipoUsuario { get; set; } // 1 para Aluno, 2 para Professor, 3 para Admin
+    public int TipoUsuario { get; set; } // 1 para Colaborador, 2 para Técnico TI, 3 para Admin
     
     [Required]
     public DateTime DataCadastro { get; set; } = DateTime.Now;
@@ -40,6 +40,6 @@ public class Usuario
     public DateTime? ResetTokenExpires { get; set; }
     
     // Propriedades de navegação
-    public AlunoPerfil? AlunoPerfil { get; set; }
-    public ProfessorPerfil? ProfessorPerfil { get; set; }
+    public ColaboradorPerfil? ColaboradorPerfil { get; set; }
+    public TecnicoTIPerfil? TecnicoTIPerfil { get; set; }
 }
