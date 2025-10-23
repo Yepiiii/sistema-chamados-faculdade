@@ -678,3 +678,4 @@ Ao final da migração, teremos:
 **Pronto para começar?** 🚀
 
 Digite "INICIAR" para começarmos pela Fase 1!
+ 
