@@ -127,7 +127,10 @@ public partial class DashboardViewModel : ObservableObject
         catch (Exception ex)
         {
             ErrorMessage = $"Erro ao abrir chamado: {ex.Message}";
-            await Application.Current.MainPage.DisplayAlert("Erro", ErrorMessage, "OK");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ErrorMessage, "OK");
+            }
         }
     }
 }

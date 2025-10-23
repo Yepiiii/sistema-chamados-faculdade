@@ -17,13 +17,16 @@ public partial class ChamadosListPage : ContentPage
         App.Log("ChamadosListPage InitializeComponent");
         _vm = vm ?? ServiceHelper.GetService<ChamadosListViewModel>();
         BindingContext = _vm;
-        _ = _vm.Load();
+        // Removido: Load() será chamado apenas no OnAppearing()
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        App.Log("ChamadosListPage OnAppearing");
+        System.Diagnostics.Debug.WriteLine("========================================");
+        System.Diagnostics.Debug.WriteLine("ChamadosListPage.OnAppearing() - FIRED");
+        System.Diagnostics.Debug.WriteLine("========================================");
+        App.Log("ChamadosListPage OnAppearing - Loading data");
         _ = _vm.Load();
     }
 

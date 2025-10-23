@@ -38,16 +38,19 @@ public partial class ChamadoDetailPage : ContentPage
                 App.Log($"ChamadoDetailPage ChamadoId setter: {value}");
                 if (int.TryParse(value, out var id))
                 {
-                    App.Log($"ChamadoDetailPage calling Load({id})");
+                    App.Log($"ChamadoDetailPage calling LoadChamadoAsync({id})");
                     MainThread.BeginInvokeOnMainThread(async () =>
                     {
                         try
                         {
-                            await _vm.Load(id);
+                            await _vm.LoadChamadoAsync(id);
+                            // Inicia o auto-refresh após carregar
+                            _vm.StartAutoRefresh();
+                            App.Log("ChamadoDetailPage auto-refresh started");
                         }
                         catch (Exception ex)
                         {
-                            App.Log($"ChamadoDetailPage Load FATAL: {ex}");
+                            App.Log($"ChamadoDetailPage LoadChamadoAsync FATAL: {ex}");
                             await DisplayAlert("Erro", $"Erro ao carregar chamado: {ex.Message}", "OK");
                             await Shell.Current.GoToAsync("..");
                         }
@@ -64,8 +67,21 @@ public partial class ChamadoDetailPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        App.Log("ChamadoDetailPage OnDisappearing - clearing data");
-        // Limpa os dados ao sair da página para evitar cache
-        _vm.ClearData();
+        App.Log("ChamadoDetailPage OnDisappearing");
+        // Para o auto-refresh quando sair da página
+        _vm.StopAutoRefresh();
+        App.Log("ChamadoDetailPage auto-refresh stopped");
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        App.Log("ChamadoDetailPage OnAppearing");
+        // Reinicia o auto-refresh se voltou para a página
+        if (_vm.Id > 0)
+        {
+            _vm.StartAutoRefresh();
+            App.Log("ChamadoDetailPage auto-refresh restarted");
+        }
     }
 }

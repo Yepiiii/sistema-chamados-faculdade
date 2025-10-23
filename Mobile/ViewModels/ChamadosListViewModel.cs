@@ -1,7 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -11,8 +10,6 @@ using SistemaChamados.Mobile.Services.Categorias;
 using SistemaChamados.Mobile.Services.Chamados;
 using SistemaChamados.Mobile.Services.Prioridades;
 using SistemaChamados.Mobile.Services.Status;
-using SistemaChamados.Mobile.Services.Polling;
-using SistemaChamados.Mobile.Services.Notifications;
 
 namespace SistemaChamados.Mobile.ViewModels;
 
@@ -22,48 +19,23 @@ public class ChamadosListViewModel : BaseViewModel
     private readonly ICategoriaService _categoriaService;
     private readonly IPrioridadeService _prioridadeService;
     private readonly IStatusService _statusService;
-    private readonly PollingService _pollingService;
-    private readonly INotificationService _notificationService;
 
     private readonly List<ChamadoDto> _allChamados = new();
-    private bool _filtersLoaded;
-    private bool _suppressFilter;
     private string _searchTerm = string.Empty;
-    private CategoriaDto? _selectedCategoria;
-    private PrioridadeDto? _selectedPrioridade;
-    private StatusDto? _selectedStatus;
     private bool _showAdvancedFilters = false;
-    private int _activeFiltersCount = 0;
+    private bool _isRefreshing = false;
+    private bool _isLoading = false; // Flag para evitar reentrada
 
+    // Collections
     public ObservableCollection<ChamadoDto> Chamados { get; } = new();
     public ObservableCollection<CategoriaDto> Categorias { get; } = new();
-    public ObservableCollection<PrioridadeDto> Prioridades { get; } = new();
     public ObservableCollection<StatusDto> Statuses { get; } = new();
+    public ObservableCollection<PrioridadeDto> Prioridades { get; } = new();
 
-    public ICommand RefreshCommand { get; }
-    public ICommand ItemTappedCommand { get; }
-    public ICommand ClearFiltersCommand { get; }
-    public ICommand ToggleAdvancedFiltersCommand { get; }
-    public ICommand SelectCategoriaCommand { get; }
-    public ICommand SelectStatusCommand { get; }
-    public ICommand SelectPrioridadeCommand { get; }
-    public ICommand TestarNotificacaoCommand { get; }
-
-    public string SearchTerm
-    {
-        get => _searchTerm;
-        set
-        {
-            var sanitized = value ?? string.Empty;
-            if (_searchTerm.Equals(sanitized, StringComparison.Ordinal)) return;
-            _searchTerm = sanitized;
-            OnPropertyChanged();
-            if (!_suppressFilter)
-            {
-                ApplyFilters();
-            }
-        }
-    }
+    // Selected Items for Filters
+    private CategoriaDto? _selectedCategoria;
+    private StatusDto? _selectedStatus;
+    private PrioridadeDto? _selectedPrioridade;
 
     public CategoriaDto? SelectedCategoria
     {
@@ -73,25 +45,8 @@ public class ChamadosListViewModel : BaseViewModel
             if (_selectedCategoria == value) return;
             _selectedCategoria = value;
             OnPropertyChanged();
-            if (!_suppressFilter)
-            {
-                ApplyFilters();
-            }
-        }
-    }
-
-    public PrioridadeDto? SelectedPrioridade
-    {
-        get => _selectedPrioridade;
-        set
-        {
-            if (_selectedPrioridade == value) return;
-            _selectedPrioridade = value;
-            OnPropertyChanged();
-            if (!_suppressFilter)
-            {
-                ApplyFilters();
-            }
+            UpdateActiveFiltersCount();
+            ApplyFilters();
         }
     }
 
@@ -103,13 +58,25 @@ public class ChamadosListViewModel : BaseViewModel
             if (_selectedStatus == value) return;
             _selectedStatus = value;
             OnPropertyChanged();
-            if (!_suppressFilter)
-            {
-                ApplyFilters();
-            }
+            UpdateActiveFiltersCount();
+            ApplyFilters();
         }
     }
 
+    public PrioridadeDto? SelectedPrioridade
+    {
+        get => _selectedPrioridade;
+        set
+        {
+            if (_selectedPrioridade == value) return;
+            _selectedPrioridade = value;
+            OnPropertyChanged();
+            UpdateActiveFiltersCount();
+            ApplyFilters();
+        }
+    }
+
+    // Advanced Filters Toggle
     public bool ShowAdvancedFilters
     {
         get => _showAdvancedFilters;
@@ -121,6 +88,20 @@ public class ChamadosListViewModel : BaseViewModel
         }
     }
 
+    // IsRefreshing - Separado de IsBusy para evitar loop infinito
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        set
+        {
+            if (_isRefreshing == value) return;
+            _isRefreshing = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Active Filters Count
+    private int _activeFiltersCount;
     public int ActiveFiltersCount
     {
         get => _activeFiltersCount;
@@ -132,277 +113,218 @@ public class ChamadosListViewModel : BaseViewModel
         }
     }
 
+    // Commands
+    public ICommand RefreshCommand { get; }
+    public ICommand ItemTappedCommand { get; }
+    public ICommand ToggleAdvancedFiltersCommand { get; }
+    public ICommand SelectCategoriaCommand { get; }
+    public ICommand SelectStatusCommand { get; }
+    public ICommand SelectPrioridadeCommand { get; }
+    public ICommand ClearFiltersCommand { get; }
+
+    public string SearchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            if (_searchTerm == value) return;
+            _searchTerm = value;
+            OnPropertyChanged();
+            ApplyFilters();
+        }
+    }
+
     public ChamadosListViewModel(
         IChamadoService chamadoService,
         ICategoriaService categoriaService,
         IPrioridadeService prioridadeService,
-        IStatusService statusService,
-        PollingService pollingService,
-        INotificationService notificationService)
+        IStatusService statusService)
     {
         _chamadoService = chamadoService;
         _categoriaService = categoriaService;
         _prioridadeService = prioridadeService;
         _statusService = statusService;
-        _pollingService = pollingService;
-        _notificationService = notificationService;
 
-        RefreshCommand = new Command(async () => await Load());
+        RefreshCommand = new Command(async () => await RefreshAsync());
         ItemTappedCommand = new Command<ChamadoDto>(async c => await OpenDetail(c));
-        ClearFiltersCommand = new Command(ClearFilters);
         ToggleAdvancedFiltersCommand = new Command(ToggleAdvancedFilters);
         SelectCategoriaCommand = new Command<CategoriaDto>(SelectCategoria);
         SelectStatusCommand = new Command<StatusDto>(SelectStatus);
         SelectPrioridadeCommand = new Command<PrioridadeDto>(SelectPrioridade);
-        TestarNotificacaoCommand = new Command(TestarNotificacao);
-
-        // Subscrever ao evento de novas atualizações
-        _pollingService.NovasAtualizacoesDetectadas += OnNovasAtualizacoesDetectadas;
-        
-        Debug.WriteLine("[ChamadosListViewModel] Polling configurado e evento subscrito.");
-    }
-
-    private async void TestarNotificacao()
-    {
-        try
-        {
-            Debug.WriteLine("[ChamadosListViewModel] 🔔 TESTE: Simulando atualizações mock...");
-            
-            // Simula atualizações
-            PollingService.SimularAtualizacao();
-            
-            // Força verificação imediata
-            var resultado = await _pollingService.VerificarAtualizacoesAsync();
-            
-            // Feedback visual
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "🔔 Teste de Notificação",
-                    $"✅ {resultado.TotalAtualizacoes} atualizações simuladas!\nVerifique a barra de notificações.",
-                    "OK");
-            });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[ChamadosListViewModel] Erro ao testar notificação: {ex.Message}");
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "Erro",
-                    $"Erro ao testar notificação: {ex.Message}",
-                    "OK");
-            });
-        }
-    }
-
-    private async void OnNovasAtualizacoesDetectadas(object sender, List<AtualizacaoDto> atualizacoes)
-    {
-        try
-        {
-            Debug.WriteLine($"[ChamadosListViewModel] {atualizacoes.Count} novas atualizações detectadas!");
-
-            // Exibir notificações para cada atualização
-            foreach (var atualizacao in atualizacoes)
-            {
-                _notificationService?.ExibirNotificacaoAtualizacao(atualizacao);
-                Debug.WriteLine($"[ChamadosListViewModel] Notificação exibida: {atualizacao.MensagemNotificacao}");
-            }
-
-            // Atualizar a lista de chamados
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await Load();
-                Debug.WriteLine("[ChamadosListViewModel] Lista de chamados atualizada após polling.");
-            });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[ChamadosListViewModel] Erro ao processar atualizações: {ex.Message}");
-        }
+        ClearFiltersCommand = new Command(ClearFilters);
     }
 
     public async Task Load()
     {
-        if (IsBusy) return;
+        System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - START (IsBusy={IsBusy}, _isLoading={_isLoading})");
+        
+        // Controle de reentrada - evita múltiplas execuções simultâneas
+        if (_isLoading) 
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Already loading, skipping");
+            return;
+        }
+
+        if (IsBusy)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Already busy, skipping");
+            return;
+        }
+
+        _isLoading = true;
+        IsBusy = true;
         try
         {
-            IsBusy = true;
-            Debug.WriteLine("[ChamadosListViewModel] Buscando chamados...");
-            Console.WriteLine("[ChamadosListViewModel] Buscando chamados...");
-
-            await EnsureFiltersLoadedAsync();
-
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Loading chamados from API...");
+            
+            // Load Chamados
+            var chamados = await _chamadoService.GetMeusChamados();
             _allChamados.Clear();
-
-            var list = await _chamadoService.GetMeusChamados();
-
-            if (list != null)
+            if (chamados != null)
             {
-                var count = 0;
-                foreach (var c in list)
-                {
-                    count++;
-                    Debug.WriteLine($"[ChamadosListViewModel] Chamado {count}: Id={c.Id}, Titulo='{c.Titulo}', Categoria={c.Categoria?.Nome ?? "NULL"}, Prioridade={c.Prioridade?.Nome ?? "NULL"}, Status={c.Status?.Nome ?? "NULL"}");
-                    Console.WriteLine($"[ChamadosListViewModel] Chamado {count}: Id={c.Id}, Titulo='{c.Titulo}', Categoria={c.Categoria?.Nome ?? "NULL"}, Prioridade={c.Prioridade?.Nome ?? "NULL"}, Status={c.Status?.Nome ?? "NULL"}");
-                    _allChamados.Add(c);
-                }
-                Debug.WriteLine($"[ChamadosListViewModel] Total de chamados carregados: {count}");
-                Console.WriteLine($"[ChamadosListViewModel] Total de chamados carregados: {count}");
+                _allChamados.AddRange(chamados);
+                System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - Loaded {chamados.Count()} chamados");
             }
             else
             {
-                Debug.WriteLine("[ChamadosListViewModel] Lista de chamados retornou NULL");
-                Console.WriteLine("[ChamadosListViewModel] Lista de chamados retornou NULL");
+                System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - No chamados returned from API");
             }
 
-            ApplyFilters();
-
-            // Iniciar polling após o primeiro carregamento
-            if (_pollingService != null)
+            // Load Filter Options (only once)
+            if (!Categorias.Any())
             {
-                _pollingService.IniciarPolling();
-                Debug.WriteLine("[ChamadosListViewModel] Polling iniciado.");
+                await LoadCategoriasAsync();
+            }
+
+            if (!Statuses.Any())
+            {
+                await LoadStatusesAsync();
+            }
+
+            if (!Prioridades.Any())
+            {
+                await LoadPrioridadesAsync();
+            }
+
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Applying filters...");
+            ApplyFilters();
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - Filters applied, {Chamados.Count} chamados visible");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() ERROR: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar chamados: {ex.Message}", "OK");
             }
         }
-        finally { IsBusy = false; }
+        finally
+        {
+            IsBusy = false;
+            IsRefreshing = false; // Sempre resetar IsRefreshing
+            _isLoading = false;
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - COMPLETE (IsBusy={IsBusy}, _isLoading={_isLoading})");
+        }
     }
 
-    private async Task OpenDetail(ChamadoDto c)
+    // Método separado para RefreshView - força reload completo
+    private async Task RefreshAsync()
     {
-        if (c == null) return;
-        await Shell.Current.GoToAsync($"chamados/detail?Id={c.Id}");
-    }
+        System.Diagnostics.Debug.WriteLine("========================================");
+        System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.RefreshAsync() - PULL TO REFRESH");
+        System.Diagnostics.Debug.WriteLine("========================================");
+        
+        // Não verifica _isLoading aqui - queremos forçar o refresh
+        if (IsBusy)
+        {
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - Already busy, skipping");
+            IsRefreshing = false;
+            return;
+        }
 
-    private async Task EnsureFiltersLoadedAsync()
-    {
-        if (_filtersLoaded) return;
-
-        _suppressFilter = true;
-
-        await LoadCategoriasAsync();
-        await LoadStatusesAsync();
-        await LoadPrioridadesAsync();
-
-        _filtersLoaded = true;
-        _suppressFilter = false;
+        try
+        {
+            // Limpa cache local antes de recarregar
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - Clearing local cache");
+            _allChamados.Clear();
+            Chamados.Clear();
+            
+            // Force reload from API
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - Calling Load()");
+            await Load();
+            
+            System.Diagnostics.Debug.WriteLine($"RefreshAsync - Complete! {Chamados.Count} chamados loaded");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RefreshAsync ERROR: {ex.Message}");
+        }
+        finally
+        {
+            // Garante que IsRefreshing seja resetado
+            IsRefreshing = false;
+            System.Diagnostics.Debug.WriteLine("RefreshAsync - IsRefreshing set to false");
+        }
     }
 
     private async Task LoadCategoriasAsync()
     {
-        Categorias.Clear();
-        Categorias.Add(new CategoriaDto { Id = 0, Nome = "Todas as categorias" });
-
-        var categorias = await _categoriaService.GetAll();
-        if (categorias != null)
+        try
         {
-            foreach (var categoria in categorias.OrderBy(c => c.Nome))
+            var categorias = await _categoriaService.GetAll();
+            Categorias.Clear();
+            if (categorias != null)
             {
-                Categorias.Add(categoria);
+                foreach (var cat in categorias)
+                {
+                    Categorias.Add(cat);
+                }
             }
         }
-
-        SelectedCategoria = Categorias.FirstOrDefault();
-    }
-
-    private async Task LoadPrioridadesAsync()
-    {
-        Prioridades.Clear();
-        Prioridades.Add(new PrioridadeDto { Id = 0, Nome = "Todas as prioridades" });
-
-        var prioridades = await _prioridadeService.GetAll();
-        if (prioridades != null)
+        catch (Exception ex)
         {
-            foreach (var prioridade in prioridades.OrderBy(p => p.Nome))
-            {
-                Prioridades.Add(prioridade);
-            }
+            System.Diagnostics.Debug.WriteLine($"Erro ao carregar categorias: {ex.Message}");
         }
-
-        SelectedPrioridade = Prioridades.FirstOrDefault();
     }
 
     private async Task LoadStatusesAsync()
     {
-        Statuses.Clear();
-        Statuses.Add(new StatusDto { Id = 0, Nome = "Todos os status" });
-
-        var statuses = await _statusService.GetAll();
-        if (statuses != null)
+        try
         {
-            foreach (var status in statuses.OrderBy(s => s.Nome))
+            var statuses = await _statusService.GetAll();
+            Statuses.Clear();
+            if (statuses != null)
             {
-                Statuses.Add(status);
+                foreach (var status in statuses)
+                {
+                    Statuses.Add(status);
+                }
             }
         }
-
-        SelectedStatus = Statuses.FirstOrDefault();
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Erro ao carregar status: {ex.Message}");
+        }
     }
 
-    private void ApplyFilters()
+    private async Task LoadPrioridadesAsync()
     {
-        if (_suppressFilter) return;
-
-        IEnumerable<ChamadoDto> filtered = _allChamados;
-        int filterCount = 0;
-
-        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        try
         {
-            var term = _searchTerm.Trim();
-            filtered = filtered.Where(c =>
-                (!string.IsNullOrEmpty(c.Titulo) && c.Titulo.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(c.Descricao) && c.Descricao.Contains(term, StringComparison.OrdinalIgnoreCase)));
-            filterCount++;
+            var prioridades = await _prioridadeService.GetAll();
+            Prioridades.Clear();
+            if (prioridades != null)
+            {
+                foreach (var pri in prioridades)
+                {
+                    Prioridades.Add(pri);
+                }
+            }
         }
-
-        if (_selectedCategoria != null && _selectedCategoria.Id > 0)
+        catch (Exception ex)
         {
-            filtered = filtered.Where(c => c.Categoria?.Id == _selectedCategoria.Id);
-            filterCount++;
+            System.Diagnostics.Debug.WriteLine($"Erro ao carregar prioridades: {ex.Message}");
         }
-
-        if (_selectedStatus != null && _selectedStatus.Id > 0)
-        {
-            filtered = filtered.Where(c => c.Status?.Id == _selectedStatus.Id);
-            filterCount++;
-        }
-
-        if (_selectedPrioridade != null && _selectedPrioridade.Id > 0)
-        {
-            filtered = filtered.Where(c => c.Prioridade?.Id == _selectedPrioridade.Id);
-            filterCount++;
-        }
-
-        filtered = filtered.OrderByDescending(c => c.DataAbertura);
-
-        Chamados.Clear();
-
-        var count = 0;
-        foreach (var chamado in filtered)
-        {
-            count++;
-            Chamados.Add(chamado);
-        }
-
-        ActiveFiltersCount = filterCount;
-
-        Debug.WriteLine($"[ChamadosListViewModel] Chamados após filtros: {count}");
-        Console.WriteLine($"[ChamadosListViewModel] Chamados após filtros: {count}");
-    }
-
-    private void ClearFilters()
-    {
-        _suppressFilter = true;
-
-        _searchTerm = string.Empty;
-        OnPropertyChanged(nameof(SearchTerm));
-
-        SelectedCategoria = Categorias.FirstOrDefault();
-        SelectedStatus = Statuses.FirstOrDefault();
-        SelectedPrioridade = Prioridades.FirstOrDefault();
-
-        _suppressFilter = false;
-        ApplyFilters();
     }
 
     private void ToggleAdvancedFilters()
@@ -412,42 +334,111 @@ public class ChamadosListViewModel : BaseViewModel
 
     private void SelectCategoria(CategoriaDto categoria)
     {
-        SelectedCategoria = categoria;
+        // Toggle: se já estava selecionada, desmarca
+        if (SelectedCategoria?.Id == categoria?.Id)
+        {
+            SelectedCategoria = null;
+        }
+        else
+        {
+            SelectedCategoria = categoria;
+        }
     }
 
     private void SelectStatus(StatusDto status)
     {
-        SelectedStatus = status;
+        // Toggle: se já estava selecionado, desmarca
+        if (SelectedStatus?.Id == status?.Id)
+        {
+            SelectedStatus = null;
+        }
+        else
+        {
+            SelectedStatus = status;
+        }
     }
 
     private void SelectPrioridade(PrioridadeDto prioridade)
     {
-        SelectedPrioridade = prioridade;
-    }
-
-    /// <summary>
-    /// Para o polling quando a ViewModel não está mais em uso.
-    /// Chame este método quando a página for destruída ou desativada.
-    /// </summary>
-    public void StopPolling()
-    {
-        if (_pollingService != null)
+        // Toggle: se já estava selecionada, desmarca
+        if (SelectedPrioridade?.Id == prioridade?.Id)
         {
-            _pollingService.PararPolling();
-            Debug.WriteLine("[ChamadosListViewModel] Polling parado.");
+            SelectedPrioridade = null;
+        }
+        else
+        {
+            SelectedPrioridade = prioridade;
         }
     }
 
-    /// <summary>
-    /// Dessubscreve eventos e limpa recursos.
-    /// </summary>
-    public void Cleanup()
+    private void ClearFilters()
     {
-        if (_pollingService != null)
+        SelectedCategoria = null;
+        SelectedStatus = null;
+        SelectedPrioridade = null;
+        SearchTerm = string.Empty;
+    }
+
+    private void UpdateActiveFiltersCount()
+    {
+        int count = 0;
+        if (SelectedCategoria != null) count++;
+        if (SelectedStatus != null) count++;
+        if (SelectedPrioridade != null) count++;
+        ActiveFiltersCount = count;
+    }
+
+    private void ApplyFilters()
+    {
+        System.Diagnostics.Debug.WriteLine($"ApplyFilters() - START: _allChamados.Count={_allChamados.Count}");
+        
+        var filtered = _allChamados.AsEnumerable();
+
+        // Search Term Filter
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
         {
-            _pollingService.NovasAtualizacoesDetectadas -= OnNovasAtualizacoesDetectadas;
-            _pollingService.PararPolling();
+            var term = _searchTerm.ToLowerInvariant();
+            filtered = filtered.Where(c =>
+                (c.Titulo?.ToLowerInvariant().Contains(term) ?? false) ||
+                (c.Descricao?.ToLowerInvariant().Contains(term) ?? false));
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After SearchTerm: {filtered.Count()} chamados");
         }
-        Debug.WriteLine("[ChamadosListViewModel] Cleanup executado.");
+
+        // Categoria Filter
+        if (SelectedCategoria != null)
+        {
+            filtered = filtered.Where(c => c.Categoria?.Id == SelectedCategoria.Id);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After Categoria: {filtered.Count()} chamados");
+        }
+
+        // Status Filter
+        if (SelectedStatus != null)
+        {
+            filtered = filtered.Where(c => c.Status?.Id == SelectedStatus.Id);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After Status: {filtered.Count()} chamados");
+        }
+
+        // Prioridade Filter
+        if (SelectedPrioridade != null)
+        {
+            filtered = filtered.Where(c => c.Prioridade?.Id == SelectedPrioridade.Id);
+            System.Diagnostics.Debug.WriteLine($"ApplyFilters() - After Prioridade: {filtered.Count()} chamados");
+        }
+
+        Chamados.Clear();
+        foreach (var chamado in filtered.OrderByDescending(c => c.DataAbertura))
+        {
+            Chamados.Add(chamado);
+            System.Diagnostics.Debug.WriteLine($"  - Chamado #{chamado.Id}: {chamado.Titulo} (Status: {chamado.Status?.Nome})");
+        }
+
+        OnPropertyChanged(nameof(Chamados));
+        System.Diagnostics.Debug.WriteLine($"ApplyFilters() - COMPLETE: Chamados.Count={Chamados.Count}");
+    }
+
+    private async Task OpenDetail(ChamadoDto chamado)
+    {
+        if (chamado == null) return;
+        await Shell.Current.GoToAsync($"//chamados/detail?id={chamado.Id}");
     }
 }

@@ -9,6 +9,8 @@
     <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
     <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
     <converters:PluralSuffixConverter x:Key="PluralSuffixConverter" />
+    <converters:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+    <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
     
     <LinearGradientBrush x:Key="ListHeaderGradient" StartPoint="0,0" EndPoint="1,1">
       <GradientStop Color="#2A5FDF" Offset="0" />
@@ -122,183 +124,208 @@
       </Grid>
 
       <!-- Advanced Filters (Collapsible) -->
-      <VerticalStackLayout IsVisible="{Binding ShowAdvancedFilters}" Spacing="16">
-        
-        <!-- Categorias Chip Buttons -->
-        <VerticalStackLayout Spacing="8">
-          <Label Text="📁 Categoria" 
-                 FontSize="14" 
-                 FontAttributes="Bold" 
-                 TextColor="{DynamicResource Gray700}" />
+      <Frame IsVisible="{Binding ShowAdvancedFilters}"
+             Padding="16"
+             CornerRadius="16"
+             BackgroundColor="{DynamicResource White}"
+             BorderColor="{DynamicResource Gray200}"
+             HasShadow="False">
+        <VerticalStackLayout Spacing="20">
           
-          <FlexLayout Wrap="Wrap" 
-                      JustifyContent="Start"
-                      BindableLayout.ItemsSource="{Binding Categorias}">
-            <BindableLayout.ItemTemplate>
-              <DataTemplate>
-                <Border>
-                  <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource ChipButtonStyle}">
-                      <Style.Triggers>
-                        <DataTrigger TargetType="Border" 
-                                     Binding="{Binding Id}" 
-                                     Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
-                          <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
-                          <Setter Property="StrokeThickness" Value="0" />
-                        </DataTrigger>
-                      </Style.Triggers>
-                    </Style>
-                  </Border.Style>
-                  
-                  <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCategoriaCommand}"
-                                          CommandParameter="{Binding}" />
-                  </Border.GestureRecognizers>
-                  
-                  <Label>
-                    <Label.Style>
-                      <Style TargetType="Label">
-                        <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
-                        <Setter Property="FontSize" Value="14" />
-                        <Setter Property="FontAttributes" Value="Bold" />
+          <!-- Categorias Chip Buttons -->
+          <VerticalStackLayout Spacing="10">
+            <Label Text="📁 Categoria" 
+                   FontSize="15" 
+                   FontAttributes="Bold" 
+                   TextColor="{DynamicResource Gray900}" />
+            
+            <CollectionView ItemsSource="{Binding Categorias}"
+                            SelectionMode="None">
+              <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+              </CollectionView.ItemsLayout>
+              
+              <CollectionView.ItemTemplate>
+                <DataTemplate>
+                  <Border StrokeShape="RoundRectangle 20"
+                          Padding="16,10"
+                          StrokeThickness="1"
+                          Margin="0">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+                        <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
                         <Style.Triggers>
-                          <DataTrigger TargetType="Label" 
+                          <DataTrigger TargetType="Border" 
                                        Binding="{Binding Id}" 
                                        Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
-                            <Setter Property="TextColor" Value="White" />
+                            <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+                            <Setter Property="Stroke" Value="{DynamicResource Primary}" />
                           </DataTrigger>
                         </Style.Triggers>
                       </Style>
-                    </Label.Style>
-                    <Label.Text>
-                      <Binding Path="Nome" />
-                    </Label.Text>
-                  </Label>
-                </Border>
-              </DataTemplate>
-            </BindableLayout.ItemTemplate>
-          </FlexLayout>
-        </VerticalStackLayout>
+                    </Border.Style>
+                    
+                    <Border.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCategoriaCommand}"
+                                            CommandParameter="{Binding}" />
+                    </Border.GestureRecognizers>
+                    
+                    <Label FontSize="14" FontAttributes="Bold">
+                      <Label.Style>
+                        <Style TargetType="Label">
+                          <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
+                          <Style.Triggers>
+                            <DataTrigger TargetType="Label" 
+                                         Binding="{Binding Id}" 
+                                         Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
+                              <Setter Property="TextColor" Value="White" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </Label.Style>
+                      <Label.Text>
+                        <Binding Path="Nome" />
+                      </Label.Text>
+                    </Label>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
 
-        <!-- Status Chip Buttons -->
-        <VerticalStackLayout Spacing="8">
-          <Label Text="📊 Status" 
-                 FontSize="14" 
-                 FontAttributes="Bold" 
-                 TextColor="{DynamicResource Gray700}" />
-          
-          <FlexLayout Wrap="Wrap" 
-                      JustifyContent="Start"
-                      BindableLayout.ItemsSource="{Binding Statuses}">
-            <BindableLayout.ItemTemplate>
-              <DataTemplate>
-                <Border>
-                  <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource ChipButtonStyle}">
-                      <Style.Triggers>
-                        <DataTrigger TargetType="Border" 
-                                     Binding="{Binding Id}" 
-                                     Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
-                          <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
-                          <Setter Property="StrokeThickness" Value="0" />
-                        </DataTrigger>
-                      </Style.Triggers>
-                    </Style>
-                  </Border.Style>
-                  
-                  <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectStatusCommand}"
-                                          CommandParameter="{Binding}" />
-                  </Border.GestureRecognizers>
-                  
-                  <Label>
-                    <Label.Style>
-                      <Style TargetType="Label">
-                        <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
-                        <Setter Property="FontSize" Value="14" />
-                        <Setter Property="FontAttributes" Value="Bold" />
+          <!-- Status Chip Buttons -->
+          <VerticalStackLayout Spacing="10">
+            <Label Text="📊 Status" 
+                   FontSize="15" 
+                   FontAttributes="Bold" 
+                   TextColor="{DynamicResource Gray900}" />
+            
+            <CollectionView ItemsSource="{Binding Statuses}"
+                            SelectionMode="None">
+              <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+              </CollectionView.ItemsLayout>
+              
+              <CollectionView.ItemTemplate>
+                <DataTemplate>
+                  <Border StrokeShape="RoundRectangle 20"
+                          Padding="16,10"
+                          StrokeThickness="1"
+                          Margin="0">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+                        <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
                         <Style.Triggers>
-                          <DataTrigger TargetType="Label" 
+                          <DataTrigger TargetType="Border" 
                                        Binding="{Binding Id}" 
                                        Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
-                            <Setter Property="TextColor" Value="White" />
+                            <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+                            <Setter Property="Stroke" Value="{DynamicResource Primary}" />
                           </DataTrigger>
                         </Style.Triggers>
                       </Style>
-                    </Label.Style>
-                    <Label.Text>
-                      <Binding Path="Nome" />
-                    </Label.Text>
-                  </Label>
-                </Border>
-              </DataTemplate>
-            </BindableLayout.ItemTemplate>
-          </FlexLayout>
-        </VerticalStackLayout>
+                    </Border.Style>
+                    
+                    <Border.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectStatusCommand}"
+                                            CommandParameter="{Binding}" />
+                    </Border.GestureRecognizers>
+                    
+                    <Label FontSize="14" FontAttributes="Bold">
+                      <Label.Style>
+                        <Style TargetType="Label">
+                          <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
+                          <Style.Triggers>
+                            <DataTrigger TargetType="Label" 
+                                         Binding="{Binding Id}" 
+                                         Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
+                              <Setter Property="TextColor" Value="White" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </Label.Style>
+                      <Label.Text>
+                        <Binding Path="Nome" />
+                      </Label.Text>
+                    </Label>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
 
-        <!-- Prioridades Chip Buttons -->
-        <VerticalStackLayout Spacing="8">
-          <Label Text="⚡ Prioridade" 
-                 FontSize="14" 
-                 FontAttributes="Bold" 
-                 TextColor="{DynamicResource Gray700}" />
-          
-          <FlexLayout Wrap="Wrap" 
-                      JustifyContent="Start"
-                      BindableLayout.ItemsSource="{Binding Prioridades}">
-            <BindableLayout.ItemTemplate>
-              <DataTemplate>
-                <Border>
-                  <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource ChipButtonStyle}">
-                      <Style.Triggers>
-                        <DataTrigger TargetType="Border" 
-                                     Binding="{Binding Id}" 
-                                     Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
-                          <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
-                          <Setter Property="StrokeThickness" Value="0" />
-                        </DataTrigger>
-                      </Style.Triggers>
-                    </Style>
-                  </Border.Style>
-                  
-                  <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectPrioridadeCommand}"
-                                          CommandParameter="{Binding}" />
-                  </Border.GestureRecognizers>
-                  
-                  <Label>
-                    <Label.Style>
-                      <Style TargetType="Label">
-                        <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
-                        <Setter Property="FontSize" Value="14" />
-                        <Setter Property="FontAttributes" Value="Bold" />
+          <!-- Prioridades Chip Buttons -->
+          <VerticalStackLayout Spacing="10">
+            <Label Text="⚡ Prioridade" 
+                   FontSize="15" 
+                   FontAttributes="Bold" 
+                   TextColor="{DynamicResource Gray900}" />
+            
+            <CollectionView ItemsSource="{Binding Prioridades}"
+                            SelectionMode="None">
+              <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+              </CollectionView.ItemsLayout>
+              
+              <CollectionView.ItemTemplate>
+                <DataTemplate>
+                  <Border StrokeShape="RoundRectangle 20"
+                          Padding="16,10"
+                          StrokeThickness="1"
+                          Margin="0">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+                        <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
                         <Style.Triggers>
-                          <DataTrigger TargetType="Label" 
+                          <DataTrigger TargetType="Border" 
                                        Binding="{Binding Id}" 
                                        Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
-                            <Setter Property="TextColor" Value="White" />
+                            <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+                            <Setter Property="Stroke" Value="{DynamicResource Primary}" />
                           </DataTrigger>
                         </Style.Triggers>
                       </Style>
-                    </Label.Style>
-                    <Label.Text>
-                      <Binding Path="Nome" />
-                    </Label.Text>
-                  </Label>
-                </Border>
-              </DataTemplate>
-            </BindableLayout.ItemTemplate>
-          </FlexLayout>
-        </VerticalStackLayout>
+                    </Border.Style>
+                    
+                    <Border.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectPrioridadeCommand}"
+                                            CommandParameter="{Binding}" />
+                    </Border.GestureRecognizers>
+                    
+                    <Label FontSize="14" FontAttributes="Bold">
+                      <Label.Style>
+                        <Style TargetType="Label">
+                          <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
+                          <Style.Triggers>
+                            <DataTrigger TargetType="Label" 
+                                         Binding="{Binding Id}" 
+                                         Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
+                              <Setter Property="TextColor" Value="White" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </Label.Style>
+                      <Label.Text>
+                        <Binding Path="Nome" />
+                      </Label.Text>
+                    </Label>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
 
-      </VerticalStackLayout>
+        </VerticalStackLayout>
+      </Frame>
     </VerticalStackLayout>
 
     <!-- RefreshView with Pull-to-Refresh -->
     <RefreshView Grid.Row="2"
                  Command="{Binding RefreshCommand}"
-                 IsRefreshing="{Binding IsBusy}"
+                 IsRefreshing="{Binding IsRefreshing}"
                  RefreshColor="{StaticResource Primary}">
       <CollectionView ItemsSource="{Binding Chamados}"
                       SelectionMode="Single"
@@ -381,28 +408,6 @@
       </CollectionView.ItemTemplate>
     </CollectionView>
     </RefreshView>
-
-    <!-- Botão de Teste de Notificação (DEBUG) -->
-    <Border Grid.Row="2"
-            StrokeShape="RoundRectangle 28"
-            BackgroundColor="#F59E0B"
-            WidthRequest="56"
-            HeightRequest="56"
-            HorizontalOptions="End"
-            VerticalOptions="End"
-            Margin="0,0,90,20"
-            StrokeThickness="0"
-            Shadow="{Shadow Brush=Black, Opacity=0.3, Radius=8, Offset='0,4'}">
-      <Border.GestureRecognizers>
-        <TapGestureRecognizer Command="{Binding TestarNotificacaoCommand}" />
-      </Border.GestureRecognizers>
-      
-      <Label Text="🔔"
-             FontSize="28"
-             TextColor="White"
-             HorizontalOptions="Center"
-             VerticalOptions="Center" />
-    </Border>
 
     <!-- Floating Action Button (FAB) -->
     <Border Grid.Row="2"

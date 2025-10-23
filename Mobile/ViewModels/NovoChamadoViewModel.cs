@@ -1,17 +1,12 @@
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using SistemaChamados.Mobile.Models.DTOs;
 using SistemaChamados.Mobile.Services.Chamados;
 using SistemaChamados.Mobile.Services.Categorias;
 using SistemaChamados.Mobile.Services.Prioridades;
-using SistemaChamados.Mobile.Services.Anexos;
-using SistemaChamados.Mobile.Helpers;
 
 namespace SistemaChamados.Mobile.ViewModels;
 
@@ -20,14 +15,6 @@ public class NovoChamadoViewModel : BaseViewModel
     private readonly IChamadoService _chamadoService;
     private readonly ICategoriaService _categoriaService;
     private readonly IPrioridadeService _prioridadeService;
-    private readonly AnexoService _anexoService;
-
-    // Tipos de usuário: 1 = Aluno, 2 = Técnico, 3 = Admin
-    private int TipoUsuarioAtual => Settings.TipoUsuario;
-    
-    public bool IsAluno => TipoUsuarioAtual == 1;
-    public bool IsTecnicoOuAdmin => TipoUsuarioAtual == 2 || TipoUsuarioAtual == 3;
-    public bool IsAdmin => TipoUsuarioAtual == 3;
 
     public string Descricao { get; set; } = string.Empty;
     public string Titulo { get; set; } = string.Empty;
@@ -36,12 +23,6 @@ public class NovoChamadoViewModel : BaseViewModel
 
     public ObservableCollection<CategoriaDto> Categorias { get; } = new ObservableCollection<CategoriaDto>();
     public ObservableCollection<PrioridadeDto> Prioridades { get; } = new ObservableCollection<PrioridadeDto>();
-
-    public bool HasCategorias => Categorias.Any();
-    public bool IsCategoriasEmpty => !HasCategorias;
-
-    public bool HasPrioridades => Prioridades.Any();
-    public bool IsPrioridadesEmpty => !HasPrioridades;
 
     private CategoriaDto? _categoriaSelecionada;
     public CategoriaDto? CategoriaSelecionada
@@ -69,23 +50,7 @@ public class NovoChamadoViewModel : BaseViewModel
         }
     }
 
-    public ICommand CriarCommand { get; }
-    public ICommand ToggleOpcoesAvancadasCommand { get; }
-
-    private bool _exibirOpcoesAvancadas;
-    public bool ExibirOpcoesAvancadas
-    {
-        get => _exibirOpcoesAvancadas;
-        set
-        {
-            if (_exibirOpcoesAvancadas == value) return;
-            _exibirOpcoesAvancadas = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(ToggleOpcoesAvancadasTexto));
-            OnPropertyChanged(nameof(ExibirClassificacaoManual));
-        }
-    }
-
+    // Propriedades para controle de IA
     private bool _usarAnaliseAutomatica = true;
     public bool UsarAnaliseAutomatica
     {
@@ -99,108 +64,78 @@ public class NovoChamadoViewModel : BaseViewModel
         }
     }
 
-    public bool ExibirClassificacaoManual => ExibirOpcoesAvancadas && !UsarAnaliseAutomatica && IsTecnicoOuAdmin;
-
-    public string ToggleOpcoesAvancadasTexto => ExibirOpcoesAvancadas ? "Ocultar opções avançadas" : "Mostrar opções avançadas";
+    public bool PodeUsarClassificacaoManual => true; // Sempre true para Admin/Técnico
     
-    // Propriedade para mostrar/ocultar opções avançadas (apenas Técnicos e Admins)
-    public bool PodeUsarClassificacaoManual => IsTecnicoOuAdmin;
-    
-    // Propriedade para mostrar descrição apropriada no header
-    public string DescricaoHeader => IsAluno 
-        ? "Descreva seu problema de forma clara para que possamos ajudá-lo rapidamente."
-        : "Informe o contexto do problema e classifique o chamado para que o time possa priorizar corretamente.";
+    public bool ExibirClassificacaoManual => !UsarAnaliseAutomatica && PodeUsarClassificacaoManual;
 
-    // Propriedades para anexos
-    public ObservableCollection<AnexoDto> AnexosTemporarios { get; } = new();
-    public bool HasAnexos => AnexosTemporarios.Count > 0;
-    public ICommand SelecionarImagemCommand { get; }
-    public ICommand TirarFotoCommand { get; }
-    public ICommand RemoverAnexoCommand { get; }
+    public bool HasCategorias => Categorias.Any();
+    public bool IsCategoriasEmpty => !HasCategorias;
+    public bool HasPrioridades => Prioridades.Any();
+    public bool IsPrioridadesEmpty => !HasPrioridades;
 
-    public NovoChamadoViewModel(IChamadoService chamadoService, ICategoriaService categoriaService, IPrioridadeService prioridadeService, AnexoService anexoService)
+    // Propriedades para Empty State com recursos localizáveis
+    public string EmptyCategoriasText => "Nenhuma categoria disponível";
+    public string EmptyCategoriasIcon => "📋";
+    public string EmptyPrioridadesText => "Nenhuma prioridade disponível";
+    public string EmptyPrioridadesIcon => "⚠️";
+    public string RetryIcon => "🔄";
+    public string RetryText => "Tentar novamente";
+
+    public string DescricaoHeader => "Preencha os campos abaixo para criar um novo chamado";
+
+    public ICommand CriarCommand { get; }
+    public ICommand RetryLoadCommand { get; }
+
+    public NovoChamadoViewModel(
+        IChamadoService chamadoService,
+        ICategoriaService categoriaService,
+        IPrioridadeService prioridadeService)
     {
         _chamadoService = chamadoService;
         _categoriaService = categoriaService;
         _prioridadeService = prioridadeService;
-        _anexoService = anexoService;
 
-        CriarCommand = new Command(async () => await Criar());
-        ToggleOpcoesAvancadasCommand = new Command(AlternarOpcoesAvancadas);
-        SelecionarImagemCommand = new Command(async () => await SelecionarImagemAsync());
-        TirarFotoCommand = new Command(async () => await TirarFotoAsync());
-        RemoverAnexoCommand = new Command<AnexoDto>(async (anexo) => await RemoverAnexoAsync(anexo));
-
-        // Log das permissões do usuário
-        App.Log($"NovoChamadoViewModel constructor - UserId: {Settings.UserId}");
-        App.Log($"NovoChamadoViewModel constructor - NomeUsuario: {Settings.NomeUsuario}");
-        App.Log($"NovoChamadoViewModel constructor - Email: {Settings.Email}");
-        App.Log($"NovoChamadoViewModel constructor - TipoUsuario: {Settings.TipoUsuario}");
-        App.Log($"NovoChamadoViewModel constructor - IsAluno: {IsAluno}, IsTecnicoOuAdmin: {IsTecnicoOuAdmin}, IsAdmin: {IsAdmin}");
-        App.Log($"NovoChamadoViewModel constructor - PodeUsarClassificacaoManual: {PodeUsarClassificacaoManual}");
-
-        // Atualiza propriedades derivadas quando as coleções mudam
-        Categorias.CollectionChanged += (s, e) =>
-        {
-            OnPropertyChanged(nameof(HasCategorias));
-            OnPropertyChanged(nameof(IsCategoriasEmpty));
-        };
-
-        Prioridades.CollectionChanged += (s, e) =>
-        {
-            OnPropertyChanged(nameof(HasPrioridades));
-            OnPropertyChanged(nameof(IsPrioridadesEmpty));
-        };
-        
-        AnexosTemporarios.CollectionChanged += (s, e) =>
-        {
-            OnPropertyChanged(nameof(HasAnexos));
-        };
+        CriarCommand = new Command(async () => await CriarChamadoAsync());
+        RetryLoadCommand = new Command(async () => await LoadDataAsync());
     }
 
-    public async Task Init()
+    public async Task LoadDataAsync()
     {
         if (IsBusy) return;
+
+        IsBusy = true;
         try
         {
-            IsBusy = true;
-
-            var categoriasResult = await _categoriaService.GetAll();
-            var prioridadesResult = await _prioridadeService.GetAll();
-
-            var categoriasCount = categoriasResult?.Count() ?? 0;
-            var prioridadesCount = prioridadesResult?.Count() ?? 0;
-            Debug.WriteLine($"[NovoChamadoViewModel] Categorias recebidas: {categoriasCount}");
-            Debug.WriteLine($"[NovoChamadoViewModel] Prioridades recebidas: {prioridadesCount}");
-            Console.WriteLine($"[NovoChamadoViewModel] Categorias recebidas: {categoriasCount}");
-            Console.WriteLine($"[NovoChamadoViewModel] Prioridades recebidas: {prioridadesCount}");
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            var categorias = await _categoriaService.GetAll();
+            Categorias.Clear();
+            if (categorias != null)
             {
-                Categorias.Clear();
-                if (categoriasResult != null)
+                foreach (var cat in categorias)
                 {
-                    foreach (var categoria in categoriasResult)
-                    {
-                        Categorias.Add(categoria);
-                    }
-                    Debug.WriteLine($"[NovoChamadoViewModel] Categorias carregadas na UI: {Categorias.Count}");
-                    Console.WriteLine($"[NovoChamadoViewModel] Categorias carregadas na UI: {Categorias.Count}");
-                    CategoriaSelecionada = Categorias.FirstOrDefault();
+                    Categorias.Add(cat);
                 }
+            }
+            OnPropertyChanged(nameof(HasCategorias));
+            OnPropertyChanged(nameof(IsCategoriasEmpty));
 
-                Prioridades.Clear();
-                if (prioridadesResult != null)
+            var prioridades = await _prioridadeService.GetAll();
+            Prioridades.Clear();
+            if (prioridades != null)
+            {
+                foreach (var pri in prioridades)
                 {
-                    foreach (var prioridade in prioridadesResult)
-                    {
-                        Prioridades.Add(prioridade);
-                    }
-                    Debug.WriteLine($"[NovoChamadoViewModel] Prioridades carregadas na UI: {Prioridades.Count}");
-                    Console.WriteLine($"[NovoChamadoViewModel] Prioridades carregadas na UI: {Prioridades.Count}");
-                    PrioridadeSelecionada = Prioridades.FirstOrDefault();
+                    Prioridades.Add(pri);
                 }
-            });
+            }
+            OnPropertyChanged(nameof(HasPrioridades));
+            OnPropertyChanged(nameof(IsPrioridadesEmpty));
+        }
+        catch (System.Exception ex)
+        {
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao carregar dados: {ex.Message}", "OK");
+            }
         }
         finally
         {
@@ -208,224 +143,114 @@ public class NovoChamadoViewModel : BaseViewModel
         }
     }
 
-    private void AlternarOpcoesAvancadas()
+    private async Task CriarChamadoAsync()
     {
-        ExibirOpcoesAvancadas = !ExibirOpcoesAvancadas;
-        App.Log($"NovoChamadoViewModel AlternarOpcoesAvancadas - ExibirOpcoesAvancadas: {ExibirOpcoesAvancadas}");
-        App.Log($"NovoChamadoViewModel AlternarOpcoesAvancadas - UsarAnaliseAutomatica: {UsarAnaliseAutomatica}");
-        App.Log($"NovoChamadoViewModel AlternarOpcoesAvancadas - ExibirClassificacaoManual: {ExibirClassificacaoManual}");
-
-        if (!ExibirOpcoesAvancadas)
+        if (string.IsNullOrWhiteSpace(Descricao))
         {
-            UsarAnaliseAutomatica = true;
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, informe a descrição do chamado.", "OK");
+            }
+            return;
         }
-    }
 
-    private async Task Criar()
-    {
+        // Se IA desativada, validar seleção manual
+        if (!UsarAnaliseAutomatica)
+        {
+            if (!CategoriaId.HasValue)
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, selecione uma categoria.", "OK");
+                }
+                return;
+            }
+
+            if (!PrioridadeId.HasValue)
+            {
+                if (Application.Current?.MainPage != null)
+                {
+                    await Application.Current.MainPage.DisplayAlert("Atenção", "Por favor, selecione uma prioridade.", "OK");
+                }
+                return;
+            }
+        }
+
+        IsBusy = true;
         try
         {
-            App.Log("NovoChamadoViewModel.Criar start");
+            // Se UsarAnaliseAutomatica = true, deixa o Backend/IA gerar o título
+            // Se UsarAnaliseAutomatica = false (admin), usa o título informado manualmente
+            string? tituloFinal = Titulo?.Trim();
             
-            if (IsBusy)
+            // Se não tem título E análise automática está DESATIVADA, gera título local
+            // (quando IA está ativada, o backend que gera o título via Gemini)
+            if (string.IsNullOrWhiteSpace(tituloFinal) && !UsarAnaliseAutomatica)
             {
-                App.Log("NovoChamadoViewModel.Criar already busy, returning");
-                return;
+                tituloFinal = GerarTituloAutomatico(Descricao);
             }
-            
-            if (string.IsNullOrWhiteSpace(Descricao))
-            {
-                App.Log("NovoChamadoViewModel.Criar validation failed: empty description");
-                await ShowAlertAsync("Erro", "Descrição obrigatória");
-                return;
-            }
-            
-            if (ExibirClassificacaoManual && CategoriaSelecionada == null)
-            {
-                App.Log("NovoChamadoViewModel.Criar validation failed: no category selected");
-                await ShowAlertAsync("Erro", "Selecione uma categoria");
-                return;
-            }
-            
-            if (ExibirClassificacaoManual && PrioridadeSelecionada == null)
-            {
-                App.Log("NovoChamadoViewModel.Criar validation failed: no priority selected");
-                await ShowAlertAsync("Erro", "Selecione uma prioridade");
-                return;
-            }
-            
-            IsBusy = true;
-            App.Log($"NovoChamadoViewModel.Criar creating DTO - UsarIA: {UsarAnaliseAutomatica}");
-            
+
             var dto = new CriarChamadoRequestDto
             {
-                Titulo = string.IsNullOrWhiteSpace(Titulo) ? null : Titulo,
+                Titulo = tituloFinal ?? "", // Envia vazio para IA gerar
                 Descricao = Descricao,
+                CategoriaId = CategoriaId ?? 1, // Valor padrão se IA ativada
+                PrioridadeId = PrioridadeId ?? 1, // Valor padrão se IA ativada
                 UsarAnaliseAutomatica = UsarAnaliseAutomatica
             };
 
-            if (!UsarAnaliseAutomatica)
+            var chamado = await _chamadoService.Create(dto);
+            if (chamado != null)
             {
-                dto.CategoriaId = CategoriaId;
-                dto.PrioridadeId = PrioridadeId;
-                App.Log($"NovoChamadoViewModel.Criar manual classification - Cat: {CategoriaId}, Prior: {PrioridadeId}");
-            }
-
-            App.Log("NovoChamadoViewModel.Criar calling service.Create");
-            var created = await _chamadoService.Create(dto);
-            
-            if (created != null)
-            {
-                App.Log($"NovoChamadoViewModel.Criar chamado created successfully, Id: {created.Id}");
-                
-                if (Shell.Current is Shell shell)
+                if (Application.Current?.MainPage != null)
                 {
-                    LimparFormulario();
-
-                    var parametros = new Dictionary<string, object>
-                    {
-                        { "Chamado", created }
-                    };
-
-                    App.Log("NovoChamadoViewModel.Criar navigating to confirmacao");
-                    await shell.GoToAsync("///chamados/confirmacao", parametros);
-                    App.Log("NovoChamadoViewModel.Criar navigation complete");
+                    await Application.Current.MainPage.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
                 }
-                else
-                {
-                    App.Log("NovoChamadoViewModel.Criar ERROR: Shell.Current is null");
-                    await ShowAlertAsync("Erro", "Erro ao navegar para confirmação.");
-                }
-            }
-            else
-            {
-                App.Log("NovoChamadoViewModel.Criar ERROR: service returned null");
-                await ShowAlertAsync("Erro", "Não foi possível registrar o chamado. Tente novamente.");
+                await Shell.Current.GoToAsync("..");
             }
         }
-        catch (Exception ex)
+        catch (System.Exception ex)
         {
-            App.Log($"NovoChamadoViewModel.Criar FATAL ERROR: {ex.GetType().Name} - {ex.Message}");
-            App.Log($"NovoChamadoViewModel.Criar STACK: {ex.StackTrace}");
-            await ShowAlertAsync("Erro", $"Erro ao criar chamado: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", $"Erro ao criar chamado: {ex.Message}", "OK");
+            }
         }
         finally
         {
             IsBusy = false;
-            App.Log("NovoChamadoViewModel.Criar end");
         }
     }
 
-    private void LimparFormulario()
+    /// <summary>
+    /// Gera um título automático baseado na descrição do chamado
+    /// Extrai as primeiras palavras significativas da descrição
+    /// </summary>
+    private string GerarTituloAutomatico(string descricao)
     {
-        Descricao = string.Empty;
-        Titulo = string.Empty;
-        OnPropertyChanged(nameof(Descricao));
-        OnPropertyChanged(nameof(Titulo));
+        if (string.IsNullOrWhiteSpace(descricao))
+        {
+            return "Chamado sem título";
+        }
 
-        CategoriaSelecionada = Categorias.FirstOrDefault();
-        PrioridadeSelecionada = Prioridades.FirstOrDefault();
-
-        ExibirOpcoesAvancadas = false;
-        UsarAnaliseAutomatica = true;
+        // Remove quebras de linha e espaços extras
+        string texto = descricao.Replace("\n", " ").Replace("\r", " ").Trim();
         
-        // Limpa anexos temporários
-        AnexosTemporarios.Clear();
-    }
-
-    /// <summary>
-    /// Permite selecionar imagem da galeria
-    /// </summary>
-    private async Task SelecionarImagemAsync()
-    {
-        try
+        // Limita a 60 caracteres
+        const int maxLength = 60;
+        if (texto.Length <= maxLength)
         {
-            var resultado = await _anexoService.SelecionarImagemAsync();
-            if (resultado != null)
-            {
-                var usuario = new UsuarioResumoDto
-                {
-                    Id = Settings.UserId,
-                    NomeCompleto = Settings.NomeUsuario ?? "Usuário",
-                    Email = Settings.Email ?? "",
-                    TipoUsuario = Settings.TipoUsuario
-                };
-
-                var anexo = await _anexoService.SalvarAnexoAsync(resultado, 0, usuario);
-                if (anexo != null)
-                {
-                    AnexosTemporarios.Add(anexo);
-                    await ShowAlertAsync("Sucesso", $"Imagem '{anexo.NomeArquivo}' anexada com sucesso!");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await ShowAlertAsync("Erro", $"Erro ao selecionar imagem: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Permite tirar foto com a câmera
-    /// </summary>
-    private async Task TirarFotoAsync()
-    {
-        try
-        {
-            var resultado = await _anexoService.TirarFotoAsync();
-            if (resultado != null)
-            {
-                var usuario = new UsuarioResumoDto
-                {
-                    Id = Settings.UserId,
-                    NomeCompleto = Settings.NomeUsuario ?? "Usuário",
-                    Email = Settings.Email ?? "",
-                    TipoUsuario = Settings.TipoUsuario
-                };
-
-                var anexo = await _anexoService.SalvarAnexoAsync(resultado, 0, usuario);
-                if (anexo != null)
-                {
-                    AnexosTemporarios.Add(anexo);
-                    await ShowAlertAsync("Sucesso", $"Foto capturada e anexada com sucesso!");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            await ShowAlertAsync("Erro", $"Erro ao tirar foto: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Remove um anexo temporário
-    /// </summary>
-    private async Task RemoverAnexoAsync(AnexoDto anexo)
-    {
-        if (anexo == null) return;
-
-        var confirmar = false;
-        if (Application.Current?.MainPage != null)
-        {
-            confirmar = await Application.Current.MainPage.DisplayAlert(
-                "Confirmar",
-                $"Deseja remover o anexo '{anexo.NomeArquivo}'?",
-                "Sim", "Não");
+            return texto;
         }
 
-        if (confirmar)
+        // Corta no último espaço antes de 60 caracteres para não quebrar palavras
+        int lastSpace = texto.LastIndexOf(' ', maxLength);
+        if (lastSpace > 0)
         {
-            AnexosTemporarios.Remove(anexo);
-        }
-    }
-
-    private static Task ShowAlertAsync(string title, string message)
-    {
-        if (Application.Current?.MainPage is Page page)
-        {
-            return MainThread.InvokeOnMainThreadAsync(() => page.DisplayAlert(title, message, "OK"));
+            return texto.Substring(0, lastSpace) + "...";
         }
 
-        return Task.CompletedTask;
+        // Se não encontrou espaço, corta direto e adiciona reticências
+        return texto.Substring(0, maxLength) + "...";
     }
 }
