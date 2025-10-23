@@ -8,19 +8,19 @@ public static class Constants
     // Para Emulador Android (10.0.2.2 = localhost do host)
     public static string BaseUrlAndroidEmulator => "http://10.0.2.2:5246/api/";
     
-    // Para Dispositivo Físico - IP da máquina na rede local
-    // IMPORTANTE: Execute .\Scripts\ConfigurarIP.ps1 antes de gerar o APK
-    // O script detectará automaticamente seu IP local
-    public static string BaseUrlPhysicalDevice => "http://SEU_IP_LOCAL:5246/api/";
+    // Para Dispositivo Fisico - IP da maquina na rede local
+    // IP Detectado: 192.168.1.132 (Wi-Fi)
+    // Ultima atualizacao: 23/10/2025 08:53:04
+    public static string BaseUrlPhysicalDevice => "http://192.168.1.132:5246/api/";
     
-    // BaseUrl dinâmica baseada na plataforma
+    // BaseUrl dinamica baseada na plataforma
     public static string BaseUrl
     {
         get
         {
 #if ANDROID
-            // Usando EMULADOR Android (10.0.2.2 aponta para localhost do host)
-            return BaseUrlAndroidEmulator;
+            // DISPOSITIVO FISICO - Usando IP da rede local
+            return BaseUrlPhysicalDevice;
 #elif WINDOWS
             return BaseUrlWindows;
 #elif IOS || MACCATALYST
@@ -31,4 +31,3 @@ public static class Constants
         }
     }
 }
-
