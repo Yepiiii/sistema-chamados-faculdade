@@ -53,7 +53,7 @@ function Get-Chamados {
 }
 
 # Função para tentar encerrar chamado
-function Encerrar-Chamado {
+function Close-Chamado {
     param($token, $chamadoId, $solucao)
     
     $headers = @{ Authorization = "Bearer $token" }
@@ -70,7 +70,7 @@ function Encerrar-Chamado {
 }
 
 # Função para tentar criar chamado
-function Criar-Chamado {
+function New-Chamado {
     param($token, $titulo, $descricao)
     
     $headers = @{ Authorization = "Bearer $token" }
@@ -142,7 +142,7 @@ Write-Host ""
 Write-Host "TESTE 3: Técnico tentando criar chamado (deve falhar)" -ForegroundColor Yellow
 Write-Host "───────────────────────────────────────────────────────" -ForegroundColor Gray
 
-$resultadoCriacaoTecnico = Criar-Chamado $tokenTecnico "Teste Técnico" "Este chamado não deve ser criado"
+$resultadoCriacaoTecnico = New-Chamado $tokenTecnico "Teste Técnico" "Este chamado não deve ser criado"
 
 if (-not $resultadoCriacaoTecnico.success) {
     Write-Host "  ✅ Técnico BLOQUEADO de criar chamado (esperado)" -ForegroundColor Green
@@ -160,7 +160,7 @@ Write-Host ""
 Write-Host "TESTE 4: Colaborador criando chamado (deve funcionar)" -ForegroundColor Yellow
 Write-Host "────────────────────────────────────────────────────────" -ForegroundColor Gray
 
-$resultadoCriacaoColaborador = Criar-Chamado $tokenColaborador "Teste Permissões" "Computador não liga - teste de permissões"
+$resultadoCriacaoColaborador = New-Chamado $tokenColaborador "Teste Permissões" "Computador não liga - teste de permissões"
 
 if ($resultadoCriacaoColaborador.success) {
     $chamadoId = $resultadoCriacaoColaborador.response.id
@@ -184,7 +184,7 @@ if ($chamadosTecnico.Count -gt 0) {
     $chamadoTecnico = $chamadosTecnico[0]
     
     if ($chamadoTecnico.statusId -ne 3) {
-        $resultadoEncerramento = Encerrar-Chamado $tokenTecnico $chamadoTecnico.id "Problema resolvido - teste de permissões"
+        $resultadoEncerramento = Close-Chamado $tokenTecnico $chamadoTecnico.id "Problema resolvido - teste de permissões"
         
         if ($resultadoEncerramento.success) {
             Write-Host "  ✅ Técnico encerrou chamado #$($chamadoTecnico.id) com sucesso" -ForegroundColor Green
@@ -212,7 +212,7 @@ Write-Host "──────────────────────�
 
 if ($chamadosColaborador.Count -gt 0) {
     $chamadoColaborador = $chamadosColaborador[0]
-    $resultadoEncerramentoColaborador = Encerrar-Chamado $tokenColaborador $chamadoColaborador.id "Tentativa de encerramento"
+    $resultadoEncerramentoColaborador = Close-Chamado $tokenColaborador $chamadoColaborador.id "Tentativa de encerramento"
     
     if (-not $resultadoEncerramentoColaborador.success) {
         Write-Host "  ✅ Colaborador BLOQUEADO de encerrar chamado (esperado)" -ForegroundColor Green

@@ -633,7 +633,7 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
             .Include(c => c.Solicitante)
             .Include(c => c.Tecnico)
             .Include(c => c.TecnicoAtribuido)
-                .ThenInclude(t => t.TecnicoTIPerfil)
+                .ThenInclude(t => t!.TecnicoTIPerfil)
             .Include(c => c.Status)
             .Include(c => c.Prioridade)
             .Include(c => c.Categoria)
