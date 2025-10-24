@@ -109,13 +109,16 @@ API Backend:
 - Deve estar rodando antes de testar o app
 
 Credenciais de teste:
-- Email: colaborador@empresa.com
-- Senha: Admin@123
+- Colaborador: colaborador@empresa.com / Admin@123
+- Técnico Básico: tecnico@empresa.com / Admin@123
+- Técnico Sênior: senior@empresa.com / Admin@123
+- Admin: admin@sistema.com / Admin@123
 
-Sistema de 3 Niveis:
-- Nivel 1: Tecnico Junior (Prioridade Baixa)
-- Nivel 2: Tecnico Intermediario (Prioridade Media)
-- Nivel 3: Tecnico Senior (Prioridade Alta)
+Sistema de 2 Níveis (Nível 2 REMOVIDO):
+- Nivel 1 (Básico): tecnico@empresa.com - Prioridade Baixa
+- Nivel 3 (Sênior): senior@empresa.com - Prioridade Média e Alta
+
+NOTA: junior@empresa.com foi REMOVIDO do sistema
 
 
 # ============================================================

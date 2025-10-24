@@ -794,21 +794,24 @@ Use os arquivos `.example.json`:## 🧪 Testes
 
 ### Tipos de Usuário
 
-- `1` - Aluno (pode criar e ver seus chamados)
-- `2` - Professor (pode atribuir e responder chamados)
+- `1` - Colaborador (pode criar e ver seus chamados)
+- `2` - Técnico TI (pode atender chamados atribuídos)
 - `3` - Administrador (acesso total)
 
 ## 🎓 Credenciais de Teste
 
-Após executar `CriarAdmin.ps1`:
+Sistema configurado com 2 técnicos (Nível 2 REMOVIDO):
 
 ```
+Colaborador: colaborador@empresa.com / Admin@123
+Técnico Básico (Nível 1): tecnico@empresa.com / Admin@123
+Técnico Sênior (Nível 3): senior@empresa.com / Admin@123
 Admin: admin@sistema.com / Admin@123
-Aluno: aluno@sistema.com / Aluno@123
-Prof:  professor@sistema.com / Prof@123
+
+NOTA: junior@empresa.com (Nível 2) foi REMOVIDO
 ```
 
-Veja mais em: [](docs/INDEX.md)
+Veja mais em: [docs/INDEX.md](docs/INDEX.md)
 
 ## 📈 Status do Projeto
 

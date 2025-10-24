@@ -226,16 +226,15 @@ Senha: Admin@123
 Tipo: 1 (Colaborador)
 ```
 
-### Técnicos
+### Técnicos (Sistema com 2 níveis)
 ```
-1. Email: tecnico@empresa.com - Nível 2
+1. Email: tecnico@empresa.com - Nível 1 (Básico)
    Senha: Admin@123
    
-2. Email: junior@empresa.com - Nível 1
+2. Email: senior@empresa.com - Nível 3 (Sênior)
    Senha: Admin@123
    
-3. Email: senior@empresa.com - Nível 3
-   Senha: Admin@123
+NOTA: junior@empresa.com (Nível 2) foi REMOVIDO do sistema
 ```
 
 ### Administrador

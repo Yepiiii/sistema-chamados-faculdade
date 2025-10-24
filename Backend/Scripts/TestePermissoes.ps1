@@ -93,15 +93,15 @@ function Criar-Chamado {
 # ============================================================================
 # TESTE 1: Login e obtenção de tokens
 # ============================================================================
-Write-Host "TESTE 1: Autenticação dos 3 perfis" -ForegroundColor Yellow
+Write-Host "TESTE 1: Autenticação dos 3 perfis (Sistema com 2 técnicos)" -ForegroundColor Yellow
 Write-Host "─────────────────────────────────────" -ForegroundColor Gray
 
 $tokenColaborador = Get-AuthToken "colaborador@empresa.com" "Admin@123"
-$tokenTecnico = Get-AuthToken "tecnico@empresa.com" "Admin@123"
+$tokenTecnico = Get-AuthToken "tecnico@empresa.com" "Admin@123"  # Nível 1 (Básico)
 $tokenAdmin = Get-AuthToken "admin@sistema.com" "Admin@123"
 
 if ($tokenColaborador) { Write-Host "  ✅ Colaborador autenticado" -ForegroundColor Green }
-if ($tokenTecnico) { Write-Host "  ✅ Técnico autenticado" -ForegroundColor Green }
+if ($tokenTecnico) { Write-Host "  ✅ Técnico Nível 1 (Básico) autenticado" -ForegroundColor Green }
 if ($tokenAdmin) { Write-Host "  ✅ Admin autenticado" -ForegroundColor Green }
 
 if (-not ($tokenColaborador -and $tokenTecnico -and $tokenAdmin)) {
