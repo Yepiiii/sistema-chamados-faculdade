@@ -15,6 +15,20 @@ public class ChamadoResponseDto
     public StatusResumoDto? Status { get; set; }
     public UsuarioResumoDto? Solicitante { get; set; }
     public UsuarioResumoDto? Tecnico { get; set; }
+    
+    // Campos adicionais para atribuição inteligente
+    public int? TecnicoAtribuidoId { get; set; }
+    public string? TecnicoAtribuidoNome { get; set; }
+    public int? TecnicoAtribuidoNivel { get; set; }
+    public string? TecnicoAtribuidoNivelDescricao => TecnicoAtribuidoNivel switch
+    {
+        1 => "Nível 1 - Suporte Básico",
+        2 => "Nível 2 - Suporte Intermediário (DESATIVADO)",
+        3 => "Nível 3 - Especialista Sênior",
+        _ => null
+    };
+    public string? CategoriaNome { get; set; }
+    public string? PrioridadeNome { get; set; }
 }
 
 public class UsuarioResumoDto

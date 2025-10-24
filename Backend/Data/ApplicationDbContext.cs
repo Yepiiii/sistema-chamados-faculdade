@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Categoria> Categorias { get; set; }
     public DbSet<Prioridade> Prioridades { get; set; }
     public DbSet<Status> Status { get; set; }
+    public DbSet<AtribuicaoLog> AtribuicoesLog { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,6 +73,9 @@ public class ApplicationDbContext : DbContext
                   .WithOne(u => u.TecnicoTIPerfil)
                   .HasForeignKey<TecnicoTIPerfil>(e => e.UsuarioId)
                   .OnDelete(DeleteBehavior.Cascade);
+                  
+            // Ignora a propriedade ChamadosAtribuidos - relacionamento é feito via Usuario.TecnicoId
+            entity.Ignore(e => e.ChamadosAtribuidos);
         });
         
         // Configuração da entidade Chamado
@@ -164,5 +168,29 @@ public class ApplicationDbContext : DbContext
             .WithMany(s => s.Chamados)
             .HasForeignKey(c => c.StatusId)
             .OnDelete(DeleteBehavior.Restrict);
+            
+        // Configuração da entidade AtribuicaoLog
+        modelBuilder.Entity<AtribuicaoLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.ChamadoId).IsRequired();
+            entity.Property(e => e.TecnicoId).IsRequired();
+            entity.Property(e => e.Score).IsRequired();
+            entity.Property(e => e.MetodoAtribuicao).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.MotivoSelecao).HasMaxLength(500);
+            entity.Property(e => e.DetalhesProcesso).HasMaxLength(2000);
+            entity.Property(e => e.DataAtribuicao).IsRequired().HasDefaultValueSql("GETDATE()");
+            
+            entity.HasOne(e => e.Chamado)
+                  .WithMany()
+                  .HasForeignKey(e => e.ChamadoId)
+                  .OnDelete(DeleteBehavior.Restrict);
+                  
+            entity.HasOne(e => e.Tecnico)
+                  .WithMany()
+                  .HasForeignKey(e => e.TecnicoId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }

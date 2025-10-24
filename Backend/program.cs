@@ -39,7 +39,13 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-    options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+    // Configuração UTF-8 para caracteres especiais (acentos, etc)
+    options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(
+        System.Text.Unicode.UnicodeRanges.BasicLatin,
+        System.Text.Unicode.UnicodeRanges.Latin1Supplement,
+        System.Text.Unicode.UnicodeRanges.LatinExtendedA,
+        System.Text.Unicode.UnicodeRanges.LatinExtendedB
+    );
 });
 
 // Configurar CORS para permitir requisições do frontend

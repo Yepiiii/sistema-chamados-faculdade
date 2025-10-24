@@ -13,6 +13,13 @@ public class TecnicoTIPerfil
     [MaxLength(50)]
     public string? AreaAtuacao { get; set; } // Hardware, Software, Rede
     
+    /// <summary>
+    /// Nível do técnico: 1=Básico (Suporte Nível 1), 3=Sênior/Especialista (Suporte Nível 3)
+    /// NOTA: Nível 2 (Intermediário) foi removido - sistema opera com 2 técnicos
+    /// </summary>
+    [Required]
+    public int NivelTecnico { get; set; } = 1; // Default: Nível 1 (Básico)
+    
     public DateTime DataContratacao { get; set; } = DateTime.Now;
     
     // Propriedade de navegação

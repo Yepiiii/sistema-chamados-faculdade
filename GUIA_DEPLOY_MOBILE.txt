@@ -1,0 +1,143 @@
+# ============================================================
+# GUIA: CONFIGURAR DEPLOY DO PROJETO MOBILE NO VISUAL STUDIO
+# ============================================================
+
+ERRO ENCONTRADO:
+"O projeto SistemaChamados.Mobile precisa ser implantado antes de ser iniciado"
+
+CAUSA:
+O projeto Mobile (.NET MAUI) nao esta marcado para Deploy no Configuration Manager
+
+# ============================================================
+# SOLUCAO PASSO A PASSO
+# ============================================================
+
+PASSO 1: ABRIR CONFIGURATION MANAGER
+--------------------------------------
+
+Opcao A - Menu Build:
+  1. Clique em "Build" no menu superior
+  2. Clique em "Configuration Manager..."
+
+Opcao B - Solution Explorer:
+  1. Clique com botao direito na Solution (primeiro item)
+  2. Selecione "Configuration Manager..."
+
+
+PASSO 2: MARCAR DEPLOY
+-----------------------
+
+Na janela "Configuration Manager":
+
++------------------------------------------------------------------+
+| Configuration Manager                                      [X]   |
++------------------------------------------------------------------+
+| Active solution configuration: [Debug ▼]  Platform: [Any CPU ▼] |
++------------------------------------------------------------------+
+| Project                    Configuration  Platform   Build Deploy|
+| SistemaChamados           Debug         Any CPU      [✓]   [ ]   |
+| SistemaChamados.Mobile    Debug         Any CPU      [✓]   [✓]   | <- MARCAR AQUI!
++------------------------------------------------------------------+
+|                                            [Close]  [Help]       |
++------------------------------------------------------------------+
+
+IMPORTANTE:
+- Localize a linha "SistemaChamados.Mobile"
+- Marque a checkbox "Deploy" (ultima coluna)
+- Clique em "Close"
+
+
+PASSO 3: SELECIONAR PLATAFORMA
+-------------------------------
+
+No topo do Visual Studio, ao lado do botao Play (▶):
+
++----------------------------------------------------------------------+
+| [Debug ▼] [Any CPU ▼] [Windows Machine ▼] [▶ SistemaChamados.Mobile]|
++----------------------------------------------------------------------+
+                         ↑
+                    CLIQUE AQUI
+
+Opcoes disponiveis:
+  - Windows Machine (recomendado para Windows)
+  - Android Emulator (requer emulador configurado)
+  - Android Device (requer dispositivo conectado via USB)
+
+
+PASSO 4: EXECUTAR
+------------------
+
+Pressione F5 ou clique no botao verde ▶
+
+
+# ============================================================
+# ALTERNATIVA: LINHA DE COMANDO
+# ============================================================
+
+Se preferir nao usar o Visual Studio:
+
+# Para Windows:
+cd C:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\Mobile
+dotnet build -f net8.0-windows10.0.19041.0
+dotnet run -f net8.0-windows10.0.19041.0
+
+# Para Android (requer emulador):
+dotnet build -f net8.0-android
+dotnet run -f net8.0-android
+
+
+# ============================================================
+# VERIFICACAO
+# ============================================================
+
+Status da compilacao: OK
+- Projeto compilado com sucesso (8 avisos nao criticos)
+- Framework: net8.0-android
+- DLL gerada: bin\Debug\net8.0-android\SistemaChamados.Mobile.dll
+
+Avisos (nao criticos):
+- Alguns BindableProperty estao deprecated
+- Nao impedem execucao do app
+
+
+# ============================================================
+# INFORMACOES ADICIONAIS
+# ============================================================
+
+API Backend:
+- URL: http://localhost:5246
+- Deve estar rodando antes de testar o app
+
+Credenciais de teste:
+- Email: colaborador@empresa.com
+- Senha: Admin@123
+
+Sistema de 3 Niveis:
+- Nivel 1: Tecnico Junior (Prioridade Baixa)
+- Nivel 2: Tecnico Intermediario (Prioridade Media)
+- Nivel 3: Tecnico Senior (Prioridade Alta)
+
+
+# ============================================================
+# TROUBLESHOOTING
+# ============================================================
+
+Se o erro persistir:
+
+1. Limpar e recompilar:
+   - Build > Clean Solution
+   - Build > Rebuild Solution
+
+2. Verificar projeto de inicializacao:
+   - Clique com botao direito em "SistemaChamados.Mobile"
+   - Selecione "Set as Startup Project"
+
+3. Reiniciar Visual Studio:
+   - Feche e abra novamente
+   - Reabra a solution
+
+4. Verificar instalacao do .NET MAUI:
+   - Visual Studio Installer
+   - Modificar
+   - Marcar ".NET Multi-platform App UI development"
+

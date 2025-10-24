@@ -17,6 +17,12 @@ public class ChamadoDto
     public UsuarioResumoDto? Solicitante { get; set; }
     public UsuarioResumoDto? Tecnico { get; set; }
     
+    // Informações do Técnico Atribuído
+    public int? TecnicoAtribuidoId { get; set; }
+    public string? TecnicoAtribuidoNome { get; set; }
+    public int? TecnicoAtribuidoNivel { get; set; }
+    public string? TecnicoAtribuidoNivelDescricao { get; set; }
+    
     // Histórico de atualizações
     public List<HistoricoItemDto>? Historico { get; set; }
 
@@ -25,6 +31,8 @@ public class ChamadoDto
     public string SolicitanteDisplay => Solicitante is null
         ? string.Empty
         : $"{Solicitante.NomeCompleto} ({Solicitante.Email})";
+    
+    public bool HasTecnicoAtribuido => !string.IsNullOrEmpty(TecnicoAtribuidoNome);
     
     public bool HasHistorico => Historico != null && Historico.Count > 0;
 }

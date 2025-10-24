@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SistemaChamados.Application.DTOs;
+using SistemaChamados.Application.Services;
 using SistemaChamados.Core.Entities;
+using SistemaChamados.Core.Enums;
 using SistemaChamados.Data;
 using SistemaChamados.Services;
 using System.Security.Claims;
@@ -49,17 +51,30 @@ public class ChamadosController : ControllerBase
         }
 
     var tipoUsuarioValor = User.FindFirst("TipoUsuario")?.Value;
-    var isAdmin = tipoUsuarioValor == "3";
-    var tipoUsuario = int.TryParse(tipoUsuarioValor, out var tipo) ? tipo : 0;
+    if (!int.TryParse(tipoUsuarioValor, out var tipoUsuarioInt))
+    {
+        return Unauthorized("Tipo de usuário inválido no token.");
+    }
+    
+    var tipoUsuario = (TipoUsuario)tipoUsuarioInt;
+
+    // REGRA: Colaborador, Técnico e Admin podem criar chamados
+    if (!PermissoesService.PodeCriarChamado(tipoUsuario))
+    {
+        _logger.LogWarning("Usuário tipo {TipoUsuario} (ID: {SolicitanteId}) tentou criar chamado sem permissão.", tipoUsuario, solicitanteIdStr);
+        return StatusCode(StatusCodes.Status403Forbidden, 
+            "Você não tem permissão para criar chamados.");
+    }
 
     var usarAnaliseAutomatica = request.UsarAnaliseAutomatica ?? true;
 
-    // REGRA: Apenas Admin (tipo 3) pode criar chamados com classificação manual
-    if (!usarAnaliseAutomatica && tipoUsuario != 3)
+    // REGRA: Apenas Admin e Técnico podem criar chamados com classificação manual
+    // Colaboradores devem sempre usar a IA
+    if (!usarAnaliseAutomatica && tipoUsuario == TipoUsuario.Colaborador)
     {
-        _logger.LogWarning("Usuário tipo {TipoUsuario} tentou criar chamado com classificação manual.", tipoUsuario);
+        _logger.LogWarning("Colaborador tentou criar chamado com classificação manual.");
         return StatusCode(StatusCodes.Status403Forbidden, 
-            "Apenas administradores podem criar chamados com classificação manual. Use a análise automática por IA.");
+            "Colaboradores devem usar a análise automática por IA. Apenas Técnicos e Administradores podem fazer classificação manual.");
     }
 
     var categoriaSelecionada = 0;
@@ -138,15 +153,31 @@ public class ChamadosController : ControllerBase
             CategoriaId = categoriaSelecionada
         };
 
-        var tecnicoId = await _handoffService.AtribuirTecnicoAsync(categoriaSelecionada);
-        if (tecnicoId.HasValue)
-        {
-            novoChamado.TecnicoAtribuidoId = tecnicoId.Value;
-            novoChamado.TecnicoId = tecnicoId.Value;
-        }
-
         _context.Chamados.Add(novoChamado);
         await _context.SaveChangesAsync();
+        
+        // Atribuição inteligente de técnico
+        _logger.LogInformation("🤖 Iniciando atribuição automática de técnico...");
+        var usouIA = request.UsarAnaliseAutomatica ?? true;
+        var atribuicao = await _handoffService.AtribuirTecnicoInteligenteAsync(
+            novoChamado.Id,
+            categoriaSelecionada,
+            prioridadeSelecionada,
+            usouIA ? "IA+Automatico" : "Automatico");
+        
+        if (atribuicao.Sucesso && atribuicao.TecnicoId.HasValue)
+        {
+            novoChamado.TecnicoAtribuidoId = atribuicao.TecnicoId.Value;
+            novoChamado.TecnicoId = atribuicao.TecnicoId.Value;
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation($"✅ Técnico atribuído: {atribuicao.TecnicoNome} (Score: {atribuicao.Score:F2})");
+            _logger.LogInformation($"   Motivo: {atribuicao.Motivo}");
+        }
+        else
+        {
+            _logger.LogWarning($"⚠️ Nenhum técnico atribuído: {atribuicao.MensagemErro}");
+        }
 
         var chamadoCompleto = await ObterChamadoCompletoAsync(novoChamado.Id);
         if (chamadoCompleto == null)
@@ -154,7 +185,7 @@ public class ChamadosController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, "Não foi possível carregar o chamado recém-criado.");
         }
 
-        return Ok(MapToResponseDto(chamadoCompleto, isAdmin));
+        return Ok(MapToResponseDto(chamadoCompleto, tipoUsuario == TipoUsuario.Admin));
     }
 [HttpGet]
 public async Task<IActionResult> GetChamados()
@@ -173,33 +204,36 @@ public async Task<IActionResult> GetChamados()
 
     // Obter tipo de usuário do token JWT
     var tipoUsuarioClaim = User.FindFirst("TipoUsuario")?.Value;
-    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuario))
+    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuarioInt))
     {
         return Unauthorized("Tipo de usuário não encontrado no token.");
     }
 
+    var tipoUsuario = (TipoUsuario)tipoUsuarioInt;
+
     // Query base com includes
     IQueryable<Chamado> query = _context.Chamados
         .Include(c => c.Solicitante)
-        .Include(c => c.Tecnico)
+        .Include(c => c.Tecnico!)
+            .ThenInclude(t => t.TecnicoTIPerfil)
         .Include(c => c.Status)
         .Include(c => c.Prioridade)
         .Include(c => c.Categoria);
 
-    // Aplicar filtro baseado no tipo de usuário
+    // Aplicar filtro baseado no tipo de usuário usando serviço de permissões
     switch (tipoUsuario)
     {
-        case 1: // Aluno - vê apenas seus próprios chamados
+        case TipoUsuario.Colaborador: // Vê apenas seus próprios chamados
             query = query.Where(c => c.SolicitanteId == usuarioId);
-            _logger.LogInformation($"Aluno {usuarioId} visualizando apenas seus próprios chamados.");
+            _logger.LogInformation($"Colaborador {usuarioId} visualizando apenas seus próprios chamados.");
             break;
 
-        case 2: // Professor - vê seus chamados + chamados onde é técnico
-            query = query.Where(c => c.SolicitanteId == usuarioId || c.TecnicoId == usuarioId);
-            _logger.LogInformation($"Professor {usuarioId} visualizando seus chamados e chamados atribuídos.");
+        case TipoUsuario.TecnicoTI: // Vê apenas chamados atribuídos a ele
+            query = query.Where(c => c.TecnicoId == usuarioId);
+            _logger.LogInformation($"Técnico {usuarioId} visualizando apenas chamados atribuídos a ele.");
             break;
 
-        case 3: // Admin - vê todos os chamados
+        case TipoUsuario.Admin: // Vê todos os chamados
             _logger.LogInformation($"Admin {usuarioId} visualizando todos os chamados do sistema.");
             // Sem filtro - admin vê tudo
             break;
@@ -214,8 +248,7 @@ public async Task<IActionResult> GetChamados()
 
     _logger.LogInformation($"Usuário {usuarioId} (Tipo {tipoUsuario}) recuperou {chamados.Count} chamados.");
 
-    var isAdmin = tipoUsuario == 3;
-    var response = chamados.Select(chamado => MapToResponseDto(chamado, isAdmin)).ToList();
+    var response = chamados.Select(chamado => MapToResponseDto(chamado, tipoUsuario == TipoUsuario.Admin)).ToList();
 
     return Ok(response);
 }
@@ -237,10 +270,12 @@ public async Task<IActionResult> GetChamadoPorId(int id)
 
     // Obter tipo de usuário do token JWT
     var tipoUsuarioClaim = User.FindFirst("TipoUsuario")?.Value;
-    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuario))
+    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuarioInt))
     {
         return Unauthorized("Tipo de usuário não encontrado no token.");
     }
+
+    var tipoUsuario = (TipoUsuario)tipoUsuarioInt;
 
     var chamado = await ObterChamadoCompletoAsync(id);
 
@@ -249,16 +284,8 @@ public async Task<IActionResult> GetChamadoPorId(int id)
         return NotFound("Chamado não encontrado.");
     }
 
-    // Validar permissão de acesso ao chamado
-    bool temPermissao = tipoUsuario switch
-    {
-        1 => chamado.SolicitanteId == usuarioId, // Aluno: só seus próprios
-        2 => chamado.SolicitanteId == usuarioId || chamado.TecnicoId == usuarioId, // Professor: seus + atribuídos
-        3 => true, // Admin: todos
-        _ => false
-    };
-
-    if (!temPermissao)
+    // Validar permissão de acesso ao chamado usando serviço de permissões
+    if (!PermissoesService.PodeVisualizarChamado(chamado, usuarioId, tipoUsuario))
     {
         _logger.LogWarning($"Usuário {usuarioId} (Tipo {tipoUsuario}) tentou acessar chamado {id} sem permissão.");
         return StatusCode(StatusCodes.Status403Forbidden, "Acesso negado ao chamado solicitado.");
@@ -266,7 +293,7 @@ public async Task<IActionResult> GetChamadoPorId(int id)
 
     _logger.LogInformation($"Usuário {usuarioId} (Tipo {tipoUsuario}) acessou chamado {id}.");
 
-    return Ok(MapToResponseDto(chamado, tipoUsuario == 3));
+    return Ok(MapToResponseDto(chamado, tipoUsuario == TipoUsuario.Admin));
 }
 
 [HttpPut("{id}")]
@@ -286,10 +313,12 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
 
     // Obter tipo de usuário do token JWT
     var tipoUsuarioClaim = User.FindFirst("TipoUsuario")?.Value;
-    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuario))
+    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuarioInt))
     {
         return Unauthorized("Tipo de usuário não encontrado no token.");
     }
+
+    var tipoUsuario = (TipoUsuario)tipoUsuarioInt;
 
     var chamado = await _context.Chamados.FindAsync(id);
     if (chamado == null)
@@ -297,11 +326,12 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
         return NotFound("Chamado não encontrado.");
     }
 
-    // Validar permissão: Apenas Admin pode atualizar chamados
-    if (tipoUsuario != 3)
+    // Validar permissão: Verificar se pode editar usando serviço de permissões
+    if (!PermissoesService.PodeEditarChamado(chamado, usuarioId, tipoUsuario))
     {
-        _logger.LogWarning($"Usuário {usuarioId} (Tipo {tipoUsuario}) tentou atualizar chamado {id} sem permissão de admin.");
-    return StatusCode(StatusCodes.Status403Forbidden, "Apenas administradores podem atualizar chamados.");
+        _logger.LogWarning($"Usuário {usuarioId} (Tipo {tipoUsuario}) tentou atualizar chamado {id} sem permissão.");
+        return StatusCode(StatusCodes.Status403Forbidden, 
+            "Você não tem permissão para editar este chamado. Apenas o criador (em chamados abertos) ou administradores podem editá-lo.");
     }
 
     // Valida se o novo StatusId existe
@@ -311,12 +341,20 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
         return BadRequest("O StatusId fornecido é inválido.");
     }
 
+    // Validar mudança de status
+    if (!PermissoesService.PodeMudarStatus(chamado, usuarioId, tipoUsuario, request.StatusId))
+    {
+        _logger.LogWarning($"Usuário {usuarioId} (Tipo {tipoUsuario}) tentou mudar status do chamado {id} sem permissão.");
+        return StatusCode(StatusCodes.Status403Forbidden, 
+            "Você não tem permissão para mudar o status deste chamado.");
+    }
+
     // --- INÍCIO DA NOVA LÓGICA ---
     // 1. Atualiza sempre a data da última modificação
     chamado.DataUltimaAtualizacao = DateTime.UtcNow;
 
-    // 2. Verifica se o novo status é 'Fechado' (vamos assumir que o ID 4 é "Fechado")
-    if (request.StatusId == 4) 
+    // 2. Verifica se o novo status é 'Fechado' (vamos assumir que o ID 3 é "Encerrado")
+    if (request.StatusId == 3) 
     {
         chamado.DataFechamento = DateTime.UtcNow;
     }
@@ -330,12 +368,19 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
     // Atualiza os campos do chamado
     chamado.StatusId = request.StatusId;
 
+    // Apenas Admin pode reatribuir técnico
     if (request.TecnicoId.HasValue)
     {
-        var tecnicoExiste = await _context.Usuarios.AnyAsync(u => u.Id == request.TecnicoId.Value && u.Ativo);
+        if (!PermissoesService.PodeAtribuirTecnico(tipoUsuario))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, 
+                "Apenas administradores podem atribuir ou reatribuir técnicos.");
+        }
+
+        var tecnicoExiste = await _context.Usuarios.AnyAsync(u => u.Id == request.TecnicoId.Value && u.Ativo && u.TipoUsuario == 2);
         if (!tecnicoExiste)
         {
-            return BadRequest("O TecnicoId fornecido é inválido ou o usuário está inativo.");
+            return BadRequest("O TecnicoId fornecido é inválido ou o usuário não é um técnico ativo.");
         }
         chamado.TecnicoId = request.TecnicoId;
     }
@@ -349,7 +394,77 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
         return NotFound("Chamado não encontrado após atualização.");
     }
 
-    return Ok(MapToResponseDto(chamadoAtualizado, true));
+    return Ok(MapToResponseDto(chamadoAtualizado, tipoUsuario == TipoUsuario.Admin));
+}
+
+/// <summary>
+/// Endpoint específico para técnicos encerrarem seus chamados
+/// </summary>
+[HttpPost("{id}/encerrar")]
+public async Task<IActionResult> EncerrarChamado(int id, [FromBody] EncerrarChamadoDto? request)
+{
+    // Obter informações do usuário autenticado
+    var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(usuarioIdClaim) || !int.TryParse(usuarioIdClaim, out var usuarioId))
+    {
+        return Unauthorized("Usuário não autenticado.");
+    }
+
+    // Obter tipo de usuário
+    var tipoUsuarioClaim = User.FindFirst("TipoUsuario")?.Value;
+    if (string.IsNullOrEmpty(tipoUsuarioClaim) || !int.TryParse(tipoUsuarioClaim, out var tipoUsuarioInt))
+    {
+        return Unauthorized("Tipo de usuário não encontrado no token.");
+    }
+
+    var tipoUsuario = (TipoUsuario)tipoUsuarioInt;
+
+    var chamado = await _context.Chamados
+        .Include(c => c.Solicitante)
+        .Include(c => c.Tecnico)
+        .Include(c => c.Status)
+        .Include(c => c.Prioridade)
+        .Include(c => c.Categoria)
+        .FirstOrDefaultAsync(c => c.Id == id);
+
+    if (chamado == null)
+    {
+        return NotFound("Chamado não encontrado.");
+    }
+
+    // Validar permissão para encerrar
+    if (!PermissoesService.PodeEncerrarChamado(chamado, usuarioId, tipoUsuario))
+    {
+        _logger.LogWarning($"Usuário {usuarioId} (Tipo {tipoUsuario}) tentou encerrar chamado {id} sem permissão.");
+        return StatusCode(StatusCodes.Status403Forbidden, 
+            "Você não tem permissão para encerrar este chamado. Apenas o técnico atribuído ou administradores podem encerrá-lo.");
+    }
+
+    // Verificar se já está encerrado
+    if (chamado.StatusId == 3) // Status Encerrado
+    {
+        return BadRequest("Este chamado já está encerrado.");
+    }
+
+    // Encerrar o chamado
+    chamado.StatusId = 3; // Status Encerrado
+    chamado.DataFechamento = DateTime.UtcNow;
+    chamado.DataUltimaAtualizacao = DateTime.UtcNow;
+
+    // TODO: Quando implementar comentários, salvar a solução aqui
+    // if (request != null && !string.IsNullOrWhiteSpace(request.Solucao)) { ... }
+
+    await _context.SaveChangesAsync();
+
+    var chamadoAtualizado = await ObterChamadoCompletoAsync(id);
+    if (chamadoAtualizado == null)
+    {
+        return NotFound("Chamado não encontrado após encerramento.");
+    }
+
+    _logger.LogInformation($"Chamado {id} encerrado por usuário {usuarioId} (Tipo {tipoUsuario}).");
+
+    return Ok(MapToResponseDto(chamadoAtualizado, tipoUsuario == TipoUsuario.Admin));
 }
 
 [HttpPost("analisar")]
@@ -518,6 +633,7 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
             .Include(c => c.Solicitante)
             .Include(c => c.Tecnico)
             .Include(c => c.TecnicoAtribuido)
+                .ThenInclude(t => t.TecnicoTIPerfil)
             .Include(c => c.Status)
             .Include(c => c.Prioridade)
             .Include(c => c.Categoria)
@@ -562,7 +678,14 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
                     NomeCompleto = chamado.Tecnico.NomeCompleto,
                     Email = chamado.Tecnico.Email
                 }
-                : null
+                : null,
+            
+            // Campos adicionais para atribuição inteligente
+            TecnicoAtribuidoId = chamado.TecnicoAtribuidoId,
+            TecnicoAtribuidoNome = chamado.TecnicoAtribuido?.NomeCompleto,
+            TecnicoAtribuidoNivel = chamado.TecnicoAtribuido?.TecnicoTIPerfil?.NivelTecnico,
+            CategoriaNome = chamado.Categoria?.Nome,
+            PrioridadeNome = chamado.Prioridade?.Nome
         };
 
         if (incluirSolicitante && chamado.Solicitante != null)
@@ -596,6 +719,162 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
         var truncado = texto.Substring(0, limite).TrimEnd();
         return string.Concat(truncado, "...");
     }
+    
+    #region Endpoints de Atribuição e Métricas
+    
+    /// <summary>
+    /// Calcula scores de técnicos disponíveis para uma categoria/prioridade
+    /// </summary>
+    [HttpGet("tecnicos/scores")]
+    [AllowAnonymous] // Permitir acesso para testes
+    public async Task<IActionResult> GetTecnicosScores(
+        [FromQuery] int categoriaId,
+        [FromQuery] int prioridadeId)
+    {
+        try
+        {
+            var scores = await _handoffService.CalcularScoresTecnicosAsync(categoriaId, prioridadeId);
+            
+            return Ok(new
+            {
+                Success = true,
+                TotalTecnicos = scores.Count,
+                Tecnicos = scores.Select(t => new
+                {
+                    t.TecnicoId,
+                    t.NomeCompleto,
+                    t.AreaAtuacao,
+                    Score = Math.Round(t.ScoreTotal, 2),
+                    Breakdown = new
+                    {
+                        Especialidade = Math.Round(t.Breakdown.Especialidade, 2),
+                        Disponibilidade = Math.Round(t.Breakdown.Disponibilidade, 2),
+                        Performance = Math.Round(t.Breakdown.Performance, 2),
+                        Prioridade = Math.Round(t.Breakdown.Prioridade, 2)
+                    },
+                    t.Estatisticas.ChamadosAtivos,
+                    t.Estatisticas.ChamadosResolvidos,
+                    t.Estatisticas.TempoMedioResolucao,
+                    t.Estatisticas.CapacidadeRestante
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao calcular scores de técnicos");
+            return StatusCode(500, new { Error = "Erro ao calcular scores" });
+        }
+    }
+    
+    /// <summary>
+    /// Redistribui chamados de um técnico indisponível
+    /// </summary>
+    [HttpPost("tecnicos/{tecnicoId}/redistribuir")]
+    [Authorize(Roles = "3")] // Apenas Admin
+    public async Task<IActionResult> RedistribuirChamados(int tecnicoId)
+    {
+        try
+        {
+            var quantidade = await _handoffService.RedistribuirChamadosAsync(tecnicoId);
+            
+            return Ok(new
+            {
+                Success = true,
+                Message = $"{quantidade} chamados redistribuídos com sucesso",
+                ChamadosRedistribuidos = quantidade
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Erro ao redistribuir chamados do técnico {tecnicoId}");
+            return StatusCode(500, new { Error = "Erro ao redistribuir chamados" });
+        }
+    }
+    
+    /// <summary>
+    /// Obtém métricas de distribuição de carga entre técnicos
+    /// </summary>
+    [HttpGet("metricas/distribuicao")]
+    [Authorize(Roles = "3")] // Apenas Admin
+    public async Task<IActionResult> GetDistribuicaoCarga()
+    {
+        try
+        {
+            var distribuicao = await _handoffService.ObterDistribuicaoCargaAsync();
+            
+            // Obter nomes dos técnicos
+            var tecnicosIds = distribuicao.Keys.ToList();
+            var tecnicos = await _context.Usuarios
+                .Where(u => tecnicosIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.NomeCompleto })
+                .ToDictionaryAsync(u => u.Id, u => u.NomeCompleto);
+            
+            var resultado = distribuicao.Select(d => new
+            {
+                TecnicoId = d.Key,
+                TecnicoNome = tecnicos.ContainsKey(d.Key) ? tecnicos[d.Key] : "Desconhecido",
+                ChamadosAtivos = d.Value,
+                CapacidadeRestante = Math.Max(0, 10 - d.Value), // MAX_CHAMADOS_POR_TECNICO = 10
+                PercentualCarga = Math.Round((d.Value / 10.0) * 100, 1)
+            }).OrderByDescending(x => x.ChamadosAtivos);
+            
+            return Ok(new
+            {
+                Success = true,
+                TotalTecnicos = distribuicao.Count,
+                CargaTotal = distribuicao.Values.Sum(),
+                CargaMedia = distribuicao.Any() ? Math.Round(distribuicao.Values.Average(), 1) : 0,
+                Tecnicos = resultado
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao obter distribuição de carga");
+            return StatusCode(500, new { Error = "Erro ao obter métricas" });
+        }
+    }
+    
+    /// <summary>
+    /// Obtém histórico de atribuições de um chamado
+    /// </summary>
+    [HttpGet("{id}/atribuicoes")]
+    public async Task<IActionResult> GetHistoricoAtribuicoes(int id)
+    {
+        try
+        {
+            var atribuicoes = await _context.AtribuicoesLog
+                .Include(a => a.Tecnico)
+                .Where(a => a.ChamadoId == id)
+                .OrderByDescending(a => a.DataAtribuicao)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.DataAtribuicao,
+                    TecnicoId = a.TecnicoId,
+                    TecnicoNome = a.Tecnico!.NomeCompleto,
+                    Score = Math.Round(a.Score, 2),
+                    a.MetodoAtribuicao,
+                    a.MotivoSelecao,
+                    a.CargaTrabalho,
+                    a.FallbackGenerico
+                })
+                .ToListAsync();
+            
+            return Ok(new
+            {
+                Success = true,
+                TotalAtribuicoes = atribuicoes.Count,
+                Atribuicoes = atribuicoes
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Erro ao obter histórico de atribuições do chamado {id}");
+            return StatusCode(500, new { Error = "Erro ao obter histórico" });
+        }
+    }
+    
+    #endregion
 }
 
 // DTO para requisição de análise
