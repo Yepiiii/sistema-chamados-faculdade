@@ -62,7 +62,7 @@ Sistema completo de permissões implementado para controlar o acesso e ações s
 
 **TODOS os usuários** (Colaborador, Técnico, Admin) podem ver:
 - Nome do técnico atribuído
-- Nível do técnico (1 - Básico, 2 - Intermediário, 3 - Sênior)
+- Nível do técnico (1 - Básico, 3 - Sênior) - **Nível 2 foi removido**
 - Informações de contato do técnico
 
 Isso garante transparência para o solicitante saber quem está resolvendo seu problema.

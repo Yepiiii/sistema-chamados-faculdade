@@ -1,7 +1,12 @@
 # SISTEMA DE 3 NÍVEIS DE TÉCNICOS - IMPLEMENTAÇÃO COMPLETA
 
+> ⚠️ **NOTA IMPORTANTE:** Este documento descreve o sistema original com 3 níveis.  
+> **ATUALIZAÇÃO 24/10/2025:** Sistema foi reconfigurado para **2 TÉCNICOS** (Nível 1 + Nível 3).  
+> **Nível 2 (Intermediário) foi REMOVIDO** do banco de dados.  
+> Veja configuração atual no README.md principal.
+
 **Data de Implementação:** 23-24/10/2025  
-**Status:** ✅ **100% FUNCIONAL E TESTADO**
+**Status:** ⚠️ **DOCUMENTO HISTÓRICO - Sistema atual possui 2 níveis**
 
 ---
 

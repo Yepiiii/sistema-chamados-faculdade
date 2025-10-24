@@ -1,8 +1,9 @@
--- Criar Técnicos de Nível 1, 2 e 3
+-- Criar Técnicos de Nível 1 e 3 (Sistema com 2 técnicos)
+-- NOTA: Nível 2 (Intermediário) foi REMOVIDO do sistema
 
 -- Técnico Nível 1 (Básico)
 INSERT INTO Usuarios (NomeCompleto, Email, SenhaHash, TipoUsuario, DataCadastro, Ativo, EspecialidadeCategoriaId)
-VALUES ('Técnico Junior - Nível 1', 'junior@empresa.com', '$2a$11$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 2, GETDATE(), 1, 1);
+VALUES ('Técnico Junior - Nível 1', 'tecnico@empresa.com', '$2a$11$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 2, GETDATE(), 1, 1);
 
 DECLARE @IdJunior INT = SCOPE_IDENTITY();
 
@@ -27,7 +28,7 @@ SELECT
     t.AreaAtuacao,
     CASE t.NivelTecnico
         WHEN 1 THEN 'Nível 1 - Suporte Básico'
-        WHEN 2 THEN 'Nível 2 - Suporte Intermediário'
+        WHEN 2 THEN 'Nível 2 - Suporte Intermediário (REMOVIDO)'
         WHEN 3 THEN 'Nível 3 - Especialista Sênior'
     END AS DescricaoNivel
 FROM Usuarios u
