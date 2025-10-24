@@ -2,7 +2,7 @@ using SistemaChamados.Application.DTOs;
 
 namespace SistemaChamados.Services
 {
-    public interface IOpenAIService
+    public interface IGeminiService
     {
         Task<AnaliseChamadoResponseDto?> AnalisarChamadoAsync(string descricaoProblema);
         

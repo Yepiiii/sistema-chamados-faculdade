@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace SistemaChamados.Services
 {
-    public class GeminiService : IOpenAIService
+    public class GeminiService : IGeminiService
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
@@ -366,8 +366,8 @@ namespace SistemaChamados.Services
             var categoriasTexto = string.Join("\n", categorias.Select(c => $"- ID: {c.Id}, Nome: {c.Nome}, Descrição: {c.Descricao}"));
             var prioridadesTexto = string.Join("\n", prioridades.Select(p => $"- ID: {p.Id}, Nome: {p.Nome}, Nível: {p.Nivel}"));
 
-            // Prompt otimizado para respostas mais curtas e precisas
-            return $@"Você é um sistema de classificação de chamados de TI. Analise o problema e retorne APENAS um JSON válido.
+            // Prompt otimizado com gatilhos específicos para classificação de prioridade
+            return $@"Você é um sistema especializado em classificação de chamados de TI. Analise o problema e retorne APENAS um JSON válido.
 
 PROBLEMA: {descricaoProblema}
 
@@ -377,20 +377,272 @@ CATEGORIAS:
 PRIORIDADES:
 {prioridadesTexto}
 
-INSTRUÇÕES:
-1. Escolha a categoria mais adequada
-2. Defina a prioridade (1=Baixa, 2=Média, 3=Alta)
-3. Crie um título curto (máximo 10 palavras)
-4. Justifique em 1 frase
+===== REGRAS DE CLASSIFICAÇÃO DE PRIORIDADE =====
 
-FORMATO DE RESPOSTA (JSON puro, sem markdown, sem explicações):
+🔴 PRIORIDADE ALTA (3) - Problemas CRÍTICOS que afetam MUITOS usuários ou sistemas essenciais:
+   • Servidor/sistema completamente fora do ar
+   • Rede inteira sem acesso
+   • Recursos compartilhados críticos indisponíveis (impressoras fiscais, sistemas ERP)
+   • Falhas de segurança ou vazamento de dados
+   • Palavras-chave: ""parou"", ""fora do ar"", ""ninguém consegue"", ""toda empresa"", ""setor inteiro"", ""urgente"", ""crítico""
+   
+🟡 PRIORIDADE MÉDIA (2) - Problemas MODERADOS que afetam ALGUNS usuários ou podem escalar:
+   MÉDIA-ALTA (→ Técnico Sênior):
+   • Recursos compartilhados com problema parcial (pasta de rede lenta, impressora específica)
+   • Problemas que afetam um setor/departamento
+   • Software/sistema com comportamento intermitente
+   • Instalação/configuração de software corporativo
+   • Palavras-chave: ""setor"", ""departamento"", ""compartilhado"", ""vários usuários"", ""lento"", ""travando""
+   
+   MÉDIA-BAIXA (→ Técnico Básico experiente):
+   • Solicitação de software individual
+   • Problema de equipamento pessoal (mouse, teclado)
+   • Dúvidas sobre uso de sistema
+   • Configurações de email/outlook
+   • Palavras-chave: ""meu computador"", ""preciso de"", ""como faço"", ""solicito"", ""não sei""
+
+🟢 PRIORIDADE BAIXA (1) - Problemas SIMPLES que afetam UM único usuário:
+   • Senha esquecida
+   • Trocar periféricos (mouse, teclado)
+   • Dúvidas básicas sobre software
+   • Solicitação de acesso/permissão
+   • Problemas estéticos ou de conforto
+   • Palavras-chave: ""esqueci senha"", ""trocar"", ""meu"", ""minha"", ""pergunta"", ""dúvida""
+
+===== CRITÉRIOS DE DECISÃO =====
+1. IMPACTO: Quantas pessoas são afetadas?
+2. URGÊNCIA: Quanto tempo pode esperar?
+3. COMPLEXIDADE: Requer conhecimento técnico avançado?
+4. ESCOPO: Individual, setorial ou empresa inteira?
+
+INSTRUÇÕES:
+1. Identifique a categoria mais adequada analisando o tipo de problema
+2. Classifique a prioridade baseada nas regras acima
+3. Crie um título descritivo e conciso (máximo 10 palavras)
+4. Justifique sua escolha em 1 frase objetiva
+
+FORMATO DE RESPOSTA (JSON puro, sem markdown, sem explicações adicionais):
 {{
   ""CategoriaId"": <número>,
   ""CategoriaNome"": ""<texto>"",
   ""PrioridadeId"": <número>,
   ""PrioridadeNome"": ""<texto>"",
-  ""TituloSugerido"": ""<texto curto>"",
-  ""Justificativa"": ""<1 frase>""
+  ""TituloSugerido"": ""<texto curto e descritivo>"",
+  ""Justificativa"": ""<explicação em 1 frase sobre prioridade e impacto>""
+}}";
+        }
+        
+        public async Task<AnaliseChamadoComHandoffDto?> AnalisarChamadoComHandoffAsync(
+            string titulo, 
+            string descricao, 
+            List<TecnicoScoreDto> tecnicosDisponiveis)
+        {
+            try
+            {
+                _logger.LogInformation("Analisando chamado com contexto de handoff: {Titulo}", titulo);
+                
+                // Construir prompt com informações de handoff
+                var prompt = CriarPromptComHandoff(titulo, descricao, tecnicosDisponiveis);
+                
+                var apiKey = _configuration["GeminiApiKey"];
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    _logger.LogError("API Key do Gemini não configurada");
+                    return null;
+                }
+
+                var requestBody = new
+                {
+                    contents = new[]
+                    {
+                        new
+                        {
+                            parts = new[]
+                            {
+                                new { text = prompt }
+                            }
+                        }
+                    },
+                    generationConfig = new
+                    {
+                        temperature = TEMPERATURE,
+                        maxOutputTokens = MAX_OUTPUT_TOKENS,
+                        responseMimeType = "application/json"
+                    }
+                };
+
+                var jsonRequest = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+                
+                var url = $"{GEMINI_BASE_URL}/models/{GEMINI_MODEL}:generateContent?key={apiKey}";
+                var response = await _httpClient.PostAsync(url, content);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Erro na API Gemini: {StatusCode} - {Error}", response.StatusCode, errorContent);
+                    return null;
+                }
+
+                var responseJson = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseJson);
+                
+                if (!doc.RootElement.TryGetProperty("candidates", out var candidates) || 
+                    candidates.GetArrayLength() == 0)
+                {
+                    _logger.LogWarning("Resposta da API Gemini sem candidates");
+                    return null;
+                }
+
+                var firstCandidate = candidates[0];
+                if (!firstCandidate.TryGetProperty("content", out var contentElement) ||
+                    !contentElement.TryGetProperty("parts", out var parts) ||
+                    parts.GetArrayLength() == 0)
+                {
+                    _logger.LogWarning("Resposta da API Gemini sem content/parts");
+                    return null;
+                }
+
+                var textResponse = parts[0].GetProperty("text").GetString();
+                if (string.IsNullOrEmpty(textResponse))
+                {
+                    _logger.LogWarning("Resposta da API Gemini vazia");
+                    return null;
+                }
+
+                _logger.LogInformation("Resposta da IA: {Response}", textResponse);
+
+                // Parse da resposta JSON da IA
+                var analiseDoc = JsonDocument.Parse(textResponse);
+                var root = analiseDoc.RootElement;
+                
+                var resultado = new AnaliseChamadoComHandoffDto
+                {
+                    TecnicoIdEscolhido = root.GetProperty("TecnicoIdEscolhido").GetInt32(),
+                    TecnicoNome = root.TryGetProperty("TecnicoNome", out var nomeElement) 
+                        ? nomeElement.GetString() 
+                        : null,
+                    CategoriaSugerida = root.TryGetProperty("CategoriaNome", out var catElement) 
+                        ? catElement.GetString() 
+                        : null,
+                    PrioridadeSugerida = root.TryGetProperty("PrioridadeNome", out var prioElement) 
+                        ? prioElement.GetString() 
+                        : null,
+                    JustificativaEscolha = root.TryGetProperty("JustificativaEscolha", out var justElement) 
+                        ? justElement.GetString() 
+                        : null,
+                    ScoreFinal = root.TryGetProperty("ScoreFinal", out var scoreElement) 
+                        ? scoreElement.GetDouble() 
+                        : 0,
+                    ConcordouComHandoff = root.TryGetProperty("ConcordouComHandoff", out var concordaElement) 
+                        ? concordaElement.GetBoolean() 
+                        : false,
+                    Observacoes = root.TryGetProperty("Observacoes", out var obsElement) 
+                        ? obsElement.GetString() 
+                        : null,
+                    ScoresContexto = tecnicosDisponiveis
+                };
+                
+                _logger.LogInformation(
+                    "IA escolheu técnico ID {TecnicoId} com score {Score}. Concordou com handoff: {Concorda}",
+                    resultado.TecnicoIdEscolhido,
+                    resultado.ScoreFinal,
+                    resultado.ConcordouComHandoff
+                );
+                
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao analisar chamado com handoff: {Message}", ex.Message);
+                return null;
+            }
+        }
+        
+        private string CriarPromptComHandoff(string titulo, string descricao, List<TecnicoScoreDto> tecnicos)
+        {
+            var tecnicosInfo = new StringBuilder();
+            tecnicosInfo.AppendLine("TÉCNICOS DISPONÍVEIS COM SCORES DO SISTEMA DE HANDOFF:");
+            tecnicosInfo.AppendLine();
+            
+            foreach (var tec in tecnicos.OrderByDescending(t => t.ScoreTotal))
+            {
+                tecnicosInfo.AppendLine($"ID: {tec.TecnicoId}");
+                tecnicosInfo.AppendLine($"Nome: {tec.NomeCompleto}");
+                tecnicosInfo.AppendLine($"Nível: {tec.NivelDescricao}");
+                tecnicosInfo.AppendLine($"Score Total: {tec.ScoreTotal:F2}");
+                
+                if (tec.Breakdown != null)
+                {
+                    tecnicosInfo.AppendLine("  Breakdown:");
+                    tecnicosInfo.AppendLine($"    • Especialidade: {tec.Breakdown.Especialidade:F2}");
+                    tecnicosInfo.AppendLine($"    • Disponibilidade: {tec.Breakdown.Disponibilidade:F2}");
+                    tecnicosInfo.AppendLine($"    • Performance: {tec.Breakdown.Performance:F2}");
+                    tecnicosInfo.AppendLine($"    • Prioridade: {tec.Breakdown.Prioridade:F2}");
+                    tecnicosInfo.AppendLine($"    • Bonus Complexidade: {tec.Breakdown.BonusComplexidade:F2}");
+                }
+                
+                if (tec.Estatisticas != null)
+                {
+                    tecnicosInfo.AppendLine($"Chamados Ativos: {tec.Estatisticas.ChamadosAtivos}");
+                    tecnicosInfo.AppendLine($"Taxa de Resolução: {tec.Estatisticas.TaxaResolucao:P0}");
+                    tecnicosInfo.AppendLine($"Capacidade Restante: {tec.Estatisticas.CapacidadeRestante}");
+                }
+                
+                if (!string.IsNullOrEmpty(tec.AreaAtuacao))
+                {
+                    tecnicosInfo.AppendLine($"Área de Atuação: {tec.AreaAtuacao}");
+                }
+                
+                tecnicosInfo.AppendLine();
+            }
+            
+            return $@"Você é um sistema inteligente de atribuição de chamados de TI. Analise o chamado abaixo e ESCOLHA o técnico mais adequado baseado nos scores calculados pelo nosso sistema de handoff.
+
+===== CHAMADO =====
+TÍTULO: {titulo}
+DESCRIÇÃO: {descricao}
+
+===== CONTEXTO DO SISTEMA DE HANDOFF =====
+{tecnicosInfo}
+
+===== SUA TAREFA =====
+1. Analise o problema descrito no chamado
+2. Considere os scores calculados pelo sistema de handoff
+3. Avalie a complexidade do problema e o perfil de cada técnico
+4. ESCOLHA o técnico mais adequado (pode ser o top score ou outro, se tiver justificativa)
+5. Sugira categoria e prioridade para o chamado
+
+===== REGRAS DE DECISÃO =====
+• O sistema de handoff já calculou scores considerando: especialidade, disponibilidade, performance, prioridade e complexidade
+• Você PODE escolher o técnico com maior score (concordar com handoff)
+• Você PODE escolher outro técnico SE tiver uma justificativa clara baseada nas especialidades ou na natureza específica do problema
+• Considere: técnicos sêniores para problemas complexos/críticos, técnicos básicos para problemas simples/rotineiros
+• Um técnico com score ligeiramente menor MAS com especialidade exata pode ser melhor escolha
+
+===== CATEGORIAS =====
+1. Hardware (problemas físicos: impressora, mouse, teclado, monitor)
+2. Software (instalação, configuração, erro em aplicação)
+3. Rede (conectividade, VPN, acesso remoto)
+4. Infraestrutura (servidor, backup, sistemas críticos)
+
+===== PRIORIDADES =====
+1. Baixa - Problema individual simples (senha, periférico pessoal)
+2. Média-Baixa - Solicitação individual moderada (software, configuração)
+3. Média-Alta - Problema setorial ou recurso compartilhado
+4. Alta - Sistema crítico afetado ou múltiplos usuários
+5. Crítica - Empresa inteira afetada ou sistema essencial parado
+
+FORMATO DE RESPOSTA (JSON puro, sem markdown):
+{{
+  ""TecnicoIdEscolhido"": <id do técnico escolhido>,
+  ""TecnicoNome"": ""<nome do técnico>"",
+  ""CategoriaNome"": ""<categoria do chamado>"",
+  ""PrioridadeNome"": ""<prioridade do chamado>"",
+  ""JustificativaEscolha"": ""<explique DETALHADAMENTE porque escolheu este técnico, mencionando o score dele e se concordou ou não com o handoff>"",
+  ""ScoreFinal"": <score final do técnico escolhido>,
+  ""ConcordouComHandoff"": <true se escolheu o técnico com maior score, false caso contrário>,
+  ""Observacoes"": ""<comentários adicionais sobre a análise, se houver>""
 }}";
         }
     }

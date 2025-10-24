@@ -22,12 +22,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     
 // Registrar serviços
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IOpenAIService, GeminiService>();
+builder.Services.AddScoped<IGeminiService, GeminiService>();
 builder.Services.AddScoped<IAIService, AIService>();
 builder.Services.AddScoped<IHandoffService, HandoffService>();
 
 // Configurar HttpClient para o GeminiService
-builder.Services.AddHttpClient<IOpenAIService, GeminiService>();
+builder.Services.AddHttpClient<IGeminiService, GeminiService>();
 
 // Configura a seção EmailSettings do appsettings.json
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));

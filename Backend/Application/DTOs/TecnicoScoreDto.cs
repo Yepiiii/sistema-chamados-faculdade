@@ -63,6 +63,11 @@ public class ScoreBreakdown
     /// Pontos por prioridade adequada (0-20)
     /// </summary>
     public double Prioridade { get; set; }
+    
+    /// <summary>
+    /// Bônus de complexidade baseado em palavras-chave (±10)
+    /// </summary>
+    public double BonusComplexidade { get; set; }
 }
 
 public class TecnicoEstatisticas

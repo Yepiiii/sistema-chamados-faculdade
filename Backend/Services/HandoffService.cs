@@ -79,13 +79,25 @@ public class HandoffService : IHandoffService
         int chamadoId, 
         int categoriaId, 
         int prioridadeId,
-        string metodoAtribuicao = "Automatico")
+        string metodoAtribuicao = "Automatico",
+        string titulo = "",
+        string descricao = "")
     {
         _logger.LogInformation("═══════════════════════════════════════════════════════");
         _logger.LogInformation("🎯 [ATRIBUIÇÃO INTELIGENTE] Iniciando processo");
         _logger.LogInformation($"   Chamado ID: {chamadoId}");
         _logger.LogInformation($"   Categoria ID: {categoriaId}");
-        _logger.LogInformation($"   Prioridade ID: {prioridadeId}");
+        _logger.LogInformation($"   Prioridade ID (IA): {prioridadeId}");
+        
+        // VALIDAÇÃO: Detectar inconsistência grave entre prioridade da IA e palavras-chave
+        var prioridadeAjustada = ValidarPrioridadeIA(prioridadeId, titulo, descricao);
+        if (prioridadeAjustada != prioridadeId)
+        {
+            _logger.LogWarning($"⚠️ CORREÇÃO: IA sugeriu prioridade {prioridadeId}, mas palavras-chave indicam {prioridadeAjustada}");
+            prioridadeId = prioridadeAjustada;
+        }
+        
+        _logger.LogInformation($"   Prioridade Final: {prioridadeId}");
         _logger.LogInformation("═══════════════════════════════════════════════════════");
 
         var resultado = new AtribuicaoResultadoDto();
@@ -94,7 +106,7 @@ public class HandoffService : IHandoffService
         {
             // ETAPA 1: Calcular scores de todos técnicos elegíveis
             _logger.LogInformation("📊 [ETAPA 1] Calculando scores...");
-            var tecnicosComScore = await CalcularScoresTecnicosAsync(categoriaId, prioridadeId);
+            var tecnicosComScore = await CalcularScoresTecnicosAsync(categoriaId, prioridadeId, titulo, descricao);
             resultado.TecnicosAvaliados = tecnicosComScore;
             
             if (tecnicosComScore.Count == 0)
@@ -168,7 +180,9 @@ public class HandoffService : IHandoffService
     /// </summary>
     public async Task<List<TecnicoScoreDto>> CalcularScoresTecnicosAsync(
         int categoriaId, 
-        int prioridadeId)
+        int prioridadeId,
+        string titulo = "",
+        string descricao = "")
     {
         var resultado = new List<TecnicoScoreDto>();
         
@@ -234,18 +248,28 @@ public class HandoffService : IHandoffService
             // === SCORE 4: ADEQUAÇÃO À PRIORIDADE (0-20 pontos) ===
             scoreDto.Breakdown.Prioridade = CalcularScorePrioridade(tecnico, nivelPrioridade, stats);
             
+            // === BÔNUS: ANÁLISE DE COMPLEXIDADE POR PALAVRAS-CHAVE (±10 pontos) ===
+            double bonusComplexidade = 0;
+            if (!string.IsNullOrEmpty(titulo) || !string.IsNullOrEmpty(descricao))
+            {
+                bonusComplexidade = CalcularBonusComplexidade(titulo, descricao, scoreDto.NivelTecnico);
+                scoreDto.Breakdown.BonusComplexidade = bonusComplexidade;
+                _logger.LogDebug($"   Bônus complexidade para {tecnico.NomeCompleto}: {bonusComplexidade:F1}");
+            }
+            
             // === SCORE TOTAL ===
             scoreDto.ScoreTotal = 
                 scoreDto.Breakdown.Especialidade +
                 scoreDto.Breakdown.Disponibilidade +
                 scoreDto.Breakdown.Performance +
-                scoreDto.Breakdown.Prioridade;
+                scoreDto.Breakdown.Prioridade +
+                bonusComplexidade;
             
             resultado.Add(scoreDto);
             
             _logger.LogDebug($"Técnico: {tecnico.NomeCompleto} | Score: {scoreDto.ScoreTotal:F2} " +
                            $"(Esp:{scoreDto.Breakdown.Especialidade:F0} Disp:{scoreDto.Breakdown.Disponibilidade:F0} " +
-                           $"Perf:{scoreDto.Breakdown.Performance:F0} Prior:{scoreDto.Breakdown.Prioridade:F0})");
+                           $"Perf:{scoreDto.Breakdown.Performance:F0} Prior:{scoreDto.Breakdown.Prioridade:F0} Bonus:{bonusComplexidade:F1})");
         }
         
         return resultado.OrderByDescending(t => t.ScoreTotal).ToList();
@@ -254,6 +278,47 @@ public class HandoffService : IHandoffService
     #endregion
 
     #region Cálculos de Score
+    
+    /// <summary>
+    /// Valida se a prioridade sugerida pela IA está consistente com palavras-chave críticas
+    /// Previne erros graves da IA que poderiam causar má distribuição
+    /// </summary>
+    private int ValidarPrioridadeIA(int prioridadeIA, string titulo, string descricao)
+    {
+        var textoCompleto = $"{titulo} {descricao}".ToLowerInvariant();
+        
+        // === DETECTAR PROBLEMAS CRÍTICOS que IA pode ter classificado errado ===
+        string[] palavrasCriticas = {
+            "servidor", "caiu", "fora do ar", "sistema caiu", "banco de dados",
+            "rede", "todos", "empresa inteira", "crítico", "parou"
+        };
+        
+        int countCriticas = palavrasCriticas.Count(p => textoCompleto.Contains(p));
+        
+        // Se tem 2+ palavras críticas mas IA disse Baixa (1) ou Média (2), corrigir para Alta (3)
+        if (countCriticas >= 2 && prioridadeIA < 3)
+        {
+            _logger.LogWarning($"   🚨 CORREÇÃO CRÍTICA: Detectadas {countCriticas} palavras de alta gravidade. Forçando prioridade ALTA.");
+            return 3; // Alta
+        }
+        
+        // === DETECTAR PROBLEMAS SIMPLES que IA pode ter superestimado ===
+        string[] palavrasSimples = {
+            "meu", "minha", "senha", "esqueci", "mouse", "teclado", "como faço", "dúvida"
+        };
+        
+        int countSimples = palavrasSimples.Count(p => textoCompleto.Contains(p));
+        
+        // Se tem 3+ palavras simples, NENHUMA crítica, e IA disse Alta (3), corrigir para Média (2)
+        if (countSimples >= 3 && countCriticas == 0 && prioridadeIA == 3)
+        {
+            _logger.LogWarning($"   🔧 CORREÇÃO: Detectadas {countSimples} palavras simples sem criticidade. Ajustando de ALTA para MÉDIA.");
+            return 2; // Média
+        }
+        
+        // Caso contrário, confiar na IA
+        return prioridadeIA;
+    }
     
     private double CalcularScoreEspecialidade(Usuario tecnico, int categoriaId)
     {
@@ -267,6 +332,70 @@ public class HandoffService : IHandoffService
         
         // Especialista em outra área: 5 pontos
         return PESO_ESPECIALIDADE * 0.17;
+    }
+    
+    /// <summary>
+    /// Analisa palavras-chave no título e descrição para ajustar score de complexidade
+    /// IMPORTANTE: Problemas simples BLOQUEIAM técnicos sênior para evitar desperdício de recursos
+    /// </summary>
+    private double CalcularBonusComplexidade(string titulo, string descricao, int nivelTecnico)
+    {
+        var textoCompleto = $"{titulo} {descricao}".ToLowerInvariant();
+        double bonus = 0;
+        int contadorAltaComplexidade = 0;
+        int contadorBaixaComplexidade = 0;
+        
+        // === INDICADORES DE ALTA COMPLEXIDADE (favorece Sênior) ===
+        string[] palavrasAltaComplexidade = {
+            "servidor", "rede", "compartilhado", "todos", "empresa inteira", "setor inteiro",
+            "departamento", "crítico", "fora do ar", "indisponível",
+            "sistema caiu", "sistema parou", "banco de dados", "erp", "firewall", "vpn", "caiu"
+        };
+        
+        foreach (var palavra in palavrasAltaComplexidade)
+        {
+            if (textoCompleto.Contains(palavra))
+            {
+                contadorAltaComplexidade++;
+                bonus += nivelTecnico == 3 ? 3 : -2; // Favorece Sênior, penaliza Básico
+            }
+        }
+        
+        // === INDICADORES DE BAIXA COMPLEXIDADE (favorece Básico) ===
+        string[] palavrasBaixaComplexidade = {
+            "meu", "minha", "senha", "esqueci", "trocar", "mouse", "teclado",
+            "dúvida", "como faço", "não sei", "ajuda", "solicito", "preciso",
+            "instalar", "desinstalar", "configurar email", "impressora", "celular",
+            "pessoal", "individual", "básica", "simples", "travando"
+        };
+        
+        foreach (var palavra in palavrasBaixaComplexidade)
+        {
+            if (textoCompleto.Contains(palavra))
+            {
+                contadorBaixaComplexidade++;
+                bonus += nivelTecnico == 1 ? 3 : -1; // Favorece Básico, penaliza levemente Sênior
+            }
+        }
+        
+        // === PENALIDADE SEVERA: Problema claramente simples não deve ir para Sênior ===
+        // Se tem 2+ indicadores de baixa complexidade e NENHUM de alta complexidade
+        // Técnico Sênior sofre penalidade MASSIVA para evitar desperdício de recurso
+        if (contadorBaixaComplexidade >= 2 && contadorAltaComplexidade == 0)
+        {
+            if (nivelTecnico == 3)
+            {
+                _logger.LogDebug($"   ⚠️ BLOQUEIO: Problema simples detectado ({contadorBaixaComplexidade} indicadores). Penalidade severa para Sênior: -30 pontos");
+                bonus -= 30; // Penalidade severa - neutraliza especialização
+            }
+            else if (nivelTecnico == 1)
+            {
+                _logger.LogDebug($"   ✅ BOOST: Problema simples ideal para Básico (+15 pontos)");
+                bonus += 15; // Boost para Básico
+            }
+        }
+        
+        return bonus;
     }
     
     private double CalcularScoreDisponibilidade(int chamadosAtivos)
@@ -317,29 +446,54 @@ public class HandoffService : IHandoffService
         // ===== PRIORIDADE ALTA (nível 3): Requer Técnico Sênior =====
         if (nivelPrioridade >= 3)
         {
-            if (nivelTecnico == 3) // Técnico Sênior - IDEAL
+            if (nivelTecnico == 3) // Técnico Sênior - IDEAL para problemas críticos
                 return PESO_PRIORIDADE; // 20 pontos
             
-            // Técnico Básico (nível 1) não deve atender prioridade alta
-            return PESO_PRIORIDADE * 0.1; // 2 pontos (apenas em emergência)
+            // Técnico Básico (nível 1) NUNCA deve atender prioridade alta
+            return PESO_PRIORIDADE * 0.05; // 1 ponto (bloqueio virtual)
         }
         
-        // ===== PRIORIDADE MÉDIA (nível 2): Vai para Sênior (sem nível intermediário) =====
+        // ===== PRIORIDADE MÉDIA (nível 2): Distribuir com inteligência =====
         if (nivelPrioridade == 2)
         {
-            if (nivelTecnico == 3) // Técnico Sênior atende problemas médios
-                return PESO_PRIORIDADE * 0.8; // 16 pontos (bom match)
+            // ESTRATÉGIA: Avaliar complexidade do problema e carga dos técnicos
             
-            if (nivelTecnico == 1) // Técnico Básico pode tentar com supervisão
-                return PESO_PRIORIDADE * 0.4; // 8 pontos (se Sênior ocupado)
+            // Se Técnico Sênior tem carga leve (< 3 chamados), priorizar ele
+            if (nivelTecnico == 3)
+            {
+                if (stats.ChamadosAtivos < 3)
+                    return PESO_PRIORIDADE * 0.95; // 19 pontos (alta prioridade)
+                else if (stats.ChamadosAtivos < 6)
+                    return PESO_PRIORIDADE * 0.75; // 15 pontos (boa opção)
+                else
+                    return PESO_PRIORIDADE * 0.55; // 11 pontos (disponível mas ocupado)
+            }
+            
+            // Técnico Básico pode atender APENAS se Sênior estiver sobrecarregado
+            if (nivelTecnico == 1)
+            {
+                // Se tem bom histórico (alta taxa de resolução), pode tentar
+                if (stats.TaxaResolucao > 0.8 && stats.ChamadosResolvidos > 10)
+                    return PESO_PRIORIDADE * 0.50; // 10 pontos (experiente)
+                else if (stats.ChamadosResolvidos > 5)
+                    return PESO_PRIORIDADE * 0.35; // 7 pontos (com experiência)
+                else
+                    return PESO_PRIORIDADE * 0.20; // 4 pontos (iniciante, apenas emergência)
+            }
         }
         
         // ===== PRIORIDADE BAIXA (nível 1): Ideal para Técnico Básico =====
-        if (nivelTecnico == 1) // Técnico Básico - IDEAL para problemas simples
-            return PESO_PRIORIDADE; // 20 pontos
+        if (nivelTecnico == 1) // Técnico Básico - PERFEITO para problemas simples
+            return PESO_PRIORIDADE; // 20 pontos (treinamento e desenvolvimento)
         
-        // Técnico Sênior para prioridade baixa (desperdício, mas aceitável)
-        return PESO_PRIORIDADE * 0.5; // 10 pontos (se Básico estiver ocupado)
+        // Técnico Sênior para prioridade baixa (desperdício de recurso qualificado)
+        // Só aceita se Básico estiver completamente sobrecarregado
+        if (stats.ChamadosAtivos < 2)
+            return PESO_PRIORIDADE * 0.60; // 12 pontos (disponível)
+        else if (stats.ChamadosAtivos < 5)
+            return PESO_PRIORIDADE * 0.40; // 8 pontos (aceita ajudar)
+        else
+            return PESO_PRIORIDADE * 0.20; // 4 pontos (evitar se possível)
     }
     
     private async Task<TecnicoEstatisticas> CalcularEstatisticasPerformanceAsync(

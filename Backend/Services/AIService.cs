@@ -5,10 +5,10 @@ namespace SistemaChamados.Services;
 
 public class AIService : IAIService
 {
-    private readonly IOpenAIService _geminiService;
+    private readonly IGeminiService _geminiService;
     private readonly ILogger<AIService> _logger;
 
-    public AIService(IOpenAIService geminiService, ILogger<AIService> logger)
+    public AIService(IGeminiService geminiService, ILogger<AIService> logger)
     {
         _geminiService = geminiService;
         _logger = logger;

@@ -16,14 +16,18 @@ public interface IHandoffService
         int chamadoId, 
         int categoriaId, 
         int prioridadeId,
-        string metodoAtribuicao = "Automatico");
+        string metodoAtribuicao = "Automatico",
+        string titulo = "",
+        string descricao = "");
     
     /// <summary>
     /// Calcula score de adequação de técnicos para um chamado
     /// </summary>
     Task<List<TecnicoScoreDto>> CalcularScoresTecnicosAsync(
         int categoriaId, 
-        int prioridadeId);
+        int prioridadeId,
+        string titulo = "",
+        string descricao = "");
     
     /// <summary>
     /// Redistribui chamados se técnico ficar indisponível

@@ -19,15 +19,15 @@ namespace SistemaChamados.API.Controllers;
 public class ChamadosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IOpenAIService _openAIService;
+    private readonly IGeminiService _geminiService;
     private readonly IAIService _aiService;
     private readonly IHandoffService _handoffService;
     private readonly ILogger<ChamadosController> _logger;
 
-    public ChamadosController(ApplicationDbContext context, IOpenAIService openAIService, IAIService aiService, IHandoffService handoffService, ILogger<ChamadosController> logger)
+    public ChamadosController(ApplicationDbContext context, IGeminiService geminiService, IAIService aiService, IHandoffService handoffService, ILogger<ChamadosController> logger)
     {
         _context = context;
-        _openAIService = openAIService;
+        _geminiService = geminiService;
         _aiService = aiService;
         _handoffService = handoffService;
         _logger = logger;
@@ -163,7 +163,9 @@ public class ChamadosController : ControllerBase
             novoChamado.Id,
             categoriaSelecionada,
             prioridadeSelecionada,
-            usouIA ? "IA+Automatico" : "Automatico");
+            usouIA ? "IA+Automatico" : "Automatico",
+            novoChamado.Titulo,
+            novoChamado.Descricao);
         
         if (atribuicao.Sucesso && atribuicao.TecnicoId.HasValue)
         {
@@ -729,11 +731,17 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
     [AllowAnonymous] // Permitir acesso para testes
     public async Task<IActionResult> GetTecnicosScores(
         [FromQuery] int categoriaId,
-        [FromQuery] int prioridadeId)
+        [FromQuery] int prioridadeId,
+        [FromQuery] string? titulo = null,
+        [FromQuery] string? descricao = null)
     {
         try
         {
-            var scores = await _handoffService.CalcularScoresTecnicosAsync(categoriaId, prioridadeId);
+            var scores = await _handoffService.CalcularScoresTecnicosAsync(
+                categoriaId, 
+                prioridadeId, 
+                titulo ?? "", 
+                descricao ?? "");
             
             return Ok(new
             {
@@ -750,7 +758,8 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
                         Especialidade = Math.Round(t.Breakdown.Especialidade, 2),
                         Disponibilidade = Math.Round(t.Breakdown.Disponibilidade, 2),
                         Performance = Math.Round(t.Breakdown.Performance, 2),
-                        Prioridade = Math.Round(t.Breakdown.Prioridade, 2)
+                        Prioridade = Math.Round(t.Breakdown.Prioridade, 2),
+                        BonusComplexidade = Math.Round(t.Breakdown.BonusComplexidade, 2)
                     },
                     t.Estatisticas.ChamadosAtivos,
                     t.Estatisticas.ChamadosResolvidos,
@@ -874,6 +883,131 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
         }
     }
     
+    /// <summary>
+    /// Analisa chamado usando IA com contexto dos scores de handoff
+    /// Nova arquitetura: IA decide o técnico com base nos scores calculados
+    /// </summary>
+    [HttpPost("analisar-com-handoff")]
+    public async Task<IActionResult> AnalisarChamadoComHandoff([FromBody] AnalisarComHandoffRequestDto request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Titulo) || string.IsNullOrWhiteSpace(request.Descricao))
+            {
+                return BadRequest(new { Error = "Título e descrição são obrigatórios" });
+            }
+
+            _logger.LogInformation("Analisando chamado com handoff - Título: {Titulo}", request.Titulo);
+
+            // 1. Calcular scores do handoff (categoria e prioridade temporárias para cálculo)
+            var categoriaIdTemp = request.CategoriaId ?? 2; // Software como padrão
+            var prioridadeIdTemp = request.PrioridadeId ?? 2; // Média como padrão
+            
+            var scores = await _handoffService.CalcularScoresTecnicosAsync(
+                categoriaIdTemp, 
+                prioridadeIdTemp,
+                request.Titulo,
+                request.Descricao
+            );
+
+            if (scores == null || !scores.Any())
+            {
+                return StatusCode(500, new { Error = "Não foi possível calcular scores dos técnicos" });
+            }
+
+            _logger.LogInformation("Scores calculados para {Count} técnicos", scores.Count);
+
+            // 2. Enviar scores para IA decidir
+            var decisaoIA = await _geminiService.AnalisarChamadoComHandoffAsync(
+                request.Titulo,
+                request.Descricao,
+                scores.ToList()
+            );
+
+            if (decisaoIA == null)
+            {
+                _logger.LogWarning("IA não retornou decisão, usando fallback para top score do handoff");
+                var topScore = scores.OrderByDescending(s => s.ScoreTotal).First();
+                
+                return Ok(new
+                {
+                    Success = true,
+                    UsouFallback = true,
+                    TecnicoEscolhido = new
+                    {
+                        Id = topScore.TecnicoId,
+                        Nome = topScore.NomeCompleto,
+                        Nivel = topScore.NivelDescricao,
+                        Score = Math.Round(topScore.ScoreTotal, 2)
+                    },
+                    Justificativa = "IA não disponível - usado top score do handoff como fallback",
+                    ConcordouComHandoff = true,
+                    ScoresCalculados = scores.Select(s => new
+                    {
+                        TecnicoId = s.TecnicoId,
+                        Nome = s.NomeCompleto,
+                        Nivel = s.NivelDescricao,
+                        Score = Math.Round(s.ScoreTotal, 2),
+                        Breakdown = s.Breakdown != null ? new
+                        {
+                            Especialidade = Math.Round(s.Breakdown.Especialidade, 2),
+                            Disponibilidade = Math.Round(s.Breakdown.Disponibilidade, 2),
+                            Performance = Math.Round(s.Breakdown.Performance, 2),
+                            Prioridade = Math.Round(s.Breakdown.Prioridade, 2),
+                            BonusComplexidade = Math.Round(s.Breakdown.BonusComplexidade, 2)
+                        } : null
+                    }).OrderByDescending(s => s.Score)
+                });
+            }
+
+            // 3. Retornar decisão da IA com contexto completo
+            var topHandoff = scores.OrderByDescending(s => s.ScoreTotal).First();
+            
+            return Ok(new
+            {
+                Success = true,
+                UsouFallback = false,
+                TecnicoEscolhido = new
+                {
+                    Id = decisaoIA.TecnicoIdEscolhido,
+                    Nome = decisaoIA.TecnicoNome,
+                    Score = Math.Round(decisaoIA.ScoreFinal, 2)
+                },
+                CategoriaSugerida = decisaoIA.CategoriaSugerida,
+                PrioridadeSugerida = decisaoIA.PrioridadeSugerida,
+                JustificativaIA = decisaoIA.JustificativaEscolha,
+                ConcordouComHandoff = decisaoIA.ConcordouComHandoff,
+                Observacoes = decisaoIA.Observacoes,
+                TopScoreHandoff = new
+                {
+                    Id = topHandoff.TecnicoId,
+                    Nome = topHandoff.NomeCompleto,
+                    Score = Math.Round(topHandoff.ScoreTotal, 2)
+                },
+                ScoresCalculados = scores.Select(s => new
+                {
+                    TecnicoId = s.TecnicoId,
+                    Nome = s.NomeCompleto,
+                    Nivel = s.NivelDescricao,
+                    Score = Math.Round(s.ScoreTotal, 2),
+                    Breakdown = s.Breakdown != null ? new
+                    {
+                        Especialidade = Math.Round(s.Breakdown.Especialidade, 2),
+                        Disponibilidade = Math.Round(s.Breakdown.Disponibilidade, 2),
+                        Performance = Math.Round(s.Breakdown.Performance, 2),
+                        Prioridade = Math.Round(s.Breakdown.Prioridade, 2),
+                        BonusComplexidade = Math.Round(s.Breakdown.BonusComplexidade, 2)
+                    } : null
+                }).OrderByDescending(s => s.Score)
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao analisar chamado com handoff: {Message}", ex.Message);
+            return StatusCode(500, new { Error = "Erro ao processar análise", Details = ex.Message });
+        }
+    }
+    
     #endregion
 }
 
@@ -881,4 +1015,12 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
 public class AnalisarChamadoRequestDto
 {
     public string DescricaoProblema { get; set; } = string.Empty;
+}
+// DTO para requisi��o de an�lise com handoff
+public class AnalisarComHandoffRequestDto
+{
+    public string Titulo { get; set; } = string.Empty;
+    public string Descricao { get; set; } = string.Empty;
+    public int? CategoriaId { get; set; }
+    public int? PrioridadeId { get; set; }
 }
