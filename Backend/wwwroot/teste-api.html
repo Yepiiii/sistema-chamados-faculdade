@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API & Auth - Sistema de Chamados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button.danger {
+            background: #e53e3e;
+        }
+
+        button.danger:hover {
+            background: #c53030;
+        }
+
+        .result {
+            background: #f7fafc;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            border-left: 4px solid #48bb78;
+        }
+
+        .error {
+            border-left: 4px solid #e53e3e;
+        }
+
+        .info {
+            border-left: 4px solid #4299e1;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .user-info {
+            background: #ebf8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .user-info strong {
+            color: #2c5282;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste API & Auth Service</h1>
+
+        <!-- Informações do Usuário -->
+        <div class="test-section">
+            <h2>👤 Usuário Atual</h2>
+            <div id="userStatus"></div>
+            <button onclick="checkAuth()">Verificar Autenticação</button>
+            <button onclick="showUserInfo()">Ver Informações</button>
+            <button class="danger" onclick="auth.logout()">Logout</button>
+        </div>
+
+        <!-- Teste de Login -->
+        <div class="test-section">
+            <h2>🔐 Teste de Login</h2>
+            <input type="email" id="loginEmail" placeholder="Email" value="admin@sistema.com">
+            <input type="password" id="loginSenha" placeholder="Senha" value="Admin@123">
+            <button onclick="testarLogin()">Fazer Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <!-- Teste de API - Categorias -->
+        <div class="test-section">
+            <h2>📋 Teste API - Categorias</h2>
+            <button onclick="getCategorias()">GET /api/Categorias</button>
+            <div id="categoriasResult"></div>
+        </div>
+
+        <!-- Teste de API - Prioridades -->
+        <div class="test-section">
+            <h2>⚡ Teste API - Prioridades</h2>
+            <button onclick="getPrioridades()">GET /api/Prioridades</button>
+            <div id="prioridadesResult"></div>
+        </div>
+
+        <!-- Teste de API - Chamados -->
+        <div class="test-section">
+            <h2>🎫 Teste API - Chamados</h2>
+            <button onclick="getMeusChamados()">GET Meus Chamados</button>
+            <button onclick="getTodosChamados()">GET Todos Chamados (Admin)</button>
+            <div id="chamadosResult"></div>
+        </div>
+
+        <!-- Teste de Criação de Chamado -->
+        <div class="test-section">
+            <h2>➕ Criar Chamado de Teste</h2>
+            <input type="text" id="titulo" placeholder="Título" value="Teste via Frontend">
+            <input type="text" id="descricao" placeholder="Descrição" value="Chamado criado para teste do frontend">
+            <button onclick="criarChamadoTeste()">Criar Chamado</button>
+            <div id="criarResult"></div>
+        </div>
+
+        <!-- Teste IA + Handoff -->
+        <div class="test-section">
+            <h2>🤖 Teste IA + Handoff</h2>
+            <input type="text" id="iaTitulo" placeholder="Título" value="Servidor caiu">
+            <input type="text" id="iaDescricao" placeholder="Descrição" value="O servidor principal está fora do ar">
+            <button onclick="testarIAHandoff()">Analisar com IA</button>
+            <div id="iaResult"></div>
+        </div>
+
+        <!-- Console de Logs -->
+        <div class="test-section">
+            <h2>📝 Console de Logs</h2>
+            <button onclick="clearConsole()">Limpar Console</button>
+            <div id="console" class="result info"></div>
+        </div>
+    </div>
+
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>
+        // Função para log no console da página
+        function log(message, type = 'info') {
+            const consoleDiv = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'blue';
+            consoleDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '';
+        }
+
+        // Verificar autenticação
+        function checkAuth() {
+            const isAuth = auth.isAuthenticated();
+            const result = document.getElementById('userStatus');
+            
+            if (isAuth) {
+                result.innerHTML = `<div class="result success">✅ Usuário autenticado!</div>`;
+                log('Usuário autenticado', 'success');
+            } else {
+                result.innerHTML = `<div class="result error">❌ Não autenticado</div>`;
+                log('Usuário não autenticado', 'error');
+            }
+        }
+
+        // Mostrar informações do usuário
+        function showUserInfo() {
+            const user = auth.getUserInfo();
+            const result = document.getElementById('userStatus');
+            
+            if (user) {
+                result.innerHTML = `
+                    <div class="user-info">
+                        <strong>ID:</strong> ${user.id}<br>
+                        <strong>Nome:</strong> ${user.nome}<br>
+                        <strong>Email:</strong> ${user.email}<br>
+                        <strong>Role:</strong> ${user.role}<br>
+                        <strong>Token expira:</strong> ${new Date(user.exp * 1000).toLocaleString()}
+                    </div>
+                `;
+                log('Informações do usuário exibidas', 'success');
+            } else {
+                result.innerHTML = `<div class="result error">Nenhum usuário logado</div>`;
+                log('Nenhum usuário logado', 'error');
+            }
+        }
+
+        // Teste de login
+        async function testarLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const senha = document.getElementById('loginSenha').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                log(`Tentando login: ${email}`, 'info');
+                const result = await auth.login(email, senha);
+                
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(result, null, 2)}</div>`;
+                log('Login realizado com sucesso!', 'success');
+                checkAuth();
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro no login: ${error.message}`, 'error');
+            }
+        }
+
+        // Get Categorias
+        async function getCategorias() {
+            const resultDiv = document.getElementById('categoriasResult');
+            try {
+                log('Buscando categorias...', 'info');
+                const categorias = await api.get('/Categorias');
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(categorias, null, 2)}</div>`;
+                log(`${categorias.length} categorias encontradas`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro ao buscar categorias: ${error.message}`, 'error');
+            }
+        }
+
+        // Get Prioridades
+        async function getPrioridades() {
+            const resultDiv = document.getElementById('prioridadesResult');
+            try {
+                log('Buscando prioridades...', 'info');
+                const prioridades = await api.get('/Prioridades');
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(prioridades, null, 2)}</div>`;
+                log(`${prioridades.length} prioridades encontradas`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro ao buscar prioridades: ${error.message}`, 'error');
+            }
+        }
+
+        // Get Meus Chamados
+        async function getMeusChamados() {
+            const resultDiv = document.getElementById('chamadosResult');
+            try {
+                log('Buscando meus chamados...', 'info');
+                const chamados = await api.get('/Chamados/meus-chamados');
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(chamados, null, 2)}</div>`;
+                log(`${chamados.length} chamados encontrados`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro ao buscar chamados: ${error.message}`, 'error');
+            }
+        }
+
+        // Get Todos Chamados
+        async function getTodosChamados() {
+            const resultDiv = document.getElementById('chamadosResult');
+            try {
+                log('Buscando todos os chamados...', 'info');
+                const chamados = await api.get('/Chamados');
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(chamados, null, 2)}</div>`;
+                log(`${chamados.length} chamados encontrados`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro ao buscar chamados: ${error.message}`, 'error');
+            }
+        }
+
+        // Criar Chamado
+        async function criarChamadoTeste() {
+            const resultDiv = document.getElementById('criarResult');
+            try {
+                const titulo = document.getElementById('titulo').value;
+                const descricao = document.getElementById('descricao').value;
+
+                log('Criando chamado...', 'info');
+                const chamado = await api.post('/Chamados', {
+                    titulo,
+                    descricao,
+                    categoriaId: 1,
+                    prioridadeId: 2
+                });
+                
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(chamado, null, 2)}</div>`;
+                log('Chamado criado com sucesso!', 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro ao criar chamado: ${error.message}`, 'error');
+            }
+        }
+
+        // Testar IA + Handoff
+        async function testarIAHandoff() {
+            const resultDiv = document.getElementById('iaResult');
+            try {
+                const titulo = document.getElementById('iaTitulo').value;
+                const descricao = document.getElementById('iaDescricao').value;
+
+                log('Analisando com IA + Handoff...', 'info');
+                const resultado = await api.post('/chamados/analisar-com-handoff', {
+                    titulo,
+                    descricao,
+                    categoriaId: 1,
+                    prioridadeId: 3
+                });
+                
+                resultDiv.innerHTML = `<div class="result success">${JSON.stringify(resultado, null, 2)}</div>`;
+                log('Análise IA concluída!', 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
+                log(`Erro na análise IA: ${error.message}`, 'error');
+            }
+        }
+
+        // Executa ao carregar
+        window.addEventListener('load', () => {
+            log('Página de testes carregada', 'success');
+            log('API URL: ' + api.baseURL, 'info');
+            checkAuth();
+        });
+    </script>
+</body>
+</html>

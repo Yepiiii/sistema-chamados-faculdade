@@ -22,8 +22,7 @@ public class ChamadoResponseDto
     public int? TecnicoAtribuidoNivel { get; set; }
     public string? TecnicoAtribuidoNivelDescricao => TecnicoAtribuidoNivel switch
     {
-        1 => "Nível 1 - Suporte Básico",
-        2 => "Nível 2 - Suporte Intermediário (DESATIVADO)",
+        2 => "Nível 2 - Suporte Intermediário",
         3 => "Nível 3 - Especialista Sênior",
         _ => null
     };

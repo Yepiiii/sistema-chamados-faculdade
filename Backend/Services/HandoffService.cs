@@ -215,7 +215,7 @@ public class HandoffService : IHandoffService
                 TecnicoId = tecnico.Id,
                 NomeCompleto = tecnico.NomeCompleto,
                 AreaAtuacao = tecnico.TecnicoTIPerfil?.AreaAtuacao,
-                NivelTecnico = tecnico.TecnicoTIPerfil?.NivelTecnico ?? 1
+                NivelTecnico = tecnico.TecnicoTIPerfil?.NivelTecnico ?? 2  // Default: Nível 2 (Intermediário)
             };
             
             // === SCORE 1: ESPECIALIDADE (0-30 pontos) ===
@@ -336,7 +336,7 @@ public class HandoffService : IHandoffService
     
     /// <summary>
     /// Analisa palavras-chave no título e descrição para ajustar score de complexidade
-    /// IMPORTANTE: Problemas simples BLOQUEIAM técnicos sênior para evitar desperdício de recursos
+    /// NÍVEIS: 2=Intermediário (rotina), 3=Sênior (complexo/crítico)
     /// </summary>
     private double CalcularBonusComplexidade(string titulo, string descricao, int nivelTecnico)
     {
@@ -357,11 +357,11 @@ public class HandoffService : IHandoffService
             if (textoCompleto.Contains(palavra))
             {
                 contadorAltaComplexidade++;
-                bonus += nivelTecnico == 3 ? 3 : -2; // Favorece Sênior, penaliza Básico
+                bonus += nivelTecnico == 3 ? 3 : (nivelTecnico == 2 ? -1 : -2); // Favorece Sênior, neutraliza Intermediário
             }
         }
         
-        // === INDICADORES DE BAIXA COMPLEXIDADE (favorece Básico) ===
+        // === INDICADORES DE BAIXA COMPLEXIDADE (favorece Intermediário) ===
         string[] palavrasBaixaComplexidade = {
             "meu", "minha", "senha", "esqueci", "trocar", "mouse", "teclado",
             "dúvida", "como faço", "não sei", "ajuda", "solicito", "preciso",
@@ -374,24 +374,22 @@ public class HandoffService : IHandoffService
             if (textoCompleto.Contains(palavra))
             {
                 contadorBaixaComplexidade++;
-                bonus += nivelTecnico == 1 ? 3 : -1; // Favorece Básico, penaliza levemente Sênior
+                bonus += nivelTecnico == 2 ? 3 : -1; // Favorece Intermediário, penaliza Sênior
             }
         }
         
-        // === PENALIDADE SEVERA: Problema claramente simples não deve ir para Sênior ===
-        // Se tem 2+ indicadores de baixa complexidade e NENHUM de alta complexidade
-        // Técnico Sênior sofre penalidade MASSIVA para evitar desperdício de recurso
+        // === BOOST/PENALIDADE: Problema simples não deve ir para Sênior ===
         if (contadorBaixaComplexidade >= 2 && contadorAltaComplexidade == 0)
         {
             if (nivelTecnico == 3)
             {
                 _logger.LogDebug($"   ⚠️ BLOQUEIO: Problema simples detectado ({contadorBaixaComplexidade} indicadores). Penalidade severa para Sênior: -30 pontos");
-                bonus -= 30; // Penalidade severa - neutraliza especialização
+                bonus -= 30; // Penalidade severa
             }
-            else if (nivelTecnico == 1)
+            else if (nivelTecnico == 2)
             {
-                _logger.LogDebug($"   ✅ BOOST: Problema simples ideal para Básico (+15 pontos)");
-                bonus += 15; // Boost para Básico
+                _logger.LogDebug($"   ✅ BOOST: Problema simples ideal para Intermediário (+15 pontos)");
+                bonus += 15; // Boost para Intermediário
             }
         }
         
@@ -439,61 +437,67 @@ public class HandoffService : IHandoffService
     
     private double CalcularScorePrioridade(Usuario tecnico, int nivelPrioridade, TecnicoEstatisticas stats)
     {
-        // Obter nível do técnico (1=Básico, 3=Sênior/Especialista)
-        // NOTA: Nível 2 foi removido do sistema (apenas 2 técnicos)
-        var nivelTecnico = tecnico.TecnicoTIPerfil?.NivelTecnico ?? 1;
+        // Obter nível do técnico (2=Intermediário, 3=Sênior/Especialista)
+        // SISTEMA COM 2 TÉCNICOS:
+        // - Nível 2: Problemas BÁSICOS e INTERMEDIÁRIOS BAIXOS (rotina, configurações, instalações)
+        // - Nível 3: Problemas INTERMEDIÁRIOS ALTOS e CRÍTICOS (servidores, rede, sistemas complexos)
+        var nivelTecnico = tecnico.TecnicoTIPerfil?.NivelTecnico ?? 2;
         
-        // ===== PRIORIDADE ALTA (nível 3): Requer Técnico Sênior =====
+        // ===== PRIORIDADE ALTA/CRÍTICA (nível 3): Requer Técnico Sênior =====
         if (nivelPrioridade >= 3)
         {
             if (nivelTecnico == 3) // Técnico Sênior - IDEAL para problemas críticos
                 return PESO_PRIORIDADE; // 20 pontos
             
-            // Técnico Básico (nível 1) NUNCA deve atender prioridade alta
-            return PESO_PRIORIDADE * 0.05; // 1 ponto (bloqueio virtual)
+            // Técnico Intermediário (nível 2) pode atender APENAS em emergência (Sênior sobrecarregado)
+            if (stats.ChamadosAtivos < 2) // Se estiver muito livre
+                return PESO_PRIORIDADE * 0.25; // 5 pontos (última opção)
+            else
+                return PESO_PRIORIDADE * 0.05; // 1 ponto (bloqueio virtual)
         }
         
-        // ===== PRIORIDADE MÉDIA (nível 2): Distribuir com inteligência =====
+        // ===== PRIORIDADE MÉDIA (nível 2): Distribuir baseado em carga e complexidade =====
         if (nivelPrioridade == 2)
         {
-            // ESTRATÉGIA: Avaliar complexidade do problema e carga dos técnicos
+            // ESTRATÉGIA: Técnico Intermediário é IDEAL para problemas médios simples
+            //             Técnico Sênior entra apenas se Intermediário estiver ocupado
             
-            // Se Técnico Sênior tem carga leve (< 3 chamados), priorizar ele
-            if (nivelTecnico == 3)
+            if (nivelTecnico == 2) // Técnico Intermediário - PERFEITO para rotina
             {
+                // Sempre priorizar Intermediário para problemas médios
                 if (stats.ChamadosAtivos < 3)
-                    return PESO_PRIORIDADE * 0.95; // 19 pontos (alta prioridade)
+                    return PESO_PRIORIDADE; // 20 pontos (ideal!)
                 else if (stats.ChamadosAtivos < 6)
-                    return PESO_PRIORIDADE * 0.75; // 15 pontos (boa opção)
+                    return PESO_PRIORIDADE * 0.85; // 17 pontos (ainda ótimo)
                 else
-                    return PESO_PRIORIDADE * 0.55; // 11 pontos (disponível mas ocupado)
+                    return PESO_PRIORIDADE * 0.60; // 12 pontos (ocupado mas ok)
             }
             
-            // Técnico Básico pode atender APENAS se Sênior estiver sobrecarregado
-            if (nivelTecnico == 1)
+            // Técnico Sênior para prioridade média (usar apenas se Intermediário ocupado)
+            if (nivelTecnico == 3)
             {
-                // Se tem bom histórico (alta taxa de resolução), pode tentar
-                if (stats.TaxaResolucao > 0.8 && stats.ChamadosResolvidos > 10)
-                    return PESO_PRIORIDADE * 0.50; // 10 pontos (experiente)
-                else if (stats.ChamadosResolvidos > 5)
-                    return PESO_PRIORIDADE * 0.35; // 7 pontos (com experiência)
+                // Se Intermediário está sobrecarregado, Sênior pode ajudar
+                if (stats.ChamadosAtivos < 2)
+                    return PESO_PRIORIDADE * 0.70; // 14 pontos (disponível)
+                else if (stats.ChamadosAtivos < 4)
+                    return PESO_PRIORIDADE * 0.50; // 10 pontos (pode ajudar)
                 else
-                    return PESO_PRIORIDADE * 0.20; // 4 pontos (iniciante, apenas emergência)
+                    return PESO_PRIORIDADE * 0.30; // 6 pontos (evitar desperdício)
             }
         }
         
-        // ===== PRIORIDADE BAIXA (nível 1): Ideal para Técnico Básico =====
-        if (nivelTecnico == 1) // Técnico Básico - PERFEITO para problemas simples
-            return PESO_PRIORIDADE; // 20 pontos (treinamento e desenvolvimento)
+        // ===== PRIORIDADE BAIXA (nível 1): Ideal para Técnico Intermediário =====
+        if (nivelTecnico == 2) // Técnico Intermediário - PERFEITO para problemas simples/rotina
+            return PESO_PRIORIDADE; // 20 pontos (treinamento e manutenção de carga)
         
         // Técnico Sênior para prioridade baixa (desperdício de recurso qualificado)
-        // Só aceita se Básico estiver completamente sobrecarregado
+        // Só aceita se Intermediário estiver completamente sobrecarregado
         if (stats.ChamadosAtivos < 2)
-            return PESO_PRIORIDADE * 0.60; // 12 pontos (disponível)
-        else if (stats.ChamadosAtivos < 5)
-            return PESO_PRIORIDADE * 0.40; // 8 pontos (aceita ajudar)
+            return PESO_PRIORIDADE * 0.40; // 8 pontos (muito disponível, pode ajudar)
+        else if (stats.ChamadosAtivos < 4)
+            return PESO_PRIORIDADE * 0.25; // 5 pontos (aceita se necessário)
         else
-            return PESO_PRIORIDADE * 0.20; // 4 pontos (evitar se possível)
+            return PESO_PRIORIDADE * 0.10; // 2 pontos (evitar ao máximo)
     }
     
     private async Task<TecnicoEstatisticas> CalcularEstatisticasPerformanceAsync(

@@ -207,4 +207,44 @@ public class UsuariosController : ControllerBase
         
         return Ok(new { message = "Senha redefinida com sucesso." });
     }
+
+    // ENDPOINT TEMPORÁRIO PARA CORRIGIR TÉCNICO INTERMEDIÁRIO
+    [HttpPost("fix-tecnico-intermediario")]
+    [AllowAnonymous] // Temporário para facilitar execução
+    public async Task<IActionResult> FixTecnicoIntermediario()
+    {
+        var tecnico = await _context.Usuarios
+            .Include(u => u.TecnicoTIPerfil)
+            .FirstOrDefaultAsync(u => u.Email == "tecnico@empresa.com");
+
+        if (tecnico == null)
+        {
+            return NotFound(new { message = "Técnico tecnico@empresa.com não encontrado" });
+        }
+
+        // Atualizar nome
+        tecnico.NomeCompleto = "Técnico Intermediário - Nível 2";
+
+        // Atualizar perfil de técnico
+        if (tecnico.TecnicoTIPerfil != null)
+        {
+            tecnico.TecnicoTIPerfil.NivelTecnico = 2;
+            tecnico.TecnicoTIPerfil.AreaAtuacao = "Suporte Intermediário";
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Técnico atualizado com sucesso!",
+            usuario = new
+            {
+                id = tecnico.Id,
+                email = tecnico.Email,
+                nomeCompleto = tecnico.NomeCompleto,
+                nivel = tecnico.TecnicoTIPerfil?.NivelTecnico,
+                areaAtuacao = tecnico.TecnicoTIPerfil?.AreaAtuacao
+            }
+        });
+    }
 }

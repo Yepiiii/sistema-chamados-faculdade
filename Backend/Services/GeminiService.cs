@@ -394,7 +394,7 @@ PRIORIDADES:
    • Instalação/configuração de software corporativo
    • Palavras-chave: ""setor"", ""departamento"", ""compartilhado"", ""vários usuários"", ""lento"", ""travando""
    
-   MÉDIA-BAIXA (→ Técnico Básico experiente):
+   MÉDIA-BAIXA (→ Técnico Intermediário):
    • Solicitação de software individual
    • Problema de equipamento pessoal (mouse, teclado)
    • Dúvidas sobre uso de sistema
@@ -617,8 +617,19 @@ DESCRIÇÃO: {descricao}
 • O sistema de handoff já calculou scores considerando: especialidade, disponibilidade, performance, prioridade e complexidade
 • Você PODE escolher o técnico com maior score (concordar com handoff)
 • Você PODE escolher outro técnico SE tiver uma justificativa clara baseada nas especialidades ou na natureza específica do problema
-• Considere: técnicos sêniores para problemas complexos/críticos, técnicos básicos para problemas simples/rotineiros
+• Considere: técnicos sêniores (Nível 3) para problemas complexos/críticos, técnicos intermediários (Nível 2) para problemas básicos/rotineiros
 • Um técnico com score ligeiramente menor MAS com especialidade exata pode ser melhor escolha
+
+===== ESTRUTURA DE TÉCNICOS (2 NÍVEIS) =====
+• Nível 2 (Intermediário): Problemas BÁSICOS e INTERMEDIÁRIOS BAIXOS
+  - Senha, periféricos, instalações básicas, configurações de email
+  - Problemas individuais e solicitações rotineiras
+  - Ideal para prioridade BAIXA e MÉDIA-BAIXA
+
+• Nível 3 (Sênior/Especialista): Problemas INTERMEDIÁRIOS ALTOS e CRÍTICOS
+  - Servidores, rede, sistemas críticos, problemas setoriais
+  - Infraestrutura, VPN, banco de dados, ERP
+  - Ideal para prioridade MÉDIA-ALTA, ALTA e CRÍTICA
 
 ===== CATEGORIAS =====
 1. Hardware (problemas físicos: impressora, mouse, teclado, monitor)

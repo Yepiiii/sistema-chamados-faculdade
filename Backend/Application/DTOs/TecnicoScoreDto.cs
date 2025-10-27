@@ -10,8 +10,7 @@ public class TecnicoScoreDto
     public string? AreaAtuacao { get; set; }
     
     /// <summary>
-    /// Nível do técnico: 1=Básico, 3=Sênior/Especialista
-    /// NOTA: Nível 2 foi removido
+    /// Nível do técnico: 2=Intermediário, 3=Sênior/Especialista
     /// </summary>
     public int NivelTecnico { get; set; }
     
@@ -20,8 +19,7 @@ public class TecnicoScoreDto
     /// </summary>
     public string NivelDescricao => NivelTecnico switch
     {
-        1 => "Nível 1 - Suporte Básico",
-        2 => "Nível 2 - Suporte Intermediário (DESATIVADO)",
+        2 => "Nível 2 - Suporte Intermediário",
         3 => "Nível 3 - Especialista Sênior",
         _ => "Nível Desconhecido"
     };

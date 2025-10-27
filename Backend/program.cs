@@ -39,6 +39,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    // Configurar camelCase para nomes de propriedades (padrão JavaScript)
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     // Configuração UTF-8 para caracteres especiais (acentos, etc)
     options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(
         System.Text.Unicode.UnicodeRanges.BasicLatin,
@@ -51,6 +53,22 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Configurar CORS para permitir requisições do frontend
 builder.Services.AddCors(options =>
 {
+    // Política para desenvolvimento local (frontend web)
+    options.AddPolicy("FrontendLocal", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000", 
+                "http://127.0.0.1:5500", 
+                "http://localhost:5500",
+                "http://localhost:5173", // Vite
+                "http://127.0.0.1:5173"
+              )
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+    
+    // Política aberta para mobile e testes (mantida para compatibilidade)
     options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
@@ -165,8 +183,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Usar CORS
-app.UseCors("AllowAll");
+// Configurar para servir arquivos estáticos do frontend
+app.UseDefaultFiles(); // Serve index.html automaticamente
+app.UseStaticFiles(); // Serve CSS, JS, imagens, etc.
+
+// Usar CORS - FrontendLocal para web, AllowAll para mobile
+app.UseCors("FrontendLocal");
 
 //app.UseHttpsRedirection();
 

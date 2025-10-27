@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Chamados - Faculdade</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/contrast-fixes.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sistema de Chamados</h1>
+            <p>Gerenciamento Inteligente com IA + Handoff</p>
+        </header>
+
+        <main>
+            <div class="welcome-section">
+                <h2>Bem-vindo ao Sistema de Chamados</h2>
+                <p>Sistema de gerenciamento de chamados com inteligência artificial para atribuição automática de técnicos.</p>
+                
+                <div class="action-buttons">
+                    <a href="pages/login.html" class="btn btn-primary">Entrar</a>
+                    <a href="pages/cadastro.html" class="btn btn-secondary">Cadastrar</a>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>🤖 Inteligência Artificial</h3>
+                    <p>Sistema de IA com Gemini para análise e atribuição inteligente de chamados</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>📊 Sistema Handoff</h3>
+                    <p>4 camadas de proteção com scores baseados em especialidade, disponibilidade e performance</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3>⚡ Atribuição Automática</h3>
+                    <p>Técnicos atribuídos automaticamente baseado em complexidade e prioridade</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Sistema de Chamados - Faculdade. Todos os direitos reservados.</p>
+        </footer>
+    </div>
+
+    <!-- Scripts de autenticação -->
+    <script src="assets/js/auth.js"></script>
+    <script>
+        // Verifica se o usuário já está logado e redireciona
+        if (auth.isAuthenticated()) {
+            const userInfo = auth.getUserInfo();
+            const role = auth.getUserRole();
+            
+            console.log('Usuário já logado:', userInfo.nome || userInfo.email);
+            
+            // Redireciona baseado no tipo de usuário
+            if (role === 'Admin') {
+                window.location.href = 'pages/admin-dashboard.html';
+            } else {
+                window.location.href = 'pages/dashboard.html';
+            }
+        }
+    </script>
+
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .welcome-section h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .welcome-section p {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+</html>
