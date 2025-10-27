@@ -8,7 +8,7 @@ param(
 
 Write-Host "`n=== INICIALIZACAO DO BANCO DE DADOS GuiNRB ===" -ForegroundColor Cyan
 
-$backendPath = "c:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\Backend"
+$backendPath = Join-Path (Split-Path $PSScriptRoot -Parent | Split-Path -Parent) "Backend"
 
 # Verifica se o diretório existe
 if (-not (Test-Path $backendPath)) {

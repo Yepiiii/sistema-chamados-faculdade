@@ -18,8 +18,8 @@ try {
 }
 
 # Caminho do projeto mobile
-$mobileProjectPath = "C:\Users\opera\sistema-chamados-faculdade\SistemaChamados.Mobile\SistemaChamados.Mobile.csproj"
-$solutionPath = "C:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\sistema-chamados-faculdade.sln"
+$mobileProjectPath = Join-Path (Split-Path $PSScriptRoot -Parent) "SistemaChamados.Mobile\SistemaChamados.Mobile.csproj"
+$solutionPath = Join-Path $PSScriptRoot "..\SistemaChamados.sln"
 
 Write-Host "[2] Abrindo projeto Mobile no Visual Studio..." -ForegroundColor Yellow
 

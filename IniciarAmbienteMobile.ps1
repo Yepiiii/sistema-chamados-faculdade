@@ -21,7 +21,7 @@ try {
     Write-Host "    API nao esta rodando. Iniciando..." -ForegroundColor Yellow
     
     # Iniciar API em nova janela
-    $apiPath = "C:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\Backend"
+    $apiPath = Join-Path $PSScriptRoot "Backend"
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$apiPath'; Write-Host 'Iniciando API Backend...' -ForegroundColor Cyan; dotnet run" -WindowStyle Normal
     
     Write-Host "    Aguardando API inicializar (20 segundos)..." -ForegroundColor Gray
@@ -58,7 +58,7 @@ if ($vsProcess) {
     Write-Host "    PID: $($vsProcess.Id)" -ForegroundColor Gray
 } else {
     Write-Host "    Abrindo Visual Studio..." -ForegroundColor Yellow
-    $solutionPath = "C:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\SistemaChamados.sln"
+    $solutionPath = Join-Path $PSScriptRoot "SistemaChamados.sln"
     Start-Process $solutionPath
     Write-Host "    Visual Studio abrindo..." -ForegroundColor Green
 }

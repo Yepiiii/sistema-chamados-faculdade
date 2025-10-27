@@ -2,7 +2,7 @@
 Write-Host "Iniciando API em nova janela..." -ForegroundColor Cyan
 
 $scriptBlock = {
-    Set-Location "C:\Users\opera\sistema-chamados-faculdade\sistema-chamados-faculdade\Backend"
+    $backendPath = Join-Path $PSScriptRoot "Backend"; Set-Location $backendPath
     Write-Host "==================================" -ForegroundColor Cyan
     Write-Host "    SERVIDOR API BACKEND" -ForegroundColor Cyan
     Write-Host "==================================" -ForegroundColor Cyan
