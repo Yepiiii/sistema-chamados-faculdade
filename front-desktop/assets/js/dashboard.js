@@ -102,7 +102,7 @@ async function loadChamados() {
         setEmptyState(false);
 
         console.log('Buscando chamados do usuário...');
-        const response = await api.get('/Chamados');
+        const response = await chamadosService.getChamados();
         
         allChamados = response || [];
         console.log(`${allChamados.length} chamados encontrados`);

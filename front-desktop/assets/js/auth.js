@@ -18,7 +18,7 @@ class AuthService {
      */
     async login(email, senha) {
         try {
-            const response = await this.api.post('/Usuarios/login', {
+            const response = await this.api.post('/usuarios/login', {
                 email,
                 senha
             });
@@ -53,7 +53,7 @@ class AuthService {
      */
     async register(userData) {
         try {
-            const response = await this.api.post('/Usuarios/register', userData);
+            const response = await this.api.post('/usuarios/registrar-admin', userData);
             
             console.log('Cadastro realizado com sucesso!');
             return {

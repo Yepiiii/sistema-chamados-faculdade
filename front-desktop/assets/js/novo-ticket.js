@@ -1,7 +1,7 @@
 // novo-ticket.js - Criação de novos chamados com preview IA
 
 // Verificar autenticação
-if (!authService.isAuthenticated()) {
+if (!auth.isAuthenticated()) {
     window.location.href = 'login.html';
 }
 
@@ -42,8 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadCategorias() {
     try {
-        const response = await apiClient.get('/Categorias');
-        categorias = response.data || response;
+        const response = await chamadosService.getCategorias();
+        categorias = response;
         
         populateCategoriaSelect();
     } catch (error) {
@@ -63,8 +63,8 @@ async function loadCategorias() {
 
 async function loadPrioridades() {
     try {
-        const response = await apiClient.get('/Prioridades');
-        prioridades = response.data || response;
+        const response = await chamadosService.getPrioridades();
+        prioridades = response;
         
         populatePrioridadeSelect();
     } catch (error) {
@@ -120,7 +120,7 @@ function setupEventListeners() {
     // Logout
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        authService.logout();
+        auth.logout();
         window.location.href = 'login.html';
     });
     
@@ -163,8 +163,8 @@ async function showAIPreview() {
     
     try {
         // Chamar API de análise
-        const response = await apiClient.post(`/Chamados/analisar-com-handoff`, formData);
-        aiAnalysisResult = response.data || response;
+        const response = await chamadosService.analisarChamado(formData.descricao);
+        aiAnalysisResult = response;
         
         displayAIPreview(aiAnalysisResult);
         hideLoading();
@@ -298,8 +298,8 @@ async function handleSubmit(e) {
     showLoading('Criando chamado...');
     
     try {
-        const response = await apiClient.post('/Chamados', formData);
-        const chamado = response.data || response;
+        const response = await chamadosService.criarChamado(formData);
+        const chamado = response;
         
         hideLoading();
         showToast('Chamado criado com sucesso!', 'success');
@@ -371,7 +371,7 @@ function getFormData() {
         descricao: descricaoTextarea.value.trim(),
         categoriaId: parseInt(categoriaSelect.value),
         prioridadeId: parseInt(prioridadeSelect.value),
-        usuarioId: authService.getUserInfo().userId
+        // usuarioId será obtido automaticamente do token JWT no backend
     };
 }
 

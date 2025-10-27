@@ -262,7 +262,7 @@ registerForm.addEventListener('submit', async (e) => {
 
         // Prepara dados para envio
         const userData = {
-            nome: name,
+            nomeCompleto: name,
             email: email,
             senha: password
         };
