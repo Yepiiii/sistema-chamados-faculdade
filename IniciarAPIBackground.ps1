@@ -1,15 +1,19 @@
 # Script para iniciar a API em background
 Write-Host "Iniciando API em nova janela..." -ForegroundColor Cyan
 
-$scriptBlock = {
-    $backendPath = Join-Path $PSScriptRoot "Backend"; Set-Location $backendPath
-    Write-Host "==================================" -ForegroundColor Cyan
-    Write-Host "    SERVIDOR API BACKEND" -ForegroundColor Cyan
-    Write-Host "==================================" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Iniciando servidor..." -ForegroundColor Yellow
+# Obter caminho absoluto do Backend
+$backendPath = Join-Path $PSScriptRoot "Backend"
+$backendPath = Resolve-Path $backendPath
+
+$scriptBlock = @"
+    Set-Location '$backendPath'
+    Write-Host '==================================' -ForegroundColor Cyan
+    Write-Host '    SERVIDOR API BACKEND' -ForegroundColor Cyan
+    Write-Host '==================================' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host 'Iniciando servidor...' -ForegroundColor Yellow
     dotnet run
-}
+"@
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $scriptBlock
 

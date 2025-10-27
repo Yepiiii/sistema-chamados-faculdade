@@ -21,16 +21,20 @@ Write-Host ""
 # Passo 2: Iniciar Backend em nova janela
 Write-Host "[2/3] Iniciando Backend API..." -ForegroundColor Yellow
 
-$scriptBlock = {
-    $backendPath = Join-Path $PSScriptRoot "Backend"; Set-Location $backendPath
-    Write-Host "==================================" -ForegroundColor Cyan
-    Write-Host "    SERVIDOR API BACKEND" -ForegroundColor Cyan
-    Write-Host "==================================" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Aguarde o servidor iniciar..." -ForegroundColor Yellow
-    Write-Host ""
+# Obter caminho absoluto do Backend
+$backendPath = Join-Path $PSScriptRoot "Backend"
+$backendPath = Resolve-Path $backendPath
+
+$scriptBlock = @"
+    Set-Location '$backendPath'
+    Write-Host '==================================' -ForegroundColor Cyan
+    Write-Host '    SERVIDOR API BACKEND' -ForegroundColor Cyan
+    Write-Host '==================================' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host 'Aguarde o servidor iniciar...' -ForegroundColor Yellow
+    Write-Host ''
     dotnet run
-}
+"@
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $scriptBlock
 
