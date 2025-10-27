@@ -372,12 +372,17 @@ FodyWeavers.xsd
 # Logs
 *.log
 
-# Environment files
+# Environment files (IMPORTANTE: Protege chaves de API)
 .env
 *.env
+Backend/.env
+**/Backend/.env
+**/.env
 
 # Dados sensíveis locais (NÃO COMMITAR!)
 DADOS_SENSIVEIS.txt
+*.key
+*.secret
 
 # Configurações sensíveis (IMPORTANTE: appsettings.json SEM dados sensíveis pode ser commitado)
 # Backend/appsettings.json - Commitado com valores padrão
