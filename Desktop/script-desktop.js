@@ -205,38 +205,55 @@ async function initDashboard() {
   }
 }
 
-/* Renderização da tabela de chamados (v4 - Final para DTO) */
-function renderTicketsTable(chamados, tbody) { // A resposta já é a lista 'chamados'
+/* Renderização da tabela de chamados (v5 - Simplificada e Segura) */
+function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' diretamente
   tbody.innerHTML = ""; // Limpa a tabela
 
-  // Verifica se a lista existe e tem itens
+  // Verifica apenas se a lista é válida e tem itens
   if (!Array.isArray(chamados) || chamados.length === 0) {
+    console.log("renderTicketsTable: A lista de chamados está vazia ou inválida.", chamados);
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
 
-  chamados.forEach((chamado) => {
-    const tr = document.createElement("tr");
+  console.log("renderTicketsTable: Recebeu chamados para renderizar:", chamados);
 
-    // Leitura direta das propriedades do DTO
-    const chamadoId = chamado.id ?? '#ERR';
-    const titulo = chamado.titulo ?? 'Sem Título';
-    const categoriaNome = chamado.categoriaNome ?? 'N/A'; // Vem direto do DTO
-    const statusNome = chamado.statusNome ?? 'N/A';       // Vem direto do DTO
+  chamados.forEach((chamado, index) => {
+    // Adiciona um try...catch para isolar erros em chamados individuais
+    try {
+      console.log(`--- Processando Chamado #${index + 1} ---`);
+      console.log("Objeto Chamado:", chamado);
 
-    const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
+      const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
-      <td>${titulo}</td>
-      <td>${categoriaNome}</td>
-      <td><span class="badge status-${statusClass}">${statusNome}</span></td>
-      <td><button class="btn btn-outline btn-sm" data-id="${chamadoId}">Abrir</button></td>
-    `;
-    tbody.appendChild(tr);
+      // Leitura segura das propriedades
+      const chamadoId = chamado?.id ?? '#ERR';
+      const titulo = chamado?.titulo ?? 'Sem Título';
+      const categoriaNome = chamado?.categoriaNome ?? 'N/A'; // Usa a propriedade direta do DTO
+      const statusNome = chamado?.statusNome ?? 'N/A';       // Usa a propriedade direta do DTO
+
+      const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
+
+      console.log(`ID Lido: ${chamadoId}, Título: ${titulo}, Categoria: ${categoriaNome}, Status: ${statusNome}`);
+
+      tr.innerHTML = `
+        <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
+        <td>${titulo}</td>
+        <td>${categoriaNome}</td>
+        <td><span class="badge status-${statusClass}">${statusNome}</span></td>
+        <td><button class="btn btn-outline btn-sm" data-id="${chamadoId}">Abrir</button></td>
+      `;
+      tbody.appendChild(tr);
+    } catch (error) {
+      console.error(`Erro ao processar o chamado no índice ${index}:`, chamado, error);
+      // Opcional: Adicionar uma linha de erro na tabela
+      const trError = document.createElement("tr");
+      trError.innerHTML = `<td colspan="5" style="color: red; text-align: center;">Erro ao renderizar este chamado. Verifique o console.</td>`;
+      tbody.appendChild(trError);
+    }
   });
 
-  // Lógica para os botões "Abrir" (não muda)
+  // Lógica dos botões "Abrir" (não muda)
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
