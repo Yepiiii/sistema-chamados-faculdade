@@ -208,36 +208,28 @@ async function initDashboard() {
 /* Renderização da tabela de chamados (v3 - Depuração Detalhada) */
 function renderTicketsTable(apiResponse, tbody) {
   tbody.innerHTML = ""; // Limpa a tabela
-
   // Verifica se a resposta e $values existem e são uma lista
   if (!apiResponse || !Array.isArray(apiResponse.$values) || apiResponse.$values.length === 0) {
     console.log("renderTicketsTable: Não há chamados para exibir ou a estrutura da resposta é inesperada.", apiResponse);
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
-
   const chamados = apiResponse.$values; // A lista real de chamados
-
   chamados.forEach((chamado, index) => {
     console.log(`--- Processando Chamado #${index + 1} ---`);
     console.log("Objeto Chamado:", chamado); // Log do objeto inteiro
-
     const tr = document.createElement("tr");
-
     // Leitura SUPER segura de cada propriedade
     const chamadoId = chamado && typeof chamado.id !== 'undefined' ? chamado.id : '#ERR';
     const titulo = chamado && typeof chamado.titulo === 'string' ? chamado.titulo : 'Sem Título';
     const categoriaNome = chamado && chamado.categoria && typeof chamado.categoria.nome === 'string' ? chamado.categoria.nome : 'N/A';
     const statusNome = chamado && chamado.status && typeof chamado.status.nome === 'string' ? chamado.status.nome : 'N/A';
-
     const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
-
     // Log dos valores lidos
     console.log(`ID Lido: ${chamadoId}`);
     console.log(`Título Lido: ${titulo}`);
     console.log(`Categoria Lido: ${categoriaNome}`);
     console.log(`Status Lido: ${statusNome}`);
-
     tr.innerHTML = `
       <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
       <td>${titulo}</td>
@@ -247,7 +239,6 @@ function renderTicketsTable(apiResponse, tbody) {
     `;
     tbody.appendChild(tr);
   });
-
   // Lógica para os botões "Abrir"
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
