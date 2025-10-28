@@ -167,10 +167,6 @@ async function initDashboard() {
     return go("login-desktop.html");
   }
 
-  // Identificar a tabela correta para renderizar os dados
-  const table = $("#tickets-table") || $("#tickets-body-admin");
-  if (!table) return;
-
   try {
     // Fazer chamada para a API para buscar os chamados
     const response = await fetch(`${API_BASE}/api/chamados`, {
@@ -185,8 +181,12 @@ async function initDashboard() {
     if (response.ok) {
       const chamados = await response.json();
       
+      // Identificar o tbody da tabela na página atual
+      const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
+      if (!tbody) return;
+      
       // Renderizar os chamados na tabela
-      renderTicketsTable(chamados, table);
+      renderTicketsTable(chamados, tbody);
     } else if (response.status === 401) {
       // Token inválido ou expirado
       sessionStorage.removeItem('authToken');
@@ -205,8 +205,7 @@ async function initDashboard() {
 }
 
 /* Renderização da tabela de chamados */
-function renderTicketsTable(tickets, table) {
-  const tbody = table.querySelector("tbody");
+function renderTicketsTable(tickets, tbody) {
   tbody.innerHTML = "";
 
   if (!tickets.length) {
