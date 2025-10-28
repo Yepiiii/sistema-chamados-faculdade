@@ -208,6 +208,8 @@ async function initDashboard() {
 }
 
 /* Renderização da tabela de chamados (v5 - Simplificada e Segura) */
+console.log("initDashboard: Dados a serem enviados para renderTicketsTable:", chamados); // <-- ADICIONE ESTA LINHA
+renderTicketsTable(chamados, tbody);
 function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' diretamente
   tbody.innerHTML = ""; // Limpa a tabela
 
