@@ -81,14 +81,19 @@ public class ChamadosController : ControllerBase
 [HttpGet]
 public async Task<IActionResult> GetChamados()
 {
-    var chamados = await _context.Chamados
-        .Include(c => c.Solicitante)
-        .Include(c => c.Status)
-        .Include(c => c.Prioridade)
-        .Include(c => c.Categoria)
+    var chamadosDto = await _context.Chamados
+        .Include(c => c.Categoria) // Inclui para poder aceder ao Nome
+        .Include(c => c.Status)    // Inclui para poder aceder ao Nome
+        .Select(c => new ChamadoListDto // Transforma a entidade no DTO
+        {
+            Id = c.Id,
+            Titulo = c.Titulo,
+            CategoriaNome = c.Categoria.Nome, // Seleciona apenas o nome
+            StatusNome = c.Status.Nome       // Seleciona apenas o nome
+        })
         .ToListAsync();
 
-    return Ok(chamados);
+    return Ok(chamadosDto); // Retorna a lista do DTO simplificado
 }
 
 [HttpGet("{id}")]

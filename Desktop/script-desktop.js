@@ -186,7 +186,7 @@ async function initDashboard() {
       const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
       if (!tbody) return;
       
-      // Renderizar os chamados na tabela (passa o objeto completo para renderTicketsTable lidar com $values)
+      // Renderizar os chamados na tabela (responseData agora é diretamente a lista de ChamadoListDto)
       renderTicketsTable(responseData, tbody);
     } else if (response.status === 401) {
       // Token inválido ou expirado
@@ -205,31 +205,27 @@ async function initDashboard() {
   }
 }
 
-/* Renderização da tabela de chamados (v3 - Depuração Detalhada) */
-function renderTicketsTable(apiResponse, tbody) {
+/* Renderização da tabela de chamados (v4 - Final para DTO) */
+function renderTicketsTable(chamados, tbody) { // A resposta já é a lista 'chamados'
   tbody.innerHTML = ""; // Limpa a tabela
-  // Verifica se a resposta e $values existem e são uma lista
-  if (!apiResponse || !Array.isArray(apiResponse.$values) || apiResponse.$values.length === 0) {
-    console.log("renderTicketsTable: Não há chamados para exibir ou a estrutura da resposta é inesperada.", apiResponse);
+
+  // Verifica se a lista existe e tem itens
+  if (!Array.isArray(chamados) || chamados.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
-  const chamados = apiResponse.$values; // A lista real de chamados
-  chamados.forEach((chamado, index) => {
-    console.log(`--- Processando Chamado #${index + 1} ---`);
-    console.log("Objeto Chamado:", chamado); // Log do objeto inteiro
+
+  chamados.forEach((chamado) => {
     const tr = document.createElement("tr");
-    // Leitura SUPER segura de cada propriedade
-    const chamadoId = chamado && typeof chamado.id !== 'undefined' ? chamado.id : '#ERR';
-    const titulo = chamado && typeof chamado.titulo === 'string' ? chamado.titulo : 'Sem Título';
-    const categoriaNome = chamado && chamado.categoria && typeof chamado.categoria.nome === 'string' ? chamado.categoria.nome : 'N/A';
-    const statusNome = chamado && chamado.status && typeof chamado.status.nome === 'string' ? chamado.status.nome : 'N/A';
+
+    // Leitura direta das propriedades do DTO
+    const chamadoId = chamado.id ?? '#ERR';
+    const titulo = chamado.titulo ?? 'Sem Título';
+    const categoriaNome = chamado.categoriaNome ?? 'N/A'; // Vem direto do DTO
+    const statusNome = chamado.statusNome ?? 'N/A';       // Vem direto do DTO
+
     const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
-    // Log dos valores lidos
-    console.log(`ID Lido: ${chamadoId}`);
-    console.log(`Título Lido: ${titulo}`);
-    console.log(`Categoria Lido: ${categoriaNome}`);
-    console.log(`Status Lido: ${statusNome}`);
+
     tr.innerHTML = `
       <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
       <td>${titulo}</td>
@@ -239,7 +235,8 @@ function renderTicketsTable(apiResponse, tbody) {
     `;
     tbody.appendChild(tr);
   });
-  // Lógica para os botões "Abrir"
+
+  // Lógica para os botões "Abrir" (não muda)
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
@@ -247,7 +244,7 @@ function renderTicketsTable(apiResponse, tbody) {
         sessionStorage.setItem('currentTicketId', id);
         go("ticket-detalhes-desktop.html");
       } else {
-        console.error("Tentativa de abrir chamado com ID inválido/não lido.");
+        console.error("Tentativa de abrir chamado com ID inválido.");
         toast("Erro ao tentar abrir detalhes do chamado.");
       }
     });
