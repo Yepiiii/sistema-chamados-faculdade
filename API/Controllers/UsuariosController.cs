@@ -98,7 +98,11 @@ public class UsuariosController : ControllerBase
         bool senhaValida = false;
         try
         {
+            // LOG ADICIONAL 1: Ver a senha recebida ANTES da verificação
+            _logger.LogInformation("Verificando senha recebida: '{SenhaRecebida}' contra o hash do usuário ID {UserId}", loginRequest.Senha, usuario.Id);
             senhaValida = BCrypt.Net.BCrypt.Verify(loginRequest.Senha, usuario.SenhaHash);
+            // LOG ADICIONAL 2: Confirma o resultado IMEDIATAMENTE após
+            _logger.LogInformation("Resultado IMEDIATO do BCrypt.Verify para usuário ID {UserId}: {SenhaValida}", usuario.Id, senhaValida);
             _logger.LogInformation("Resultado da verificação de senha para o usuário ID {UserId}: {SenhaValida}", usuario.Id, senhaValida); // LOG 5
         }
         catch (Exception ex)
