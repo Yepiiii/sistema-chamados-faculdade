@@ -222,7 +222,6 @@ function renderTicketsTable(chamados, tbody) { // Renomeado para 'chamados' para
     const statusNome = chamado.status ? chamado.status.nome : 'N/A';
     // Adapta o nome do status para usar nas classes CSS (ex: 'Em Andamento' -> 'andamento')
     const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-');
-
     tr.innerHTML = `
       <td>#${chamado.id}</td>
       <td>${chamado.titulo || 'Sem Título'}</td>
@@ -237,9 +236,7 @@ function renderTicketsTable(chamados, tbody) { // Renomeado para 'chamados' para
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-      // IMPORTANTE: Agora precisamos buscar os detalhes completos da API ao clicar
-      // A lógica antiga de load("tickets").find(...) não funciona mais
-      // Por enquanto, apenas guardamos o ID para a próxima tela
+      // Guarda o ID no sessionStorage para a tela de detalhes buscar da API
       sessionStorage.setItem('currentTicketId', id);
       go("ticket-detalhes-desktop.html");
     });
