@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:SistemaChamados.Mobile.Converters"
+             x:Class="SistemaChamados.Mobile.Views.ChamadosListPage"
+             Title="Meus Chamados">
+  <ContentPage.Resources>
+    <!-- Converters -->
+    <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
+    <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+    <converters:PluralSuffixConverter x:Key="PluralSuffixConverter" />
+    <converters:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+    <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
+    
+    <LinearGradientBrush x:Key="ListHeaderGradient" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#2A5FDF" Offset="0" />
+      <GradientStop Color="#3FA5F5" Offset="1" />
+    </LinearGradientBrush>
+
+    <Style x:Key="ChamadoCardStyle" TargetType="Border">
+      <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+      <Setter Property="StrokeThickness" Value="1" />
+      <Setter Property="Stroke" Value="{DynamicResource Gray200Brush}" />
+      <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <Style x:Key="TagBorderStyle" TargetType="Border">
+      <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="BackgroundColor" Value="{DynamicResource Secondary}" />
+      <Setter Property="StrokeThickness" Value="0" />
+    </Style>
+
+    <!-- Chip Button Style -->
+    <Style x:Key="ChipButtonStyle" TargetType="Border">
+      <Setter Property="StrokeShape" Value="RoundRectangle 20" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+      <Setter Property="StrokeThickness" Value="1" />
+      <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+
+    <!-- Active Chip Button Style -->
+    <Style x:Key="ChipButtonActiveStyle" TargetType="Border">
+      <Setter Property="StrokeShape" Value="RoundRectangle 20" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+      <Setter Property="StrokeThickness" Value="0" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+  </ContentPage.Resources>
+
+  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="20" Padding="24">
+    <Border Grid.Row="0" Background="{StaticResource ListHeaderGradient}" StrokeShape="RoundRectangle 28" StrokeThickness="0" Padding="22">
+      <VerticalStackLayout Spacing="4">
+        <Label Text="Chamados em andamento"
+               FontSize="24"
+               FontAttributes="Bold"
+               TextColor="{DynamicResource White}" />
+        <Label Text="Acompanhe as atualizações e status em tempo real."
+               TextColor="{DynamicResource White}" />
+      </VerticalStackLayout>
+    </Border>
+
+    <VerticalStackLayout Grid.Row="1" Spacing="12">
+      <!-- SearchBar -->
+      <SearchBar Placeholder="Buscar por título ou descrição"
+                 Text="{Binding SearchTerm}"
+                 Margin="0,0,0,8" />
+
+      <!-- Filter Controls Row: Toggle Button + Active Counter + Clear Button -->
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Margin="0,0,0,8">
+        <!-- Toggle Advanced Filters Button -->
+        <Button Grid.Column="0"
+                Text="{Binding ShowAdvancedFilters, Converter={StaticResource BoolToTextConverter}}"
+                Command="{Binding ToggleAdvancedFiltersCommand}"
+                BackgroundColor="{DynamicResource Primary}"
+                TextColor="White"
+                FontSize="14"
+                FontAttributes="Bold"
+                CornerRadius="20"
+                Padding="16,8"
+                HeightRequest="40" />
+
+        <!-- Active Filters Counter Badge -->
+        <Border Grid.Column="1"
+                IsVisible="{Binding ActiveFiltersCount, Converter={StaticResource GreaterThanZeroConverter}}"
+                StrokeShape="RoundRectangle 16"
+                BackgroundColor="{DynamicResource Warning}"
+                Padding="12,8"
+                HorizontalOptions="Start"
+                VerticalOptions="Center">
+          <Label>
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="🔍 " FontSize="14" />
+                <Span Text="{Binding ActiveFiltersCount}" FontSize="14" FontAttributes="Bold" TextColor="White" />
+                <Span Text=" filtro" FontSize="14" TextColor="White" />
+                <Span Text="{Binding ActiveFiltersCount, Converter={StaticResource PluralSuffixConverter}}" FontSize="14" TextColor="White" />
+                <Span Text=" ativo" FontSize="14" TextColor="White" />
+                <Span Text="{Binding ActiveFiltersCount, Converter={StaticResource PluralSuffixConverter}}" FontSize="14" TextColor="White" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+        </Border>
+
+        <!-- Clear Filters Button -->
+        <Button Grid.Column="2"
+                Text="Limpar"
+                Command="{Binding ClearFiltersCommand}"
+                IsVisible="{Binding ActiveFiltersCount, Converter={StaticResource GreaterThanZeroConverter}}"
+                BackgroundColor="Transparent"
+                TextColor="{DynamicResource Danger}"
+                FontSize="14"
+                FontAttributes="Bold"
+                BorderColor="{DynamicResource Danger}"
+                BorderWidth="1"
+                CornerRadius="20"
+                Padding="16,8"
+                HeightRequest="40" />
+      </Grid>
+
+      <!-- Advanced Filters (Collapsible) -->
+      <Frame IsVisible="{Binding ShowAdvancedFilters}"
+             Padding="16"
+             CornerRadius="16"
+             BackgroundColor="{DynamicResource White}"
+             BorderColor="{DynamicResource Gray200}"
+             HasShadow="False">
+        <VerticalStackLayout Spacing="20">
+          
+          <!-- Categorias Chip Buttons -->
+          <VerticalStackLayout Spacing="10">
+            <Label Text="📁 Categoria" 
+                   FontSize="15" 
+                   FontAttributes="Bold" 
+                   TextColor="{DynamicResource Gray900}" />
+            
+            <CollectionView ItemsSource="{Binding Categorias}"
+                            SelectionMode="None">
+              <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+              </CollectionView.ItemsLayout>
+              
+              <CollectionView.ItemTemplate>
+                <DataTemplate>
+                  <Border StrokeShape="RoundRectangle 20"
+                          Padding="16,10"
+                          StrokeThickness="1"
+                          Margin="0">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+                        <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
+                        <Style.Triggers>
+                          <DataTrigger TargetType="Border" 
+                                       Binding="{Binding Id}" 
+                                       Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
+                            <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+                            <Setter Property="Stroke" Value="{DynamicResource Primary}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
+                    
+                    <Border.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCategoriaCommand}"
+                                            CommandParameter="{Binding}" />
+                    </Border.GestureRecognizers>
+                    
+                    <Label FontSize="14" FontAttributes="Bold">
+                      <Label.Style>
+                        <Style TargetType="Label">
+                          <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
+                          <Style.Triggers>
+                            <DataTrigger TargetType="Label" 
+                                         Binding="{Binding Id}" 
+                                         Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedCategoria.Id}">
+                              <Setter Property="TextColor" Value="White" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </Label.Style>
+                      <Label.Text>
+                        <Binding Path="Nome" />
+                      </Label.Text>
+                    </Label>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
+
+          <!-- Status Chip Buttons -->
+          <VerticalStackLayout Spacing="10">
+            <Label Text="📊 Status" 
+                   FontSize="15" 
+                   FontAttributes="Bold" 
+                   TextColor="{DynamicResource Gray900}" />
+            
+            <CollectionView ItemsSource="{Binding Statuses}"
+                            SelectionMode="None">
+              <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+              </CollectionView.ItemsLayout>
+              
+              <CollectionView.ItemTemplate>
+                <DataTemplate>
+                  <Border StrokeShape="RoundRectangle 20"
+                          Padding="16,10"
+                          StrokeThickness="1"
+                          Margin="0">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+                        <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
+                        <Style.Triggers>
+                          <DataTrigger TargetType="Border" 
+                                       Binding="{Binding Id}" 
+                                       Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
+                            <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+                            <Setter Property="Stroke" Value="{DynamicResource Primary}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
+                    
+                    <Border.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectStatusCommand}"
+                                            CommandParameter="{Binding}" />
+                    </Border.GestureRecognizers>
+                    
+                    <Label FontSize="14" FontAttributes="Bold">
+                      <Label.Style>
+                        <Style TargetType="Label">
+                          <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
+                          <Style.Triggers>
+                            <DataTrigger TargetType="Label" 
+                                         Binding="{Binding Id}" 
+                                         Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedStatus.Id}">
+                              <Setter Property="TextColor" Value="White" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </Label.Style>
+                      <Label.Text>
+                        <Binding Path="Nome" />
+                      </Label.Text>
+                    </Label>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
+
+          <!-- Prioridades Chip Buttons -->
+          <VerticalStackLayout Spacing="10">
+            <Label Text="⚡ Prioridade" 
+                   FontSize="15" 
+                   FontAttributes="Bold" 
+                   TextColor="{DynamicResource Gray900}" />
+            
+            <CollectionView ItemsSource="{Binding Prioridades}"
+                            SelectionMode="None">
+              <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+              </CollectionView.ItemsLayout>
+              
+              <CollectionView.ItemTemplate>
+                <DataTemplate>
+                  <Border StrokeShape="RoundRectangle 20"
+                          Padding="16,10"
+                          StrokeThickness="1"
+                          Margin="0">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="BackgroundColor" Value="{DynamicResource Gray100}" />
+                        <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
+                        <Style.Triggers>
+                          <DataTrigger TargetType="Border" 
+                                       Binding="{Binding Id}" 
+                                       Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
+                            <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+                            <Setter Property="Stroke" Value="{DynamicResource Primary}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
+                    
+                    <Border.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectPrioridadeCommand}"
+                                            CommandParameter="{Binding}" />
+                    </Border.GestureRecognizers>
+                    
+                    <Label FontSize="14" FontAttributes="Bold">
+                      <Label.Style>
+                        <Style TargetType="Label">
+                          <Setter Property="TextColor" Value="{DynamicResource Gray700}" />
+                          <Style.Triggers>
+                            <DataTrigger TargetType="Label" 
+                                         Binding="{Binding Id}" 
+                                         Value="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectedPrioridade.Id}">
+                              <Setter Property="TextColor" Value="White" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </Label.Style>
+                      <Label.Text>
+                        <Binding Path="Nome" />
+                      </Label.Text>
+                    </Label>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
+
+        </VerticalStackLayout>
+      </Frame>
+    </VerticalStackLayout>
+
+    <!-- RefreshView with Pull-to-Refresh -->
+    <RefreshView Grid.Row="2"
+                 Command="{Binding RefreshCommand}"
+                 IsRefreshing="{Binding IsRefreshing}"
+                 RefreshColor="{StaticResource Primary}">
+      <CollectionView ItemsSource="{Binding Chamados}"
+                      SelectionMode="Single"
+                      SelectionChanged="OnSelectionChanged"
+                      Margin="0,4,0,0">
+        <CollectionView.EmptyView>
+          <StackLayout Padding="32" Spacing="12" HorizontalOptions="Center" VerticalOptions="Center">
+            <Label Text="Nenhum chamado encontrado"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Text="Quando você abrir um chamado, ele aparecerá aqui."
+                   TextColor="{DynamicResource Gray500}" />
+          </StackLayout>
+        </CollectionView.EmptyView>
+
+      <CollectionView.ItemTemplate>
+        <DataTemplate>
+          <Border Style="{StaticResource ChamadoCardStyle}">
+            <Grid ColumnDefinitions="4,*" ColumnSpacing="0">
+              <!-- Border-left colorido por prioridade -->
+              <BoxView Grid.Column="0"
+                       Color="{Binding Prioridade.CorHexadecimal}"
+                       WidthRequest="4"
+                       HeightRequest="110"
+                       VerticalOptions="Fill" />
+              
+              <!-- Conteúdo do card -->
+              <Grid Grid.Column="1" 
+                    RowDefinitions="Auto,Auto,Auto" 
+                    ColumnDefinitions="*,Auto" 
+                    RowSpacing="8"
+                    Padding="14,12,14,12">
+                
+                <!-- Row 0: Título -->
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                       Text="{Binding Titulo}"
+                       FontAttributes="Bold"
+                       FontSize="16"
+                       LineBreakMode="TailTruncation"
+                       MaxLines="2"
+                       TextColor="{DynamicResource PrimaryDarkText}" />
+
+                <!-- Row 1: Badge de Status -->
+                <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="6">
+                  <Border StrokeShape="RoundRectangle 10"
+                          Padding="8,3"
+                          BackgroundColor="{DynamicResource Secondary}"
+                          StrokeThickness="0">
+                    <Label Text="{Binding Status.Nome}" 
+                           TextColor="{DynamicResource PrimaryDarkText}" 
+                           FontSize="11"
+                           FontAttributes="Bold" />
+                  </Border>
+                </HorizontalStackLayout>
+
+                <!-- Row 1: Categoria (alinhada à direita) -->
+                <Label Grid.Row="1" Grid.Column="1"
+                       Text="{Binding Categoria.Nome}"
+                       FontSize="11"
+                       TextColor="{DynamicResource Gray500}"
+                       VerticalOptions="Center"
+                       HorizontalTextAlignment="End" />
+
+                <!-- Row 2: Data de Abertura e Data de Encerramento -->
+                <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Spacing="10">
+                  <Label Text="{Binding DataAbertura, Converter={StaticResource UtcToLocalConverter}, StringFormat='📅 {0:dd/MM/yy HH:mm}'}"
+                         TextColor="{DynamicResource Gray500}"
+                         FontSize="11" />
+                  
+                  <Label Text="{Binding DataFechamento, Converter={StaticResource UtcToLocalConverter}, StringFormat='✅ {0:dd/MM/yy}'}"
+                         TextColor="{DynamicResource Success}"
+                         FontSize="11"
+                         FontAttributes="Bold"
+                         IsVisible="{Binding DataFechamento, Converter={StaticResource IsNotNullConverter}}" />
+                </HorizontalStackLayout>
+              </Grid>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+    </RefreshView>
+
+    <!-- Floating Action Button (FAB) -->
+    <Border Grid.Row="2"
+            StrokeShape="RoundRectangle 28"
+            BackgroundColor="{StaticResource Primary}"
+            WidthRequest="56"
+            HeightRequest="56"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Margin="0,0,20,20"
+            StrokeThickness="0"
+            Shadow="{Shadow Brush=Black, Opacity=0.3, Radius=8, Offset='0,4'}">
+      <Border.GestureRecognizers>
+        <TapGestureRecognizer Tapped="OnNovoClicked" />
+      </Border.GestureRecognizers>
+      
+      <Label Text="+"
+             FontSize="32"
+             FontAttributes="Bold"
+             TextColor="White"
+             HorizontalOptions="Center"
+             VerticalOptions="Center"
+             Margin="0,-4,0,0" />
+    </Border>
+  </Grid>
+</ContentPage>
