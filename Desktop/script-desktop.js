@@ -181,14 +181,13 @@ async function initDashboard() {
     // Verificar se a resposta é bem-sucedida
     if (response.ok) {
       const responseData = await response.json();
-      const chamados = responseData.$values || responseData; // Extrai de $values se existir, senão usa a resposta direta
       
       // Identificar o tbody da tabela na página atual
       const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
       if (!tbody) return;
       
-      // Renderizar os chamados na tabela
-      renderTicketsTable(chamados, tbody);
+      // Renderizar os chamados na tabela (passa o objeto completo para renderTicketsTable lidar com $values)
+      renderTicketsTable(responseData, tbody);
     } else if (response.status === 401) {
       // Token inválido ou expirado
       sessionStorage.removeItem('authToken');
@@ -206,42 +205,55 @@ async function initDashboard() {
   }
 }
 
-/* Renderização da tabela de chamados (Corrigida para API v2) */
-function renderTicketsTable(chamados, tbody) { 
-  tbody.innerHTML = ""; 
+/* Renderização da tabela de chamados (MAIS ROBUSTA) */
+function renderTicketsTable(chamados, tbody) {
+  tbody.innerHTML = ""; // Limpa a tabela
 
-  if (!chamados || !chamados.length) {
+  if (!chamados || !chamados.$values || !chamados.$values.length) { // Verifica a estrutura com $values
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
 
-  chamados.forEach((chamado) => {
+  // Itera sobre a lista dentro de $values
+  chamados.$values.forEach((chamado) => {
+    // Adiciona um log para depuração
+    console.log("Renderizando chamado:", chamado);
+
     const tr = document.createElement("tr");
 
-    // Leitura segura do nome da categoria
-    const categoriaNome = chamado.categoria?.nome || 'N/A'; 
-    // Leitura segura do nome do status
-    const statusNome = chamado.status?.nome || 'N/A'; 
-    // Cálculo seguro da classe CSS (garante que statusNome é tratado como string)
-    const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-'); 
+    // Leitura segura de todas as propriedades necessárias
+    const chamadoId = chamado?.id ?? '#undefined'; // ID do chamado
+    const titulo = chamado?.titulo ?? 'Sem Título'; // Título do chamado
+    const categoriaNome = chamado?.categoria?.nome ?? 'N/A'; // Nome da Categoria (aninhado)
+    const statusNome = chamado?.status?.nome ?? 'N/A'; // Nome do Status (aninhado)
 
-    // CORREÇÃO: Usar as variáveis com os nomes corretos
+    // Adapta o nome do status para usar nas classes CSS
+    const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
+
+    // Prioridade não está na tabela do HTML, mas podemos ler se necessário:
+    // const prioridadeNome = chamado?.prioridade?.nome ?? 'N/A';
+
     tr.innerHTML = `
-      <td>#${chamado.id}</td>
-      <td>${chamado.titulo || 'Sem Título'}</td>
-      <td>${categoriaNome}</td> 
+      <td>${chamadoId === '#undefined' ? '#undefined' : `#${chamadoId}`}</td> 
+      <td>${titulo}</td>
+      <td>${categoriaNome}</td>
       <td><span class="badge status-${statusClass}">${statusNome}</span></td>
-      <td><button class="btn btn-outline btn-sm" data-id="${chamado.id}">Abrir</button></td>
+      <td><button class="btn btn-outline btn-sm" data-id="${chamadoId}">Abrir</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Lógica para os botões "Abrir" (mantida)
+  // Lógica para os botões "Abrir" (ajustada para lidar com possível ID undefined)
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.id);
-      sessionStorage.setItem('currentTicketId', id);
-      go("ticket-detalhes-desktop.html");
+      const id = btn.dataset.id;
+      if (id && id !== '#undefined') {
+        sessionStorage.setItem('currentTicketId', id);
+        go("ticket-detalhes-desktop.html");
+      } else {
+        console.error("Tentativa de abrir chamado com ID indefinido.");
+        toast("Erro ao tentar abrir detalhes do chamado.");
+      }
     });
   });
 }
