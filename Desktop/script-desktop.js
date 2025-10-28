@@ -159,20 +159,49 @@ function initRegister() {
 /* ===========================================================
    📊 DASHBOARD
    =========================================================== */
-function initDashboard() {
-  const table = $("#tickets-table");
+async function initDashboard() {
+  // Verificar se o token de autenticação existe
+  const token = sessionStorage.getItem('authToken');
+  if (!token) {
+    toast("Sessão expirada. Faça login novamente.");
+    return go("login-desktop.html");
+  }
+
+  // Identificar a tabela correta para renderizar os dados
+  const table = $("#tickets-table") || $("#tickets-body-admin");
   if (!table) return;
 
-  const user = load("user", null);
-  if (!user) return go("login-desktop.html");
+  try {
+    // Fazer chamada para a API para buscar os chamados
+    const response = await fetch(`${API_BASE}/api/chamados`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  const allTickets = load("tickets");
-  const tickets =
-    user.role === "admin"
-      ? allTickets
-      : allTickets.filter((t) => t.ownerId === user.id);
-
-  renderTicketsTable(tickets, table);
+    // Verificar se a resposta é bem-sucedida
+    if (response.ok) {
+      const chamados = await response.json();
+      
+      // Renderizar os chamados na tabela
+      renderTicketsTable(chamados, table);
+    } else if (response.status === 401) {
+      // Token inválido ou expirado
+      sessionStorage.removeItem('authToken');
+      toast("Sessão expirada. Faça login novamente.");
+      return go("login-desktop.html");
+    } else {
+      // Outros erros da API
+      toast("Erro ao carregar chamados.");
+      console.error('Erro da API:', response.status, response.statusText);
+    }
+  } catch (error) {
+    // Problemas de rede ou outros erros
+    toast("Erro ao carregar chamados.");
+    console.error('Erro de rede:', error);
+  }
 }
 
 /* Renderização da tabela de chamados */
@@ -200,7 +229,7 @@ function renderTicketsTable(tickets, table) {
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-      const ticket = load("tickets").find((x) => x.id === id);
+      const ticket = tickets.find((x) => x.id === id);
       save("currentTicket", ticket);
       go("ticket-detalhes-desktop.html");
     });
