@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemaChamados.Application.DTOs;
-using SistemaChamados.Application.Services;
 using SistemaChamados.Core.Entities;
 using SistemaChamados.Data;
 using SistemaChamados.Services;
@@ -17,13 +16,11 @@ namespace SistemaChamados.API.Controllers;
 public class UsuariosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
 
-    public UsuariosController(ApplicationDbContext context, ITokenService tokenService, IEmailService emailService)
+    public UsuariosController(ApplicationDbContext context, IEmailService emailService)
     {
         _context = context;
-        _tokenService = tokenService;
         _emailService = emailService;
     }
 
@@ -69,33 +66,37 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto loginRequest)
+    public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto dto)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        // Buscar usuário pelo email
-        var usuario = await _context.Usuarios
-            .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
-
-        // Verificar se usuário existe e senha está correta
-        if (usuario == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Senha, usuario.SenhaHash))
+        // Buscar usuário por email
+        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        
+        if (usuario == null || !BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.SenhaHash))
         {
-            return Unauthorized("Email ou senha inválidos.");
+            return Unauthorized(new { message = "Email ou senha inválidos" });
         }
 
-        // Verificar se usuário está ativo
         if (!usuario.Ativo)
         {
-            return Unauthorized("Usuário inativo.");
+            return Unauthorized(new { message = "Usuário inativo" });
         }
 
-        // Gerar token JWT
-        var token = _tokenService.GenerateToken(usuario);
+        // Criar resposta sem token por enquanto (será implementado quando necessário)
+        var response = new LoginResponseDto
+        {
+            Id = usuario.Id,
+            NomeCompleto = usuario.NomeCompleto,
+            Email = usuario.Email,
+            TipoUsuario = usuario.TipoUsuario,
+            Token = "jwt-token-placeholder" // Placeholder para token JWT
+        };
 
-        return Ok(new LoginResponseDto { Token = token });
+        return Ok(response);
     }
 
     [HttpGet("perfil")]
