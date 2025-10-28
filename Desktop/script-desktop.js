@@ -100,7 +100,7 @@ function initLogin() {
         toast("Login realizado com sucesso!");
         
         // Determinar redirecionamento baseado na resposta da API
-        if (data.role === "admin") {
+        if (data.tipoUsuario === 3) {
           window.location.href = "admin-dashboard-desktop.html";
         } else {
           window.location.href = "user-dashboard-desktop.html";
@@ -159,25 +159,53 @@ function initRegister() {
 /* ===========================================================
    📊 DASHBOARD
    =========================================================== */
-function initDashboard() {
-  const table = $("#tickets-table");
-  if (!table) return;
+async function initDashboard() {
+  // Verificar se o token de autenticação existe
+  const token = sessionStorage.getItem('authToken');
+  if (!token) {
+    toast("Sessão expirada. Faça login novamente.");
+    return go("login-desktop.html");
+  }
 
-  const user = load("user", null);
-  if (!user) return go("login-desktop.html");
+  try {
+    // Fazer chamada para a API para buscar os chamados
+    const response = await fetch(`${API_BASE}/api/chamados`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  const allTickets = load("tickets");
-  const tickets =
-    user.role === "admin"
-      ? allTickets
-      : allTickets.filter((t) => t.ownerId === user.id);
-
-  renderTicketsTable(tickets, table);
+    // Verificar se a resposta é bem-sucedida
+    if (response.ok) {
+      const chamados = await response.json();
+      
+      // Identificar o tbody da tabela na página atual
+      const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
+      if (!tbody) return;
+      
+      // Renderizar os chamados na tabela
+      renderTicketsTable(chamados, tbody);
+    } else if (response.status === 401) {
+      // Token inválido ou expirado
+      sessionStorage.removeItem('authToken');
+      toast("Sessão expirada. Faça login novamente.");
+      return go("login-desktop.html");
+    } else {
+      // Outros erros da API
+      toast("Erro ao carregar chamados.");
+      console.error('Erro da API:', response.status, response.statusText);
+    }
+  } catch (error) {
+    // Problemas de rede ou outros erros
+    toast("Erro ao carregar chamados.");
+    console.error('Erro de rede:', error);
+  }
 }
 
 /* Renderização da tabela de chamados */
-function renderTicketsTable(tickets, table) {
-  const tbody = table.querySelector("tbody");
+function renderTicketsTable(tickets, tbody) {
   tbody.innerHTML = "";
 
   if (!tickets.length) {
@@ -200,7 +228,7 @@ function renderTicketsTable(tickets, table) {
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-      const ticket = load("tickets").find((x) => x.id === id);
+      const ticket = tickets.find((x) => x.id === id);
       save("currentTicket", ticket);
       go("ticket-detalhes-desktop.html");
     });
