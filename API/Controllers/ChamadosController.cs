@@ -79,21 +79,50 @@ public class ChamadosController : ControllerBase
         return Ok(novoChamado);
     }
 [HttpGet]
-public async Task<IActionResult> GetChamados()
+public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId)
 {
-    var chamadosDto = await _context.Chamados
-        .Include(c => c.Categoria) // Inclui para poder aceder ao Nome
-        .Include(c => c.Status)    // Inclui para poder aceder ao Nome
-        .Select(c => new ChamadoListDto // Transforma a entidade no DTO
+    // Começa com a consulta base, incluindo os dados relacionados
+    var query = _context.Chamados
+        .Include(c => c.Categoria) 
+        .Include(c => c.Status)    
+        .Include(c => c.Prioridade) // Incluir Prioridade também pode ser útil
+        .Include(c => c.Solicitante) // Incluir Solicitante
+        .AsQueryable(); // Transforma em IQueryable para adicionar filtros
+
+    // Aplica filtro de StatusId se fornecido
+    if (statusId.HasValue)
+    {
+        query = query.Where(c => c.StatusId == statusId.Value);
+    }
+
+    // Aplica filtro de TecnicoId se fornecido
+    if (tecnicoId.HasValue)
+    {
+        // Se tecnicoId for 0, interpretamos como "não atribuído" (TecnicoId é NULL)
+        if (tecnicoId.Value == 0) 
+        {
+           query = query.Where(c => c.TecnicoId == null);
+        }
+        else 
+        {
+           query = query.Where(c => c.TecnicoId == tecnicoId.Value);
+        }
+    }
+
+    // Executa a consulta com os filtros e projeta para o DTO
+    var chamadosDto = await query
+        .OrderByDescending(c => c.DataAbertura) // Ordena pelos mais recentes
+        .Select(c => new ChamadoListDto 
         {
             Id = c.Id,
             Titulo = c.Titulo,
-            CategoriaNome = c.Categoria.Nome, // Seleciona apenas o nome
-            StatusNome = c.Status.Nome       // Seleciona apenas o nome
+            CategoriaNome = c.Categoria.Nome, 
+            StatusNome = c.Status.Nome,
+            // Poderíamos adicionar mais campos ao DTO se necessário, como PrioridadeNome
         })
         .ToListAsync();
 
-    return Ok(chamadosDto); // Retorna a lista do DTO simplificado
+    return Ok(chamadosDto); 
 }
 
 [HttpGet("{id}")]
