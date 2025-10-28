@@ -205,32 +205,42 @@ async function initDashboard() {
   }
 }
 
-/* Renderização da tabela de chamados */
-function renderTicketsTable(tickets, tbody) {
-  tbody.innerHTML = "";
+/* Renderização da tabela de chamados (Atualizada para API) */
+function renderTicketsTable(chamados, tbody) { // Renomeado para 'chamados' para clareza
+  tbody.innerHTML = ""; // Limpa a tabela antes de preencher
 
-  if (!tickets.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhum chamado encontrado.</td></tr>`;
+  if (!chamados || !chamados.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
 
-  tickets.forEach((t) => {
+  chamados.forEach((chamado) => {
     const tr = document.createElement("tr");
+
+    // Verifica se os dados aninhados existem antes de tentar aceder
+    const categoriaNome = chamado.categoria ? chamado.categoria.nome : 'N/A';
+    const statusNome = chamado.status ? chamado.status.nome : 'N/A';
+    // Adapta o nome do status para usar nas classes CSS (ex: 'Em Andamento' -> 'andamento')
+    const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-');
+
     tr.innerHTML = `
-      <td>#${t.id}</td>
-      <td>${t.title}</td>
-      <td>${t.category}</td>
-      <td><span class="badge status-${t.status}">${t.status}</span></td>
-      <td><button class="btn btn-outline btn-sm" data-id="${t.id}">Abrir</button></td>
+      <td>#${chamado.id}</td>
+      <td>${chamado.titulo || 'Sem Título'}</td>
+      <td>${categoriaNome}</td>
+      <td><span class="badge status-${statusClass}">${statusNome}</span></td>
+      <td><button class="btn btn-outline btn-sm" data-id="${chamado.id}">Abrir</button></td>
     `;
     tbody.appendChild(tr);
   });
 
+  // Mantém a lógica para os botões "Abrir"
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-      const ticket = tickets.find((x) => x.id === id);
-      save("currentTicket", ticket);
+      // IMPORTANTE: Agora precisamos buscar os detalhes completos da API ao clicar
+      // A lógica antiga de load("tickets").find(...) não funciona mais
+      // Por enquanto, apenas guardamos o ID para a próxima tela
+      sessionStorage.setItem('currentTicketId', id);
       go("ticket-detalhes-desktop.html");
     });
   });
@@ -277,71 +287,108 @@ function initNewTicket() {
 }
 
 /* ===========================================================
-   🧩 DETALHES DO CHAMADO
+   🧩 DETALHES DO CHAMADO (Atualizado para API)
    =========================================================== */
-function initTicketDetails() {
-  const ticket = load("currentTicket", null);
-  if (!ticket) return go("user-dashboard-desktop.html");
+async function initTicketDetails() {
+  // Buscar o ID do chamado do sessionStorage (novo sistema)
+  const ticketId = sessionStorage.getItem('currentTicketId');
+  if (!ticketId) {
+    toast("Chamado não encontrado.");
+    return go("user-dashboard-desktop.html");
+  }
 
-  $("#t-id").textContent = "#" + ticket.id;
-  $("#t-title").textContent = ticket.title;
-  $("#t-category").textContent = ticket.category;
-  $("#t-priority").textContent = ticket.priority;
-  $(
-    "#t-status"
-  ).innerHTML = `<span class="badge status-${ticket.status}">${ticket.status}</span>`;
-  $("#t-desc").textContent = ticket.description;
+  // Verificar se o token de autenticação existe
+  const token = sessionStorage.getItem('authToken');
+  if (!token) {
+    toast("Sessão expirada. Faça login novamente.");
+    return go("login-desktop.html");
+  }
 
-  renderComments(ticket);
-
-  const form = $("#comment-form");
-  if (form) {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const text = $("#comment-text").value.trim();
-      if (!text) return toast("Digite um comentário.");
-
-      ticket.comments.push({
-        author: "Você",
-        text,
-        date: new Date().toISOString(),
-      });
-      persistTicket(ticket);
-      $("#comment-text").value = "";
-      renderComments(ticket);
-      toast("Comentário adicionado!");
+  try {
+    // Buscar os detalhes do chamado da API
+    const response = await fetch(`${API_BASE}/api/chamados/${ticketId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
+
+    if (response.ok) {
+      const chamado = await response.json();
+      
+      // Preencher os campos com os dados do chamado
+      $("#t-id").textContent = "#" + chamado.id;
+      $("#t-title").textContent = chamado.titulo || 'Sem Título';
+      $("#t-category").textContent = chamado.categoria ? chamado.categoria.nome : 'N/A';
+      $("#t-priority").textContent = chamado.prioridade ? chamado.prioridade.nome : 'N/A';
+      
+      const statusNome = chamado.status ? chamado.status.nome : 'N/A';
+      const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-');
+      $("#t-status").innerHTML = `<span class="badge status-${statusClass}">${statusNome}</span>`;
+      
+      $("#t-desc").textContent = chamado.descricao || 'Sem descrição';
+
+      // Renderizar comentários (se existirem)
+      renderComments(chamado);
+
+      // Configurar formulário de comentários
+      const form = $("#comment-form");
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const text = $("#comment-text").value.trim();
+          if (!text) return toast("Digite um comentário.");
+
+          // TODO: Implementar adição de comentários via API
+          // Por enquanto, apenas mostra uma mensagem
+          toast("Funcionalidade de comentários será implementada em breve.");
+          $("#comment-text").value = "";
+        });
+      }
+    } else if (response.status === 401) {
+      sessionStorage.removeItem('authToken');
+      toast("Sessão expirada. Faça login novamente.");
+      return go("login-desktop.html");
+    } else if (response.status === 404) {
+      toast("Chamado não encontrado.");
+      return go("user-dashboard-desktop.html");
+    } else {
+      toast("Erro ao carregar detalhes do chamado.");
+      console.error('Erro da API:', response.status, response.statusText);
+    }
+  } catch (error) {
+    toast("Erro ao carregar detalhes do chamado.");
+    console.error('Erro de rede:', error);
   }
 }
 
-/* Renderiza lista de comentários */
-function renderComments(ticket) {
+/* Renderiza lista de comentários (Atualizada para API) */
+function renderComments(chamado) {
   const list = $("#comments");
   list.innerHTML = "";
 
-  if (!ticket.comments.length) {
+  // Verificar se existem comentários
+  if (!chamado.comentarios || !chamado.comentarios.length) {
     list.innerHTML = `<li class="help">Nenhum comentário até o momento.</li>`;
     return;
   }
 
-  ticket.comments.forEach((c) => {
+  chamado.comentarios.forEach((comentario) => {
     const li = document.createElement("li");
     li.className = "card";
-    li.innerHTML = `<strong>${c.author}</strong> — ${new Date(
-      c.date
-    ).toLocaleString()}<br>${c.text}`;
+    
+    // Adaptar para a estrutura da API
+    const autor = comentario.usuario ? comentario.usuario.nome : 'Usuário';
+    const data = comentario.dataComentario ? new Date(comentario.dataComentario).toLocaleString() : 'Data não disponível';
+    const texto = comentario.texto || 'Comentário sem texto';
+    
+    li.innerHTML = `<strong>${autor}</strong> — ${data}<br>${texto}`;
     list.appendChild(li);
   });
 }
 
-/* Atualiza e salva o ticket */
-function persistTicket(ticket) {
-  const all = load("tickets");
-  const i = all.findIndex((t) => t.id === ticket.id);
-  if (i >= 0) all[i] = ticket;
-  save("tickets", all);
-  save("currentTicket", ticket);
-}
+/* Função persistTicket removida - não é mais necessária com a API */
 
 /* ===========================================================
    ⚙️ CONFIGURAÇÕES
@@ -367,8 +414,11 @@ function goBack() {
   window.history.back();
 }
 
-/* Logout global */
+/* Logout global (Atualizado para API) */
 function logout() {
+  // Limpar dados de autenticação
+  sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("currentTicketId");
   localStorage.removeItem("user");
   go("login-desktop.html");
 }
