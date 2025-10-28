@@ -180,7 +180,8 @@ async function initDashboard() {
 
     // Verificar se a resposta é bem-sucedida
     if (response.ok) {
-      const chamados = await response.json();
+      const responseData = await response.json();
+      const chamados = responseData.$values || responseData; // Extrai de $values se existir, senão usa a resposta direta
       
       // Identificar o tbody da tabela na página atual
       const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
