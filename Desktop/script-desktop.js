@@ -218,10 +218,12 @@ function renderTicketsTable(chamados, tbody) {
   chamados.forEach((chamado) => {
     const tr = document.createElement("tr");
 
-    // CORREÇÃO: Aceder à propriedade 'nome' dos objetos aninhados
-    const categoriaNome = chamado.categoria ? chamado.categoria.nome : 'N/A';
-    const statusNome = chamado.status ? chamado.status.nome : 'N/A';
-    const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-'); 
+    // Leitura segura do nome da categoria
+    const categoriaNome = chamado.categoria?.nome || 'N/A'; 
+    // Leitura segura do nome do status
+    const statusNome = chamado.status?.nome || 'N/A'; 
+    // Cálculo seguro da classe CSS (garante que statusNome é tratado como string)
+    const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-'); 
 
     // CORREÇÃO: Usar as variáveis com os nomes corretos
     tr.innerHTML = `
