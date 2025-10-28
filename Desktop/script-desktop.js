@@ -75,6 +75,7 @@ function initLogin() {
 
     const email = $("#email").value.trim().toLowerCase();
     const password = $("#password").value.trim();
+    console.log("Senha lida do campo:", password);
     if (!email || !password) return toast("Preencha todos os campos.");
 
     try {
@@ -84,8 +85,8 @@ function initLogin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: email,
-          password: password
+          Email: email,
+          Senha: password
         })
       });
 
