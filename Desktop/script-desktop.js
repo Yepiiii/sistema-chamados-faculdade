@@ -101,9 +101,11 @@ function initLogin() {
         toast("Login realizado com sucesso!");
         
         // Determinar redirecionamento baseado na resposta da API
-        if (data.tipoUsuario === 3) {
+        if (data.tipoUsuario === 3) { // Admin
           window.location.href = "admin-dashboard-desktop.html";
-        } else {
+        } else if (data.tipoUsuario === 2) { // Técnico
+          window.location.href = "tecnico-dashboard.html"; // <-- Redirecionamento CORRETO para técnico
+        } else { // Usuário Comum (TipoUsuario 1 ou outro)
           window.location.href = "user-dashboard-desktop.html";
         }
       } else {
