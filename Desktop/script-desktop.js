@@ -205,9 +205,9 @@ async function initDashboard() {
   }
 }
 
-/* Renderização da tabela de chamados (Atualizada para API) */
-function renderTicketsTable(chamados, tbody) { // Renomeado para 'chamados' para clareza
-  tbody.innerHTML = ""; // Limpa a tabela antes de preencher
+/* Renderização da tabela de chamados (Corrigida para API v2) */
+function renderTicketsTable(chamados, tbody) { 
+  tbody.innerHTML = ""; 
 
   if (!chamados || !chamados.length) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
@@ -217,26 +217,26 @@ function renderTicketsTable(chamados, tbody) { // Renomeado para 'chamados' para
   chamados.forEach((chamado) => {
     const tr = document.createElement("tr");
 
-    // Verifica se os dados aninhados existem antes de tentar aceder
+    // CORREÇÃO: Aceder à propriedade 'nome' dos objetos aninhados
     const categoriaNome = chamado.categoria ? chamado.categoria.nome : 'N/A';
     const statusNome = chamado.status ? chamado.status.nome : 'N/A';
-    // Adapta o nome do status para usar nas classes CSS (ex: 'Em Andamento' -> 'andamento')
-    const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-');
+    const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-'); 
+
+    // CORREÇÃO: Usar as variáveis com os nomes corretos
     tr.innerHTML = `
       <td>#${chamado.id}</td>
       <td>${chamado.titulo || 'Sem Título'}</td>
-      <td>${categoriaNome}</td>
+      <td>${categoriaNome}</td> 
       <td><span class="badge status-${statusClass}">${statusNome}</span></td>
       <td><button class="btn btn-outline btn-sm" data-id="${chamado.id}">Abrir</button></td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Mantém a lógica para os botões "Abrir"
+  // Lógica para os botões "Abrir" (mantida)
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = Number(btn.dataset.id);
-      // Guarda o ID no sessionStorage para a tela de detalhes buscar da API
       sessionStorage.setItem('currentTicketId', id);
       go("ticket-detalhes-desktop.html");
     });
