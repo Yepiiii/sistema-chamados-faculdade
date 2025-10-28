@@ -1,7 +1,11 @@
 // novo-ticket.js - Criação de novos chamados com preview IA
 
 // Verificar autenticação
+<<<<<<< HEAD
 if (!authService.isAuthenticated()) {
+=======
+if (!auth.isAuthenticated()) {
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
     window.location.href = 'login.html';
 }
 
@@ -42,8 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadCategorias() {
     try {
+<<<<<<< HEAD
         const response = await apiClient.get('/Categorias');
         categorias = response.data || response;
+=======
+        const response = await chamadosService.getCategorias();
+        categorias = response;
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
         
         populateCategoriaSelect();
     } catch (error) {
@@ -63,8 +72,13 @@ async function loadCategorias() {
 
 async function loadPrioridades() {
     try {
+<<<<<<< HEAD
         const response = await apiClient.get('/Prioridades');
         prioridades = response.data || response;
+=======
+        const response = await chamadosService.getPrioridades();
+        prioridades = response;
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
         
         populatePrioridadeSelect();
     } catch (error) {
@@ -120,7 +134,11 @@ function setupEventListeners() {
     // Logout
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
+<<<<<<< HEAD
         authService.logout();
+=======
+        auth.logout();
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
         window.location.href = 'login.html';
     });
     
@@ -163,8 +181,13 @@ async function showAIPreview() {
     
     try {
         // Chamar API de análise
+<<<<<<< HEAD
         const response = await apiClient.post(`/Chamados/analisar-com-handoff`, formData);
         aiAnalysisResult = response.data || response;
+=======
+        const response = await chamadosService.analisarChamado(formData.descricao);
+        aiAnalysisResult = response;
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
         
         displayAIPreview(aiAnalysisResult);
         hideLoading();
@@ -298,8 +321,13 @@ async function handleSubmit(e) {
     showLoading('Criando chamado...');
     
     try {
+<<<<<<< HEAD
         const response = await apiClient.post('/Chamados', formData);
         const chamado = response.data || response;
+=======
+        const response = await chamadosService.criarChamado(formData);
+        const chamado = response;
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
         
         hideLoading();
         showToast('Chamado criado com sucesso!', 'success');
@@ -371,7 +399,11 @@ function getFormData() {
         descricao: descricaoTextarea.value.trim(),
         categoriaId: parseInt(categoriaSelect.value),
         prioridadeId: parseInt(prioridadeSelect.value),
+<<<<<<< HEAD
         usuarioId: authService.getUserInfo().userId
+=======
+        // usuarioId será obtido automaticamente do token JWT no backend
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
     };
 }
 

@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using SistemaChamados.Services;
 using SistemaChamados.Data;
+using SistemaChamados.Configuration;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,12 @@ builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 
 // Configurar HttpClient para o OpenAIService
 builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
+
+// Configura a seção EmailSettings do appsettings.json
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+// Registra o EmailService para injeção de dependência
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

@@ -26,6 +26,14 @@ public class Usuario
     
     [Required]
     public bool Ativo { get; set; } = true;
+
+    public int? EspecialidadeCategoriaId { get; set; }
+    
+    // Campos para reset de senha
+    [MaxLength(128)]
+    public string? PasswordResetToken { get; set; }
+    
+    public DateTime? ResetTokenExpires { get; set; }
     
     // Propriedades de navegação
     public AlunoPerfil? AlunoPerfil { get; set; }

@@ -18,7 +18,11 @@ class AuthService {
      */
     async login(email, senha) {
         try {
+<<<<<<< HEAD
             const response = await this.api.post('/Usuarios/login', {
+=======
+            const response = await this.api.post('/usuarios/login', {
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
                 email,
                 senha
             });
@@ -53,7 +57,11 @@ class AuthService {
      */
     async register(userData) {
         try {
+<<<<<<< HEAD
             const response = await this.api.post('/Usuarios/register', userData);
+=======
+            const response = await this.api.post('/usuarios/registrar-admin', userData);
+>>>>>>> 68e1faaf0472ec2b85452be8e471c046788454d3
             
             console.log('Cadastro realizado com sucesso!');
             return {
