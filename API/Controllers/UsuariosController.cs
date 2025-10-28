@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SistemaChamados.Application.DTOs;
 using SistemaChamados.Application.Services;
 using SistemaChamados.Core.Entities;
@@ -19,12 +20,14 @@ public class UsuariosController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
+    private readonly ILogger<UsuariosController> _logger;
 
-    public UsuariosController(ApplicationDbContext context, ITokenService tokenService, IEmailService emailService)
+    public UsuariosController(ApplicationDbContext context, ITokenService tokenService, IEmailService emailService, ILogger<UsuariosController> logger)
     {
         _context = context;
         _tokenService = tokenService;
         _emailService = emailService;
+        _logger = logger;
     }
 
     [HttpPost("registrar-admin")]
@@ -71,8 +74,11 @@ public class UsuariosController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto loginRequest)
     {
+        _logger.LogInformation("Tentativa de login recebida para o email: {Email}", loginRequest.Email); // LOG 1
+        
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Modelo inválido para o email: {Email}", loginRequest.Email); // LOG 2
             return BadRequest(ModelState);
         }
 
@@ -80,20 +86,43 @@ public class UsuariosController : ControllerBase
         var usuario = await _context.Usuarios
             .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
 
-        // Verificar se usuário existe e senha está correta
-        if (usuario == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Senha, usuario.SenhaHash))
+        if (usuario == null)
         {
+            _logger.LogWarning("Usuário não encontrado para o email: {Email}", loginRequest.Email); // LOG 3
+            return Unauthorized("Email ou senha inválidos.");
+        }
+
+        _logger.LogInformation("Usuário encontrado: ID {UserId}, Email {UserEmail}", usuario.Id, usuario.Email); // LOG 4
+
+        // Verificar senha
+        bool senhaValida = false;
+        try
+        {
+            senhaValida = BCrypt.Net.BCrypt.Verify(loginRequest.Senha, usuario.SenhaHash);
+            _logger.LogInformation("Resultado da verificação de senha para o usuário ID {UserId}: {SenhaValida}", usuario.Id, senhaValida); // LOG 5
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro durante a verificação de senha para o usuário ID {UserId}", usuario.Id); // LOG 6
+            return StatusCode(500, "Erro interno ao verificar a senha.");
+        }
+
+        if (!senhaValida)
+        {
+            _logger.LogWarning("Senha inválida para o usuário ID {UserId}", usuario.Id); // LOG 7
             return Unauthorized("Email ou senha inválidos.");
         }
 
         // Verificar se usuário está ativo
         if (!usuario.Ativo)
         {
+            _logger.LogWarning("Tentativa de login por usuário inativo: ID {UserId}", usuario.Id); // LOG 8
             return Unauthorized("Usuário inativo.");
         }
 
         // Gerar token JWT
         var token = _tokenService.GenerateToken(usuario);
+        _logger.LogInformation("Login bem-sucedido e token gerado para o usuário ID {UserId}", usuario.Id); // LOG 9
 
         return Ok(new LoginResponseDto { Token = token });
     }
@@ -157,9 +186,9 @@ public class UsuariosController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Log do erro (em produção, usar um logger apropriado)
+            // Log do erro usando o logger apropriado
             // Por segurança, não revelamos detalhes do erro para o usuário
-            Console.WriteLine($"Erro ao enviar email: {ex.Message}");
+            _logger.LogError(ex, "Erro ao enviar email de redefinição de senha para o usuário ID {UserId}", usuario.Id);
         }
 
         return Ok(new { message = "Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado." });
