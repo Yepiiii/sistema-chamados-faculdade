@@ -205,36 +205,41 @@ async function initDashboard() {
   }
 }
 
-/* Renderização da tabela de chamados (MAIS ROBUSTA) */
-function renderTicketsTable(chamados, tbody) {
+/* Renderização da tabela de chamados (v3 - Depuração Detalhada) */
+function renderTicketsTable(apiResponse, tbody) {
   tbody.innerHTML = ""; // Limpa a tabela
 
-  if (!chamados || !chamados.$values || !chamados.$values.length) { // Verifica a estrutura com $values
+  // Verifica se a resposta e $values existem e são uma lista
+  if (!apiResponse || !Array.isArray(apiResponse.$values) || apiResponse.$values.length === 0) {
+    console.log("renderTicketsTable: Não há chamados para exibir ou a estrutura da resposta é inesperada.", apiResponse);
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
 
-  // Itera sobre a lista dentro de $values
-  chamados.$values.forEach((chamado) => {
-    // Adiciona um log para depuração
-    console.log("Renderizando chamado:", chamado);
+  const chamados = apiResponse.$values; // A lista real de chamados
+
+  chamados.forEach((chamado, index) => {
+    console.log(`--- Processando Chamado #${index + 1} ---`);
+    console.log("Objeto Chamado:", chamado); // Log do objeto inteiro
 
     const tr = document.createElement("tr");
 
-    // Leitura segura de todas as propriedades necessárias
-    const chamadoId = chamado?.id ?? '#undefined'; // ID do chamado
-    const titulo = chamado?.titulo ?? 'Sem Título'; // Título do chamado
-    const categoriaNome = chamado?.categoria?.nome ?? 'N/A'; // Nome da Categoria (aninhado)
-    const statusNome = chamado?.status?.nome ?? 'N/A'; // Nome do Status (aninhado)
+    // Leitura SUPER segura de cada propriedade
+    const chamadoId = chamado && typeof chamado.id !== 'undefined' ? chamado.id : '#ERR';
+    const titulo = chamado && typeof chamado.titulo === 'string' ? chamado.titulo : 'Sem Título';
+    const categoriaNome = chamado && chamado.categoria && typeof chamado.categoria.nome === 'string' ? chamado.categoria.nome : 'N/A';
+    const statusNome = chamado && chamado.status && typeof chamado.status.nome === 'string' ? chamado.status.nome : 'N/A';
 
-    // Adapta o nome do status para usar nas classes CSS
     const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
-    // Prioridade não está na tabela do HTML, mas podemos ler se necessário:
-    // const prioridadeNome = chamado?.prioridade?.nome ?? 'N/A';
+    // Log dos valores lidos
+    console.log(`ID Lido: ${chamadoId}`);
+    console.log(`Título Lido: ${titulo}`);
+    console.log(`Categoria Lido: ${categoriaNome}`);
+    console.log(`Status Lido: ${statusNome}`);
 
     tr.innerHTML = `
-      <td>${chamadoId === '#undefined' ? '#undefined' : `#${chamadoId}`}</td> 
+      <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
       <td>${titulo}</td>
       <td>${categoriaNome}</td>
       <td><span class="badge status-${statusClass}">${statusNome}</span></td>
@@ -243,15 +248,15 @@ function renderTicketsTable(chamados, tbody) {
     tbody.appendChild(tr);
   });
 
-  // Lógica para os botões "Abrir" (ajustada para lidar com possível ID undefined)
+  // Lógica para os botões "Abrir"
   $$("button[data-id]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
-      if (id && id !== '#undefined') {
+      if (id && id !== '#ERR') {
         sessionStorage.setItem('currentTicketId', id);
         go("ticket-detalhes-desktop.html");
       } else {
-        console.error("Tentativa de abrir chamado com ID indefinido.");
+        console.error("Tentativa de abrir chamado com ID inválido/não lido.");
         toast("Erro ao tentar abrir detalhes do chamado.");
       }
     });
