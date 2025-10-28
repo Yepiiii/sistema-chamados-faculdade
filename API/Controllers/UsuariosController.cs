@@ -124,7 +124,7 @@ public class UsuariosController : ControllerBase
         var token = _tokenService.GenerateToken(usuario);
         _logger.LogInformation("Login bem-sucedido e token gerado para o usuário ID {UserId}", usuario.Id); // LOG 9
 
-        return Ok(new LoginResponseDto { Token = token });
+        return Ok(new LoginResponseDto { Token = token, TipoUsuario = usuario.TipoUsuario });
     }
 
     [HttpGet("perfil")]

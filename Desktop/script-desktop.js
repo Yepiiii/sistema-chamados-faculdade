@@ -100,7 +100,7 @@ function initLogin() {
         toast("Login realizado com sucesso!");
         
         // Determinar redirecionamento baseado na resposta da API
-        if (data.role === "admin") {
+        if (data.tipoUsuario === 3) {
           window.location.href = "admin-dashboard-desktop.html";
         } else {
           window.location.href = "user-dashboard-desktop.html";
