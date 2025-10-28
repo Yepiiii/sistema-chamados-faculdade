@@ -14,8 +14,8 @@ const load = (key, fallback = []) => {
 };
 const toast = (msg) => alert(msg);
 
-/* URL base da API (futura integração) */
-const API_BASE = "https://api.h2opurificadores.com";
+/* URL base da API */
+const API_BASE = "http://localhost:5246";
 
 /* ===========================================================
    🚀 SEED DE DEMONSTRAÇÃO (DADOS INICIAIS)
@@ -70,27 +70,59 @@ function initLogin() {
   const form = $("#login-form");
   if (!form) return;
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const email = $("#email").value.trim().toLowerCase();
     const password = $("#password").value.trim();
     if (!email || !password) return toast("Preencha todos os campos.");
 
-    const users = load("users");
-    const user = users.find(
-      (u) => u.email === email && u.password === password
-    );
+    try {
+      const response = await fetch(`${API_BASE}/api/usuarios/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
 
-    if (!user) return toast("E-mail ou senha incorretos.");
-
-    save("user", user);
-    toast("Login realizado com sucesso!");
-    go(
-      user.role === "admin"
-        ? "admin-dashboard-desktop.html"
-        : "dashboard-desktop.html"
-    );
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Guardar o token no sessionStorage
+        if (data.token) {
+          sessionStorage.setItem('authToken', data.token);
+        }
+        
+        toast("Login realizado com sucesso!");
+        
+        // Determinar redirecionamento baseado na resposta da API
+        if (data.role === "admin") {
+          window.location.href = "admin-dashboard-desktop.html";
+        } else {
+          window.location.href = "user-dashboard-desktop.html";
+        }
+      } else {
+        // Tratar erro de autenticação
+        let errorMessage = "E-mail ou senha incorretos.";
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          // Se não conseguir ler a mensagem de erro, usar a mensagem padrão
+        }
+        toast(errorMessage);
+      }
+    } catch (error) {
+      // Tratar erros de rede ou outros problemas
+      console.error('Erro na autenticação:', error);
+      toast("Erro de conexão. Verifique sua internet e tente novamente.");
+    }
   });
 }
 
@@ -211,7 +243,7 @@ function initNewTicket() {
     all.push(newTicket);
     save("tickets", all);
     toast("Chamado criado com sucesso!");
-    go("dashboard-desktop.html");
+    go("user-dashboard-desktop.html");
   });
 }
 
@@ -220,7 +252,7 @@ function initNewTicket() {
    =========================================================== */
 function initTicketDetails() {
   const ticket = load("currentTicket", null);
-  if (!ticket) return go("dashboard-desktop.html");
+  if (!ticket) return go("user-dashboard-desktop.html");
 
   $("#t-id").textContent = "#" + ticket.id;
   $("#t-title").textContent = ticket.title;
@@ -339,11 +371,11 @@ document.addEventListener("DOMContentLoaded", () => {
     initPasswordToggles();
   } else if (
     path.endsWith("admin-dashboard-desktop.html") ||
-    path.endsWith("dashboard-desktop.html")
+    path.endsWith("user-dashboard-desktop.html")
   ) {
     initDashboard();
     initConfig();
-  } else if (path.endsWith("register-desktop.html")) {
+  } else if (path.endsWith("cadastro-desktop.html")) {
     initRegister();
   } else if (path.endsWith("new-ticket-desktop.html")) {
     initNewTicket();
