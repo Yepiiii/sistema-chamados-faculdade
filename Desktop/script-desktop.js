@@ -425,6 +425,231 @@ function initConfig() {
 }
 
 /* ===========================================================
+   🔧 PAINEL DO TÉCNICO
+   =========================================================== */
+
+/* Função auxiliar para decodificar JWT (payload) */
+function decodeJWT(token) {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = atob(payload);
+    return JSON.parse(decoded);
+  } catch (error) {
+    console.error("Erro ao decodificar JWT:", error);
+    return null;
+  }
+}
+
+/* Função principal do painel do técnico */
+async function initTecnicoDashboard() {
+  console.log("=== Inicializando Painel do Técnico ===");
+
+  // Verificar autenticação
+  const token = sessionStorage.getItem("authToken");
+  if (!token) {
+    console.log("Token não encontrado, redirecionando para login");
+    go("login-desktop.html");
+    return;
+  }
+
+  // Decodificar token para obter ID do técnico
+  const payload = decodeJWT(token);
+  let tecnicoId;
+  
+  if (payload && payload.nameid) {
+    tecnicoId = parseInt(payload.nameid);
+    console.log("ID do técnico obtido do token:", tecnicoId);
+  } else {
+    // Para teste, usar ID fixo se não conseguir decodificar
+    tecnicoId = 1;
+    console.log("Usando ID de técnico fixo para teste:", tecnicoId);
+  }
+
+  // Headers para as requisições
+  const headers = {
+    "Authorization": `Bearer ${token}`,
+    "Content-Type": "application/json"
+  };
+
+  try {
+    // 1. Buscar chamados não atribuídos (fila de atendimento)
+    console.log("Buscando chamados da fila de atendimento...");
+    const filaResponse = await fetch(`${API_BASE}/api/chamados?tecnicoId=0&statusId=1`, {
+      method: "GET",
+      headers: headers
+    });
+
+    if (filaResponse.status === 401) {
+      console.log("Token expirado, redirecionando para login");
+      sessionStorage.removeItem("authToken");
+      go("login-desktop.html");
+      return;
+    }
+
+    if (!filaResponse.ok) {
+      throw new Error(`Erro ao buscar fila: ${filaResponse.status} ${filaResponse.statusText}`);
+    }
+
+    const chamadosFila = await filaResponse.json();
+    console.log("Chamados da fila recebidos:", chamadosFila);
+
+    // Renderizar tabela da fila
+    const tabelaFila = $("#tabela-fila-chamados tbody");
+    if (tabelaFila) {
+      renderTabelaFila(chamadosFila, tabelaFila);
+    }
+
+    // 2. Buscar chamados atribuídos ao técnico
+    console.log("Buscando meus chamados atribuídos...");
+    const meusResponse = await fetch(`${API_BASE}/api/chamados?tecnicoId=${tecnicoId}`, {
+      method: "GET",
+      headers: headers
+    });
+
+    if (meusResponse.status === 401) {
+      console.log("Token expirado, redirecionando para login");
+      sessionStorage.removeItem("authToken");
+      go("login-desktop.html");
+      return;
+    }
+
+    if (!meusResponse.ok) {
+      throw new Error(`Erro ao buscar meus chamados: ${meusResponse.status} ${meusResponse.statusText}`);
+    }
+
+    const meusChamados = await meusResponse.json();
+    console.log("Meus chamados recebidos:", meusChamados);
+
+    // Renderizar tabela dos meus chamados
+    const tabelaMeus = $("#tabela-meus-chamados tbody");
+    if (tabelaMeus) {
+      renderTabelaMeusChamados(meusChamados, tabelaMeus);
+    }
+
+  } catch (error) {
+    console.error("Erro ao carregar dados do painel do técnico:", error);
+    toast("Erro ao carregar dados. Verifique sua conexão e tente novamente.");
+  }
+}
+
+/* Renderizar tabela da fila de atendimento */
+function renderTabelaFila(chamados, tbody) {
+  tbody.innerHTML = ""; // Limpa a tabela
+
+  if (!Array.isArray(chamados) || chamados.length === 0) {
+    console.log("Nenhum chamado na fila de atendimento");
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum chamado na fila de atendimento.</td></tr>`;
+    return;
+  }
+
+  console.log("Renderizando fila de atendimento:", chamados);
+
+  chamados.forEach((chamado, index) => {
+    try {
+      const tr = document.createElement("tr");
+
+      // Leitura segura das propriedades
+      const chamadoId = chamado?.id ?? '#ERR';
+      const titulo = chamado?.titulo ?? 'Sem Título';
+      const categoriaNome = chamado?.categoriaNome ?? 'N/A';
+      const prioridade = 'Normal'; // TODO: Adicionar ao DTO quando disponível
+      const dataAbertura = 'Hoje'; // TODO: Adicionar ao DTO quando disponível
+
+      tr.innerHTML = `
+        <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
+        <td>${titulo}</td>
+        <td>${categoriaNome}</td>
+        <td><span class="badge priority-normal">${prioridade}</span></td>
+        <td>${dataAbertura}</td>
+        <td><button class="btn btn-primary btn-sm" data-id="${chamadoId}" data-action="assumir">Assumir</button></td>
+      `;
+      tbody.appendChild(tr);
+    } catch (error) {
+      console.error(`Erro ao processar chamado da fila no índice ${index}:`, chamado, error);
+    }
+  });
+
+  // Event listeners para botões "Assumir"
+  $$("button[data-action='assumir']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      if (id && id !== '#ERR') {
+        assumirChamado(id);
+      } else {
+        console.error("Tentativa de assumir chamado com ID inválido.");
+        toast("Erro ao tentar assumir chamado.");
+      }
+    });
+  });
+}
+
+/* Renderizar tabela dos meus chamados */
+function renderTabelaMeusChamados(chamados, tbody) {
+  tbody.innerHTML = ""; // Limpa a tabela
+
+  if (!Array.isArray(chamados) || chamados.length === 0) {
+    console.log("Nenhum chamado atribuído");
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum chamado atribuído.</td></tr>`;
+    return;
+  }
+
+  console.log("Renderizando meus chamados:", chamados);
+
+  chamados.forEach((chamado, index) => {
+    try {
+      const tr = document.createElement("tr");
+
+      // Leitura segura das propriedades
+      const chamadoId = chamado?.id ?? '#ERR';
+      const titulo = chamado?.titulo ?? 'Sem Título';
+      const categoriaNome = chamado?.categoriaNome ?? 'N/A';
+      const statusNome = chamado?.statusNome ?? 'N/A';
+      const prioridade = 'Normal'; // TODO: Adicionar ao DTO quando disponível
+
+      const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
+
+      tr.innerHTML = `
+        <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
+        <td>${titulo}</td>
+        <td>${categoriaNome}</td>
+        <td><span class="badge status-${statusClass}">${statusNome}</span></td>
+        <td><span class="badge priority-normal">${prioridade}</span></td>
+        <td><button class="btn btn-outline btn-sm" data-id="${chamadoId}" data-action="detalhes">Ver Detalhes</button></td>
+      `;
+      tbody.appendChild(tr);
+    } catch (error) {
+      console.error(`Erro ao processar meu chamado no índice ${index}:`, chamado, error);
+    }
+  });
+
+  // Event listeners para botões "Ver Detalhes"
+  $$("button[data-action='detalhes']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      if (id && id !== '#ERR') {
+        sessionStorage.setItem('currentTicketId', id);
+        go("ticket-detalhes-desktop.html");
+      } else {
+        console.error("Tentativa de ver detalhes com ID inválido.");
+        toast("Erro ao tentar abrir detalhes do chamado.");
+      }
+    });
+  });
+}
+
+/* Função para assumir um chamado (placeholder) */
+async function assumirChamado(chamadoId) {
+  console.log("Assumindo chamado:", chamadoId);
+  // TODO: Implementar endpoint para atribuir chamado ao técnico
+  toast(`Funcionalidade de assumir chamado #${chamadoId} será implementada em breve.`);
+  
+  // Por enquanto, apenas recarregar os dados
+  setTimeout(() => {
+    initTecnicoDashboard();
+  }, 1000);
+}
+
+/* ===========================================================
    🧭 NAVEGAÇÃO GLOBAL
    =========================================================== */
 function go(page) {
@@ -482,6 +707,9 @@ document.addEventListener("DOMContentLoaded", () => {
     initNewTicket();
   } else if (path.endsWith("ticket-detalhes-desktop.html")) {
     initTicketDetails();
+  } else if (path.endsWith("tecnico-dashboard.html")) {
+    initTecnicoDashboard(); 
+    initConfig(); // Mantém o logout
   }
 });
 
