@@ -81,47 +81,48 @@ public class ChamadosController : ControllerBase
 [HttpGet]
 public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId)
 {
-    // Começa com a consulta base, incluindo os dados relacionados
-    var query = _context.Chamados
-        .Include(c => c.Categoria) 
-        .Include(c => c.Status)    
-        .Include(c => c.Prioridade) // Incluir Prioridade também pode ser útil
-        .Include(c => c.Solicitante) // Incluir Solicitante
-        .AsQueryable(); // Transforma em IQueryable para adicionar filtros
-
+    // Começa com a consulta base SEM includes desnecessários para a lista
+    var query = _context.Chamados.AsQueryable(); 
+    
     // Aplica filtro de StatusId se fornecido
     if (statusId.HasValue)
     {
         query = query.Where(c => c.StatusId == statusId.Value);
     }
-
-    // Aplica filtro de TecnicoId se fornecido
+    
+    // Aplica filtro de TecnicoId se fornecido (LÓGICA CORRIGIDA)
     if (tecnicoId.HasValue)
     {
-        // Se tecnicoId for 0, interpretamos como "não atribuído" (TecnicoId é NULL)
         if (tecnicoId.Value == 0) 
         {
-           query = query.Where(c => c.TecnicoId == null);
+           // Busca chamados onde TecnicoId é NULL
+           query = query.Where(c => c.TecnicoId == null); 
         }
         else 
         {
-           query = query.Where(c => c.TecnicoId == tecnicoId.Value);
+           // Busca chamados para o TecnicoId específico
+           query = query.Where(c => c.TecnicoId == tecnicoId.Value); 
         }
     }
-
-    // Executa a consulta com os filtros e projeta para o DTO
+    
+    // AGORA, após aplicar TODOS os filtros, fazemos os Includes necessários
+    // e a projeção para o DTO.
     var chamadosDto = await query
-        .OrderByDescending(c => c.DataAbertura) // Ordena pelos mais recentes
+        .Include(c => c.Categoria) // Inclui Categoria para obter o Nome
+        .Include(c => c.Status)    // Inclui Status para obter o Nome
+        .OrderByDescending(c => c.DataAbertura) 
         .Select(c => new ChamadoListDto 
         {
             Id = c.Id,
             Titulo = c.Titulo,
             CategoriaNome = c.Categoria.Nome, 
-            StatusNome = c.Status.Nome,
-            // Poderíamos adicionar mais campos ao DTO se necessário, como PrioridadeNome
+            StatusNome = c.Status.Nome       
         })
         .ToListAsync();
-
+    
+    // Log para depuração no backend
+    _logger.LogInformation("GetChamados - Filtros: statusId={StatusId}, tecnicoId={TecnicoId}. Resultados encontrados: {Count}", statusId, tecnicoId, chamadosDto.Count);
+    
     return Ok(chamadosDto); 
 }
 
