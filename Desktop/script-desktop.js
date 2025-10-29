@@ -465,11 +465,12 @@ async function initTecnicoDashboard() {
   // Decodificar token para obter ID do técnico
   const payload = decodeJWT(token);
   let tecnicoId = null; // Inicializa como null
-  if (payload && payload.nameid) { // 'nameid' é a claim padrão para ID no JWT do .NET
-    tecnicoId = parseInt(payload.nameid);
+  const nameIdentifierClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
+  if (payload && payload[nameIdentifierClaim]) { // <-- Acede usando a chave correta
+    tecnicoId = parseInt(payload[nameIdentifierClaim]); // <-- Usa a chave correta
     console.log("--- DEBUG: ID do técnico obtido do token:", tecnicoId, "---"); // Log 4
   } else {
-    console.error("--- ERRO: Não foi possível obter o ID do técnico do token. Payload:", payload, "---"); // Log 5
+    console.error("--- ERRO: Não foi possível obter o ID ('nameidentifier') do técnico do token. Payload:", payload, "---"); // Mensagem de erro mais específica
     // Considerar redirecionar ou mostrar erro, mas por agora continuamos para ver as chamadas fetch
   }
   // Headers para as requisições
