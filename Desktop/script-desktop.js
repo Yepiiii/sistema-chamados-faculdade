@@ -362,6 +362,7 @@ async function initTicketDetails() {
       const form = $("#comment-form");
       if (form) {
         form.addEventListener("submit", async (e) => {
+          console.log("--- DEBUG: Evento SUBMIT do login foi disparado! ---");
           e.preventDefault();
           const text = $("#comment-text").value.trim();
           if (!text) return toast("Digite um comentário.");
