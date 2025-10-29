@@ -166,10 +166,11 @@ async function initDashboard() {
   // Verificar se o token de autenticação existe
   const token = sessionStorage.getItem('authToken');
   if (!token) {
-    toast("Sessão expirada. Faça login novamente.");
+    console.log("initDashboard: Token não encontrado, redirecionando para login.");
     return go("login-desktop.html");
   }
-
+  console.log("initDashboard: Token encontrado, buscando chamados da API...");
+  
   try {
     // Fazer chamada para a API para buscar os chamados
     const response = await fetch(`${API_BASE}/api/chamados`, {
@@ -179,37 +180,43 @@ async function initDashboard() {
         'Content-Type': 'application/json'
       }
     });
-
+    
     // Verificar se a resposta é bem-sucedida
     if (response.ok) {
       const responseData = await response.json();
+      console.log("initDashboard: Dados recebidos da API:", responseData);
+      
+      // Extrai a lista de chamados de '$values' se existir, senão usa a resposta direta
+      const chamados = responseData.$values || responseData; 
       
       // Identificar o tbody da tabela na página atual
       const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
-      if (!tbody) return;
+      if (!tbody) {
+          console.error("initDashboard: Elemento tbody da tabela não encontrado!");
+          return;
+      }
       
-      // Renderizar os chamados na tabela (responseData agora é diretamente a lista de ChamadoListDto)
-      renderTicketsTable(responseData, tbody);
+      // Renderizar os chamados na tabela (passa a lista extraída)
+      renderTicketsTable(chamados, tbody); 
     } else if (response.status === 401) {
       // Token inválido ou expirado
+      console.log("initDashboard: Token inválido (401), redirecionando para login.");
       sessionStorage.removeItem('authToken');
       toast("Sessão expirada. Faça login novamente.");
       return go("login-desktop.html");
     } else {
       // Outros erros da API
+      console.error('initDashboard: Erro da API:', response.status, response.statusText);
       toast("Erro ao carregar chamados.");
-      console.error('Erro da API:', response.status, response.statusText);
     }
   } catch (error) {
     // Problemas de rede ou outros erros
+    console.error('initDashboard: Erro de rede:', error);
     toast("Erro ao carregar chamados.");
-    console.error('Erro de rede:', error);
   }
 }
 
 /* Renderização da tabela de chamados (v5 - Simplificada e Segura) */
-console.log("initDashboard: Dados a serem enviados para renderTicketsTable:", chamados); // <-- ADICIONE ESTA LINHA
-renderTicketsTable(chamados, tbody);
 function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' diretamente
   tbody.innerHTML = ""; // Limpa a tabela
 
