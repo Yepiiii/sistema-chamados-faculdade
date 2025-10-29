@@ -453,94 +453,82 @@ function decodeJWT(token) {
 
 /* Função principal do painel do técnico */
 async function initTecnicoDashboard() {
-  console.log("=== Inicializando Painel do Técnico ===");
-
+  console.log("--- DEBUG: Entrando em initTecnicoDashboard ---"); // Log 1
   // Verificar autenticação
   const token = sessionStorage.getItem("authToken");
   if (!token) {
-    console.log("Token não encontrado, redirecionando para login");
+    console.log("--- DEBUG: Token NÃO encontrado, redirecionando para login ---"); // Log 2
     go("login-desktop.html");
     return;
   }
-
+  console.log("--- DEBUG: Token encontrado ---"); // Log 3
   // Decodificar token para obter ID do técnico
   const payload = decodeJWT(token);
-  let tecnicoId;
-  
-  if (payload && payload.nameid) {
+  let tecnicoId = null; // Inicializa como null
+  if (payload && payload.nameid) { // 'nameid' é a claim padrão para ID no JWT do .NET
     tecnicoId = parseInt(payload.nameid);
-    console.log("ID do técnico obtido do token:", tecnicoId);
+    console.log("--- DEBUG: ID do técnico obtido do token:", tecnicoId, "---"); // Log 4
   } else {
-    // Para teste, usar ID fixo se não conseguir decodificar
-    tecnicoId = 1;
-    console.log("Usando ID de técnico fixo para teste:", tecnicoId);
+    console.error("--- ERRO: Não foi possível obter o ID do técnico do token. Payload:", payload, "---"); // Log 5
+    // Considerar redirecionar ou mostrar erro, mas por agora continuamos para ver as chamadas fetch
   }
-
   // Headers para as requisições
   const headers = {
     "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json"
   };
-
+  console.log("--- DEBUG: Headers para fetch definidos ---"); // Log 6
   try {
-    // 1. Buscar chamados não atribuídos (fila de atendimento)
-    console.log("Buscando chamados da fila de atendimento...");
-    const filaResponse = await fetch(`${API_BASE}/api/chamados?tecnicoId=0&statusId=1`, {
-      method: "GET",
-      headers: headers
-    });
-
-    if (filaResponse.status === 401) {
-      console.log("Token expirado, redirecionando para login");
-      sessionStorage.removeItem("authToken");
-      go("login-desktop.html");
-      return;
-    }
-
-    if (!filaResponse.ok) {
-      throw new Error(`Erro ao buscar fila: ${filaResponse.status} ${filaResponse.statusText}`);
-    }
-
+    // 1. Buscar chamados não atribuídos
+    const urlFila = `${API_BASE}/api/chamados?tecnicoId=0&statusId=1`;
+    console.log("--- DEBUG: Iniciando fetch para FILA:", urlFila, "---"); // Log 7
+    const filaResponse = await fetch(urlFila, { method: "GET", headers: headers });
+    console.log("--- DEBUG: Resposta fetch FILA recebida. Status:", filaResponse.status, "---"); // Log 8
+    if (filaResponse.status === 401) throw new Error("Token expirado (Fila)");
+    if (!filaResponse.ok) throw new Error(`Erro API (Fila): ${filaResponse.status}`);
     const chamadosFila = await filaResponse.json();
-    console.log("Chamados da fila recebidos:", chamadosFila);
-
+    console.log("--- DEBUG: Dados da FILA recebidos:", chamadosFila, "---"); // Log 9
     // Renderizar tabela da fila
     const tabelaFila = $("#tabela-fila-chamados tbody");
     if (tabelaFila) {
-      renderTabelaFila(chamadosFila, tabelaFila);
+      console.log("--- DEBUG: Renderizando tabela da FILA ---"); // Log 10
+      renderTabelaFila(chamadosFila.$values || chamadosFila, tabelaFila); // Passa $values ou a lista
+    } else {
+      console.error("--- ERRO: tbody da tabela da FILA não encontrado ---"); // Log 11
     }
-
     // 2. Buscar chamados atribuídos ao técnico
-    console.log("Buscando meus chamados atribuídos...");
-    const meusResponse = await fetch(`${API_BASE}/api/chamados?tecnicoId=${tecnicoId}`, {
-      method: "GET",
-      headers: headers
-    });
-
-    if (meusResponse.status === 401) {
-      console.log("Token expirado, redirecionando para login");
-      sessionStorage.removeItem("authToken");
-      go("login-desktop.html");
-      return;
+    // Garantir que tecnicoId é um número antes de usar na URL
+    if (typeof tecnicoId !== 'number' || isNaN(tecnicoId)) {
+        console.error("--- ERRO: tecnicoId inválido para buscar 'Meus Chamados'. Abortando. ---"); // Log 12
+        return; // Interrompe se não temos ID válido
     }
-
-    if (!meusResponse.ok) {
-      throw new Error(`Erro ao buscar meus chamados: ${meusResponse.status} ${meusResponse.statusText}`);
-    }
-
+    const urlMeus = `${API_BASE}/api/chamados?tecnicoId=${tecnicoId}`;
+    console.log("--- DEBUG: Iniciando fetch para MEUS CHAMADOS:", urlMeus, "---"); // Log 13
+    const meusResponse = await fetch(urlMeus, { method: "GET", headers: headers });
+    console.log("--- DEBUG: Resposta fetch MEUS CHAMADOS recebida. Status:", meusResponse.status, "---"); // Log 14
+    if (meusResponse.status === 401) throw new Error("Token expirado (Meus Chamados)");
+    if (!meusResponse.ok) throw new Error(`Erro API (Meus Chamados): ${meusResponse.status}`);
     const meusChamados = await meusResponse.json();
-    console.log("Meus chamados recebidos:", meusChamados);
-
+    console.log("--- DEBUG: Dados de MEUS CHAMADOS recebidos:", meusChamados, "---"); // Log 15
     // Renderizar tabela dos meus chamados
     const tabelaMeus = $("#tabela-meus-chamados tbody");
     if (tabelaMeus) {
-      renderTabelaMeusChamados(meusChamados, tabelaMeus);
+      console.log("--- DEBUG: Renderizando tabela MEUS CHAMADOS ---"); // Log 16
+      renderTabelaMeusChamados(meusChamados.$values || meusChamados, tabelaMeus); // Passa $values ou a lista
+    } else {
+      console.error("--- ERRO: tbody da tabela MEUS CHAMADOS não encontrado ---"); // Log 17
     }
-
   } catch (error) {
-    console.error("Erro ao carregar dados do painel do técnico:", error);
-    toast("Erro ao carregar dados. Verifique sua conexão e tente novamente.");
+    console.error("--- ERRO GERAL em initTecnicoDashboard:", error, "---"); // Log 18
+    if (error.message.includes("Token expirado")) {
+        sessionStorage.removeItem("authToken");
+        toast("Sessão expirada. Faça login novamente.");
+        go("login-desktop.html");
+    } else {
+        toast("Erro ao carregar dados. Verifique o console para detalhes.");
+    }
   }
+  console.log("--- DEBUG: Saindo de initTecnicoDashboard ---"); // Log 19
 }
 
 /* Renderizar tabela da fila de atendimento */
