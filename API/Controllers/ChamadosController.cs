@@ -116,13 +116,15 @@ public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQue
         var chamadosDto = await query
             .Include(c => c.Categoria)
             .Include(c => c.Status)
+            .Include(c => c.Prioridade) // <-- Adicione este Include
             .OrderByDescending(c => c.DataAbertura)
             .Select(c => new ChamadoListDto 
             {
                 Id = c.Id,
                 Titulo = c.Titulo,
                 CategoriaNome = c.Categoria.Nome, 
-                StatusNome = c.Status.Nome       
+                StatusNome = c.Status.Nome,
+                PrioridadeNome = c.Prioridade.Nome // <-- Adicione esta linha
             })
             .ToListAsync();
         _logger.LogInformation("GetChamados - Consulta finalizada. Resultados encontrados: {Count}", chamadosDto.Count);

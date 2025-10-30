@@ -747,14 +747,14 @@ function renderTabelaFila(chamados, tbody) {
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
       const categoriaNome = chamado?.categoriaNome ?? 'N/A';
-      const prioridade = 'Normal'; // TODO: Adicionar ao DTO quando disponível
+      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A';
       const dataAbertura = 'Hoje'; // TODO: Adicionar ao DTO quando disponível
 
       tr.innerHTML = `
         <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
         <td>${titulo}</td>
         <td>${categoriaNome}</td>
-        <td><span class="badge priority-normal">${prioridade}</span></td>
+        <td><span class="badge priority-normal">${prioridadeNome}</span></td>
         <td>${dataAbertura}</td>
         <td><button class="btn btn-primary btn-sm" data-id="${chamadoId}" data-action="assumir">Assumir</button></td>
       `;
@@ -799,7 +799,7 @@ function renderTabelaMeusChamados(chamados, tbody) {
       const titulo = chamado?.titulo ?? 'Sem Título';
       const categoriaNome = chamado?.categoriaNome ?? 'N/A';
       const statusNome = chamado?.statusNome ?? 'N/A';
-      const prioridade = 'Normal'; // TODO: Adicionar ao DTO quando disponível
+      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A';
 
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
@@ -808,7 +808,7 @@ function renderTabelaMeusChamados(chamados, tbody) {
         <td>${titulo}</td>
         <td>${categoriaNome}</td>
         <td><span class="badge status-${statusClass}">${statusNome}</span></td>
-        <td><span class="badge priority-normal">${prioridade}</span></td>
+        <td><span class="badge priority-normal">${prioridadeNome}</span></td>
         <td><button class="btn btn-outline btn-sm" data-id="${chamadoId}" data-action="detalhes">Ver Detalhes</button></td>
       `;
       tbody.appendChild(tr);
