@@ -940,21 +940,34 @@ async function initCadastrarTecnico() {
     });
 
     if (response.ok) {
-      const categorias = await response.json();
-      console.log("--- DEBUG: Categorias carregadas:", categorias);
+      const responseData = await response.json();
+      const categoriasList = responseData.$values || responseData; // Extrai de $values
+      console.log("--- DEBUG: Resposta completa:", responseData);
+      console.log("--- DEBUG: Categorias extraídas:", categoriasList);
       
       const selectEspecialidade = $("#t-especialidade");
       if (selectEspecialidade) {
-        // Limpar a opção "Carregando..."
-        selectEspecialidade.innerHTML = '<option value="">Selecione uma especialidade</option>';
+        selectEspecialidade.innerHTML = ""; // Limpa o "Carregando..."
         
-        // Preencher com as categorias recebidas
-        categorias.forEach(categoria => {
-          const option = document.createElement('option');
-          option.value = categoria.id;
-          option.textContent = categoria.nome;
-          selectEspecialidade.appendChild(option);
-        });
+        // Verifica se categoriasList é realmente uma lista antes de iterar
+        if (Array.isArray(categoriasList)) {
+          // Adiciona uma opção "Selecione"
+          const defaultOption = document.createElement("option");
+          defaultOption.value = "";
+          defaultOption.textContent = "Selecione uma especialidade";
+          selectEspecialidade.appendChild(defaultOption);
+          
+          // Preenche com as categorias
+          categoriasList.forEach(categoria => {
+            const option = document.createElement("option");
+            option.value = categoria.id;
+            option.textContent = categoria.nome;
+            selectEspecialidade.appendChild(option);
+          });
+        } else {
+          console.error("A resposta de /api/categorias não é uma lista válida:", categoriasList);
+          toast("Erro ao processar a lista de especialidades.");
+        }
       }
     } else {
       console.error("Erro ao carregar categorias:", response.status);
