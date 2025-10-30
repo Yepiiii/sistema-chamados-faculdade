@@ -130,32 +130,54 @@ function initLogin() {
 }
 
 /* ===========================================================
-   🧾 CADASTRO
+   🧾 CADASTRO (Atualizado para API)
    =========================================================== */
-function initRegister() {
+async function initRegister() {
   const form = $("#register-form");
   if (!form) return;
-
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    const name = $("#r-name").value.trim();
+    const nomeCompleto = $("#r-name").value.trim();
     const email = $("#r-email").value.trim().toLowerCase();
-    const pass = $("#r-pass").value.trim();
-    const confirm = $("#r-confirm").value.trim();
-
-    if (!name || !email || !pass || !confirm)
+    const senha = $("#r-pass").value.trim();
+    const confirmarSenha = $("#r-confirm").value.trim();
+    if (!nomeCompleto || !email || !senha || !confirmarSenha) {
       return toast("Preencha todos os campos.");
-    if (pass !== confirm) return toast("As senhas não coincidem.");
-
-    const users = load("users");
-    if (users.some((u) => u.email === email))
-      return toast("E-mail já cadastrado.");
-
-    users.push({ id: Date.now(), name, email, password: pass, role: "user" });
-    save("users", users);
-    toast("Conta criada com sucesso!");
-    go("login-desktop.html");
+    }
+    if (senha !== confirmarSenha) {
+      return toast("As senhas não coincidem.");
+    }
+    const submitButton = form.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.textContent = "A registar...";
+    try {
+      const response = await fetch(`${API_BASE}/api/usuarios/registrar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          NomeCompleto: nomeCompleto,
+          Email: email,
+          Senha: senha
+        })
+      });
+      if (response.ok) {
+        toast("Conta criada com sucesso! Por favor, faça o login.");
+        go("login-desktop.html");
+      } else {
+        const errorData = await response.json();
+        // Tenta extrair a mensagem de erro específica (ex: "Email já está em uso")
+        const errorMessage = errorData?.message || errorData?.title || "Erro ao criar conta.";
+        toast(errorMessage);
+      }
+    } catch (error) {
+      console.error('Erro no registo:', error);
+      toast("Erro de conexão ao tentar registar.");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "Criar conta";
+    }
   });
 }
 
