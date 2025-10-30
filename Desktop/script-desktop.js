@@ -908,7 +908,7 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   } else if (path.endsWith("cadastro-desktop.html")) {
     initRegister();
-  } else if (path.endsWith("new-ticket-desktop.html")) {
+  } else if (path.endsWith("novo-ticket-desktop.html")) {
     initNewTicket();
   } else if (path.endsWith("ticket-detalhes-desktop.html")) {
     initTicketDetails();
