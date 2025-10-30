@@ -111,6 +111,54 @@ public class UsuariosController : ControllerBase
         return CreatedAtAction(nameof(Registrar), new { id = usuario.Id }, response);
     }
 
+    [HttpPost("registrar-tecnico")]
+    [Authorize(Policy = "AdminOnly")] // <-- Protege o endpoint
+    public async Task<ActionResult<UsuarioResponseDto>> RegistrarTecnico([FromBody] RegistrarTecnicoDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+        {
+            return BadRequest(new { message = "Email já está em uso" });
+        }
+
+        // Valida se a categoria de especialidade existe
+        var categoriaExiste = await _context.Categorias.AnyAsync(c => c.Id == dto.EspecialidadeCategoriaId);
+        if (!categoriaExiste)
+        {
+            return BadRequest(new { message = "ID da Categoria de especialidade inválido." });
+        }
+
+        var usuario = new Usuario
+        {
+            NomeCompleto = dto.NomeCompleto,
+            Email = dto.Email,
+            SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
+            TipoUsuario = 2, // 2 = Técnico
+            Ativo = true,
+            DataCadastro = DateTime.UtcNow,
+            EspecialidadeCategoriaId = dto.EspecialidadeCategoriaId // Define a especialidade
+        };
+
+        _context.Usuarios.Add(usuario);
+        await _context.SaveChangesAsync();
+
+        var response = new UsuarioResponseDto
+        {
+            Id = usuario.Id,
+            NomeCompleto = usuario.NomeCompleto,
+            Email = usuario.Email,
+            TipoUsuario = usuario.TipoUsuario,
+            DataCadastro = usuario.DataCadastro,
+            Ativo = usuario.Ativo
+        };
+
+        return CreatedAtAction(nameof(Registrar), new { id = usuario.Id }, response);
+    }
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto loginRequest)
     {
