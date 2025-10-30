@@ -300,42 +300,54 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
 }
 
 /* ===========================================================
-   🆕 NOVO CHAMADO
+   🆕 NOVO CHAMADO (Atualizado para API com IA)
    =========================================================== */
-function initNewTicket() {
+async function initNewTicket() {
   const form = $("#new-ticket-form");
   if (!form) return;
-
-  form.addEventListener("submit", (e) => {
+  // Verificar se o token de autenticação existe
+  const token = sessionStorage.getItem('authToken');
+  if (!token) {
+    toast("Sessão expirada. Faça login novamente.");
+    return go("login-desktop.html");
+  }
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    const title = $("#title").value.trim();
-    const category = $("#category").value;
-    const priority = $("#priority").value;
-    const desc = $("#description").value.trim();
-
-    if (!title || !category || !priority || !desc)
-      return toast("Preencha todos os campos.");
-
-    const user = load("user", null);
-    const all = load("tickets");
-
-    const newTicket = {
-      id: Date.now(),
-      title,
-      category,
-      priority,
-      description: desc,
-      status: "aberto",
-      ownerId: user ? user.id : null,
-      createdAt: new Date().toISOString(),
-      comments: [],
-    };
-
-    all.push(newTicket);
-    save("tickets", all);
-    toast("Chamado criado com sucesso!");
-    go("user-dashboard-desktop.html");
+    const descricao = $("#description").value.trim();
+    if (!descricao) {
+      return toast("Por favor, descreva o seu problema.");
+    }
+    // Desabilitar o botão para evitar cliques múltiplos
+    const submitButton = form.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.textContent = "Analisando...";
+    try {
+      const response = await fetch(`${API_BASE}/api/chamados/analisar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          descricaoProblema: descricao
+        })
+      });
+      if (response.ok) {
+        const chamadoCriado = await response.json();
+        toast(`Chamado #${chamadoCriado.id} criado e classificado com sucesso!`);
+        go("user-dashboard-desktop.html"); // Redireciona para a lista
+      } else {
+        const errorData = await response.json();
+        toast(`Erro ao criar chamado: ${errorData.message || 'Tente novamente.'}`);
+      }
+    } catch (error) {
+      console.error('Erro ao criar novo chamado:', error);
+      toast("Erro de conexão ao criar o chamado.");
+    } finally {
+      // Reabilitar o botão
+      submitButton.disabled = false;
+      submitButton.textContent = "Registrar Chamado";
+    }
   });
 }
 
