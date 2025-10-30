@@ -73,14 +73,31 @@ namespace SistemaChamados.Services
                 
                 if (analise != null)
                 {
-                    // Nova Lógica: Buscar técnico especialista
+                    // Nova Lógica: Buscar técnico especialista (TipoUsuario == 2)
                     var tecnicoEspecialista = await _context.Usuarios
-                        .FirstOrDefaultAsync(u => u.TipoUsuario == 3 && u.EspecialidadeCategoriaId == analise.CategoriaId && u.Ativo);
+                        .FirstOrDefaultAsync(u => 
+                            u.TipoUsuario == 2 && // <-- CORRIGIDO para 2
+                            u.EspecialidadeCategoriaId == analise.CategoriaId && 
+                            u.Ativo);
                     
+                    // Se não encontrar especialista, busca qualquer técnico (TipoUsuario == 2) como fallback
+                    if (tecnicoEspecialista == null)
+                    {
+                        _logger.LogWarning("Nenhum técnico especialista (Tipo 2) encontrado para CategoriaId {CategoriaId}. Procurando técnico geral (Tipo 2).", analise.CategoriaId);
+                        tecnicoEspecialista = await _context.Usuarios
+                            .FirstOrDefaultAsync(u => u.TipoUsuario == 2 && u.Ativo); // <-- Busca qualquer técnico Tipo 2
+                    }
+
                     if (tecnicoEspecialista != null)
                     {
                         analise.TecnicoId = tecnicoEspecialista.Id;
                         analise.TecnicoNome = tecnicoEspecialista.NomeCompleto;
+                        _logger.LogInformation("Chamado atribuído ao técnico ID {TecnicoId}", tecnicoEspecialista.Id);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Nenhum técnico (TipoUsuario == 2) encontrado no sistema para atribuição.");
+                        // Se nenhum técnico for encontrado, analise.TecnicoId permanecerá nulo
                     }
                 }
                 
