@@ -661,16 +661,75 @@ function renderTabelaMeusChamados(chamados, tbody) {
   });
 }
 
-/* Função para assumir um chamado (placeholder) */
+/* Função para assumir um chamado */
 async function assumirChamado(chamadoId) {
-  console.log("Assumindo chamado:", chamadoId);
-  // TODO: Implementar endpoint para atribuir chamado ao técnico
-  toast(`Funcionalidade de assumir chamado #${chamadoId} será implementada em breve.`);
-  
-  // Por enquanto, apenas recarregar os dados
-  setTimeout(() => {
-    initTecnicoDashboard();
-  }, 1000);
+  try {
+    console.log("Assumindo chamado:", chamadoId);
+    
+    // Recuperar o token JWT do sessionStorage
+    const token = sessionStorage.getItem('authToken');
+    if (!token) {
+      toast("Erro: Token de autenticação não encontrado. Faça login novamente.");
+      return;
+    }
+    
+    // Decodificar o token para obter o ID do técnico logado
+    const payload = decodeJWT(token);
+    if (!payload) {
+      toast("Erro: Token inválido. Faça login novamente.");
+      return;
+    }
+    
+    // Obter o ID do técnico da claim nameidentifier
+    const nameIdentifierClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
+    const idDoTecnicoLogado = payload[nameIdentifierClaim];
+    
+    if (!idDoTecnicoLogado) {
+      toast("Erro: Não foi possível obter o ID do técnico. Faça login novamente.");
+      return;
+    }
+    
+    // Definir o novo status ID como 2 (Em Andamento)
+    const novoStatusId = 2;
+    
+    // Montar o objeto body para a requisição PUT
+    const body = {
+      statusId: novoStatusId,
+      tecnicoId: parseInt(idDoTecnicoLogado)
+    };
+    
+    console.log("Enviando requisição para assumir chamado:", { chamadoId, body });
+    
+    // Fazer a chamada fetch para o endpoint PUT
+    const response = await fetch(`${API_BASE}/api/chamados/${chamadoId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    // Verificar a resposta
+    if (response.ok) {
+      toast("Chamado assumido com sucesso!");
+      // Recarregar ambas as tabelas com os dados atualizados
+      initTecnicoDashboard();
+    } else if (response.status === 401) {
+      // Token expirado
+      sessionStorage.removeItem('authToken');
+      toast("Sessão expirada. Faça login novamente.");
+      go("login-desktop.html");
+    } else {
+      // Outros erros (400, 404, 500)
+      console.error('Erro ao assumir chamado:', response.status, response.statusText);
+      toast("Erro ao tentar assumir o chamado.");
+    }
+    
+  } catch (error) {
+    console.error('Erro na função assumirChamado:', error);
+    toast("Erro ao tentar assumir o chamado.");
+  }
 }
 
 /* ===========================================================
