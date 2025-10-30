@@ -79,51 +79,60 @@ public class ChamadosController : ControllerBase
         return Ok(novoChamado);
     }
 [HttpGet]
-public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId)
+public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId, [FromQuery] int? solicitanteId)
 {
-    // Começa com a consulta base SEM includes desnecessários para a lista
-    var query = _context.Chamados.AsQueryable(); 
-    
-    // Aplica filtro de StatusId se fornecido
-    if (statusId.HasValue)
+    _logger.LogInformation("GetChamados - Recebido pedido com filtros: statusId={StatusId}, tecnicoId={TecnicoId}, solicitanteId={SolicitanteId}", statusId, tecnicoId, solicitanteId);
+    try
     {
-        query = query.Where(c => c.StatusId == statusId.Value);
+        // 1. Começa com a consulta base
+        var query = _context.Chamados.AsQueryable();
+        // 2. Aplica filtro de StatusId se fornecido
+        if (statusId.HasValue)
+        {
+            query = query.Where(c => c.StatusId == statusId.Value);
+            _logger.LogInformation("Filtro StatusId={StatusId} aplicado.", statusId.Value);
+        }
+        // 3. Aplica filtro de TecnicoId se fornecido
+        if (tecnicoId.HasValue)
+        {
+            if (tecnicoId.Value == 0) 
+            {
+               query = query.Where(c => c.TecnicoId == null); // Busca não atribuídos
+               _logger.LogInformation("Filtro TecnicoId=NULL aplicado.");
+            }
+            else 
+            {
+               query = query.Where(c => c.TecnicoId == tecnicoId.Value); // Busca por técnico específico
+               _logger.LogInformation("Filtro TecnicoId={TecnicoId} aplicado.", tecnicoId.Value);
+            }
+        }
+        // 4. Aplica filtro de SolicitanteId se fornecido
+        if (solicitanteId.HasValue)
+        {
+            query = query.Where(c => c.SolicitanteId == solicitanteId.Value);
+            _logger.LogInformation("Filtro SolicitanteId={SolicitanteId} aplicado.", solicitanteId.Value);
+        }
+        // 5. Executa a consulta com todos os filtros e projeta para o DTO
+        var chamadosDto = await query
+            .Include(c => c.Categoria)
+            .Include(c => c.Status)
+            .OrderByDescending(c => c.DataAbertura)
+            .Select(c => new ChamadoListDto 
+            {
+                Id = c.Id,
+                Titulo = c.Titulo,
+                CategoriaNome = c.Categoria.Nome, 
+                StatusNome = c.Status.Nome       
+            })
+            .ToListAsync();
+        _logger.LogInformation("GetChamados - Consulta finalizada. Resultados encontrados: {Count}", chamadosDto.Count);
+        return Ok(chamadosDto); 
     }
-    
-    // Aplica filtro de TecnicoId se fornecido (LÓGICA CORRIGIDA)
-    if (tecnicoId.HasValue)
+    catch (Exception ex)
     {
-        if (tecnicoId.Value == 0) 
-        {
-           // Busca chamados onde TecnicoId é NULL
-           query = query.Where(c => c.TecnicoId == null); 
-        }
-        else 
-        {
-           // Busca chamados para o TecnicoId específico
-           query = query.Where(c => c.TecnicoId == tecnicoId.Value); 
-        }
+        _logger.LogError(ex, "Erro ao buscar chamados com filtros.");
+        return StatusCode(500, "Erro interno ao buscar chamados.");
     }
-    
-    // AGORA, após aplicar TODOS os filtros, fazemos os Includes necessários
-    // e a projeção para o DTO.
-    var chamadosDto = await query
-        .Include(c => c.Categoria) // Inclui Categoria para obter o Nome
-        .Include(c => c.Status)    // Inclui Status para obter o Nome
-        .OrderByDescending(c => c.DataAbertura) 
-        .Select(c => new ChamadoListDto 
-        {
-            Id = c.Id,
-            Titulo = c.Titulo,
-            CategoriaNome = c.Categoria.Nome, 
-            StatusNome = c.Status.Nome       
-        })
-        .ToListAsync();
-    
-    // Log para depuração no backend
-    _logger.LogInformation("GetChamados - Filtros: statusId={StatusId}, tecnicoId={TecnicoId}. Resultados encontrados: {Count}", statusId, tecnicoId, chamadosDto.Count);
-    
-    return Ok(chamadosDto); 
 }
 
 [HttpGet("{id}")]
