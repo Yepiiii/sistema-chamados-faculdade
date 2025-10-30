@@ -896,6 +896,155 @@ function logout() {
 }
 
 /* ===========================================================
+   🧑‍🔧 CADASTRAR TÉCNICO (ADMIN)
+   =========================================================== */
+async function initCadastrarTecnico() {
+  console.log("--- DEBUG: Entrando em initCadastrarTecnico ---");
+  
+  // a. Recuperar o token do sessionStorage e usar decodeJWT para ler o payload
+  const token = sessionStorage.getItem('authToken');
+  if (!token) {
+    toast("Acesso negado. Token não encontrado.");
+    go("login-desktop.html");
+    return;
+  }
+
+  const payload = decodeJWT(token);
+  if (!payload) {
+    toast("Acesso negado. Token inválido.");
+    go("login-desktop.html");
+    return;
+  }
+
+  // b. Verificar a permissão de Admin
+  const tipoUsuario = payload && payload["TipoUsuario"] ? payload["TipoUsuario"] : null;
+  
+  console.log("--- DEBUG: TipoUsuario do token:", tipoUsuario);
+  console.log("--- DEBUG: Payload completo:", payload);
+  
+  if (tipoUsuario !== "3") {
+    toast("Acesso negado. Apenas administradores podem cadastrar técnicos.");
+    go("login-desktop.html");
+    return;
+  }
+
+  // c. Preencher o Dropdown de Especialidades
+  try {
+    console.log("--- DEBUG: Carregando categorias ---");
+    const response = await fetch(`${API_BASE}/api/categorias`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const categorias = await response.json();
+      console.log("--- DEBUG: Categorias carregadas:", categorias);
+      
+      const selectEspecialidade = $("#t-especialidade");
+      if (selectEspecialidade) {
+        // Limpar a opção "Carregando..."
+        selectEspecialidade.innerHTML = '<option value="">Selecione uma especialidade</option>';
+        
+        // Preencher com as categorias recebidas
+        categorias.forEach(categoria => {
+          const option = document.createElement('option');
+          option.value = categoria.id;
+          option.textContent = categoria.nome;
+          selectEspecialidade.appendChild(option);
+        });
+      }
+    } else {
+      console.error("Erro ao carregar categorias:", response.status);
+      toast("Erro ao carregar especialidades.");
+    }
+  } catch (error) {
+    console.error("Erro ao carregar categorias:", error);
+    toast("Erro ao carregar especialidades.");
+  }
+
+  // d. Adicionar o Listener do Formulário
+  const form = $("#register-tecnico-form");
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      console.log("--- DEBUG: Formulário submetido ---");
+      
+      // Ler os valores dos campos
+      const nome = $("#t-nome")?.value?.trim();
+      const email = $("#t-email")?.value?.trim();
+      const senha = $("#t-senha")?.value;
+      const confirmarSenha = $("#t-confirmar-senha")?.value;
+      const especialidadeId = $("#t-especialidade")?.value;
+      
+      // Validações básicas
+      if (!nome || !email || !senha || !confirmarSenha || !especialidadeId) {
+        toast("Por favor, preencha todos os campos.");
+        return;
+      }
+      
+      // Verificar se as senhas coincidem
+      if (senha !== confirmarSenha) {
+        toast("As senhas não coincidem.");
+        return;
+      }
+      
+      // Preparar dados para envio
+      const dadosTecnico = {
+        NomeCompleto: nome,
+        Email: email,
+        Senha: senha,
+        EspecialidadeCategoriaId: parseInt(especialidadeId)
+      };
+      
+      console.log("--- DEBUG: Dados do técnico:", dadosTecnico);
+      
+      try {
+        // Fazer chamada para a API
+        const response = await fetch(`${API_BASE}/api/usuarios/registrar-tecnico`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dadosTecnico)
+        });
+        
+        if (response.ok) {
+          const resultado = await response.json();
+          console.log("--- DEBUG: Técnico registado com sucesso:", resultado);
+          toast("Técnico registado com sucesso!");
+          
+          // Limpar o formulário
+          form.reset();
+          $("#t-especialidade").selectedIndex = 0;
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Erro ao registar técnico:", response.status, errorData);
+          
+          if (errorData.message) {
+            toast(`Erro: ${errorData.message}`);
+          } else if (response.status === 400) {
+            toast("Dados inválidos. Verifique os campos e tente novamente.");
+          } else if (response.status === 401) {
+            toast("Acesso negado. Faça login novamente.");
+            go("login-desktop.html");
+          } else {
+            toast("Erro ao registar técnico. Tente novamente.");
+          }
+        }
+      } catch (error) {
+        console.error("Erro na requisição:", error);
+        toast("Erro de conexão. Verifique sua internet e tente novamente.");
+      }
+    });
+  }
+}
+
+/* ===========================================================
    👁️ MOSTRAR / OCULTAR SENHA
    =========================================================== */
 function initPasswordToggles() {
@@ -938,6 +1087,9 @@ document.addEventListener("DOMContentLoaded", () => {
     initTecnicoDashboard(); 
     initConfig(); // Mantém o logout
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
+  } else if (path.endsWith("admin-cadastrar-tecnico.html")) {
+    initCadastrarTecnico();
+    initConfig(); // Mantém o logout
   }
 });
 
