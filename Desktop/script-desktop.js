@@ -303,24 +303,37 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
    🆕 NOVO CHAMADO (Atualizado para API com IA)
    =========================================================== */
 async function initNewTicket() {
+  console.log("--- DEBUG: initNewTicket() FOI CHAMADA ---"); // Log 1
   const form = $("#new-ticket-form");
-  if (!form) return;
-  // Verificar se o token de autenticação existe
+  if (!form) {
+      console.error("--- ERRO: Formulário #new-ticket-form NÃO encontrado. ---"); // Log 2
+      return;
+  }
+  console.log("--- DEBUG: Formulário #new-ticket-form encontrado. ---"); // Log 3
   const token = sessionStorage.getItem('authToken');
   if (!token) {
+    console.error("--- ERRO: Token não encontrado, redirecionando para login. ---"); // Log 4
     toast("Sessão expirada. Faça login novamente.");
     return go("login-desktop.html");
   }
+  console.log("--- DEBUG: Token encontrado. Adicionando listener de submit... ---"); // Log 5
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    console.log("--- DEBUG: Evento SUBMIT disparado! ---"); // Log 6
     const descricao = $("#description").value.trim();
+    console.log("--- DEBUG: Descrição lida:", descricao, "---"); // Log 7
     if (!descricao) {
+      console.warn("--- AVISO: Descrição está vazia. ---"); // Log 8
       return toast("Por favor, descreva o seu problema.");
     }
-    // Desabilitar o botão para evitar cliques múltiplos
     const submitButton = form.querySelector("button[type='submit']");
+    if (!submitButton) {
+        console.error("--- ERRO: Botão Submit não encontrado dentro do formulário! ---"); // Log 9
+        return;
+    }
     submitButton.disabled = true;
     submitButton.textContent = "Analisando...";
+    console.log("--- DEBUG: Botão desabilitado. A iniciar fetch... ---"); // Log 10
     try {
       const response = await fetch(`${API_BASE}/api/chamados/analisar`, {
         method: 'POST',
@@ -332,23 +345,25 @@ async function initNewTicket() {
           descricaoProblema: descricao
         })
       });
+      
+      console.log("--- DEBUG: Resposta do fetch recebida. Status:", response.status, "---"); // Log 11
       if (response.ok) {
         const chamadoCriado = await response.json();
         toast(`Chamado #${chamadoCriado.id} criado e classificado com sucesso!`);
-        go("user-dashboard-desktop.html"); // Redireciona para a lista
+        go("user-dashboard-desktop.html");
       } else {
         const errorData = await response.json();
         toast(`Erro ao criar chamado: ${errorData.message || 'Tente novamente.'}`);
       }
     } catch (error) {
-      console.error('Erro ao criar novo chamado:', error);
+      console.error('--- ERRO: Falha no fetch ou na análise do JSON:', error, "---"); // Log 12
       toast("Erro de conexão ao criar o chamado.");
     } finally {
-      // Reabilitar o botão
       submitButton.disabled = false;
       submitButton.textContent = "Registrar Chamado";
     }
   });
+  console.log("--- DEBUG: Listener de submit adicionado com sucesso. ---"); // Log 13
 }
 
 /* ===========================================================
