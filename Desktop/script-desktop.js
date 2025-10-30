@@ -182,6 +182,28 @@ async function initRegister() {
 }
 
 /* ===========================================================
+   📊 KPIs - ESTATÍSTICAS
+   =========================================================== */
+function atualizarKPIs(chamados) {
+  if (!Array.isArray(chamados)) {
+    chamados = []; // Garante que é uma lista
+  }
+  
+  const total = chamados.length;
+  const abertos = chamados.filter(c => c.statusNome.toLowerCase() === 'aberto').length;
+  const emAndamento = chamados.filter(c => c.statusNome.toLowerCase() === 'em andamento').length;
+  const resolvidos = chamados.filter(c => c.statusNome.toLowerCase() === 'fechado' || c.statusNome.toLowerCase() === 'resolvido').length;
+  const pendentes = chamados.filter(c => c.statusNome.toLowerCase() === 'aguardando resposta').length;
+  
+  // Atualiza os elementos do DOM (ignora se não encontrar o elemento)
+  (document.getElementById('kpi-total') || {}).textContent = total;
+  (document.getElementById('kpi-aberto') || {}).textContent = abertos;
+  (document.getElementById('kpi-andamento') || {}).textContent = emAndamento;
+  (document.getElementById('kpi-resolvido') || {}).textContent = resolvidos;
+  (document.getElementById('kpi-pendente') || {}).textContent = pendentes;
+}
+
+/* ===========================================================
    📊 DASHBOARD
    =========================================================== */
 async function initDashboard() {
@@ -230,6 +252,7 @@ async function initDashboard() {
       
       // Extrai a lista de chamados de '$values' se existir, senão usa a resposta direta
       const chamados = responseData.$values || responseData; 
+      atualizarKPIs(chamados); // <-- ADICIONE ESTA LINHA
       
       // Identificar o tbody da tabela na página atual
       const tbody = document.querySelector("#tickets-table tbody") || document.querySelector("#tickets-body-admin tbody");
@@ -677,6 +700,12 @@ async function initTecnicoDashboard() {
     if (!meusResponse.ok) throw new Error(`Erro API (Meus Chamados): ${meusResponse.status}`);
     const meusChamados = await meusResponse.json();
     console.log("--- DEBUG: Dados de MEUS CHAMADOS recebidos:", meusChamados, "---"); // Log 15
+    
+    // Combina as listas para os KPIs
+    const todosChamadosDoTecnico = (meusChamados.$values || meusChamados)
+        .concat(chamadosFila.$values || chamadosFila);
+    atualizarKPIs(todosChamadosDoTecnico); // <-- ADICIONE ESTA LINHA
+    
     // Renderizar tabela dos meus chamados
     const tabelaMeus = $("#tabela-meus-chamados tbody");
     if (tabelaMeus) {
