@@ -320,81 +320,97 @@ function initNewTicket() {
 }
 
 /* ===========================================================
-   🧩 DETALHES DO CHAMADO (Atualizado para API)
+   🧩 DETALHES DO CHAMADO (Atualizado para API v2)
    =========================================================== */
 async function initTicketDetails() {
-  // Buscar o ID do chamado do sessionStorage (novo sistema)
+  console.log("--- DEBUG: Entrando em initTicketDetails ---");
+  // Buscar o ID do chamado do sessionStorage
   const ticketId = sessionStorage.getItem('currentTicketId');
   if (!ticketId) {
-    toast("Chamado não encontrado.");
-    return go("user-dashboard-desktop.html");
+    console.error("initTicketDetails: ID do chamado não encontrado no sessionStorage.");
+    toast("Chamado não encontrado. Retornando ao dashboard.");
+    // Tenta ir para o dashboard do técnico ou do user
+    return go(document.referrer.includes("tecnico") ? "tecnico-dashboard.html" : "user-dashboard-desktop.html"); 
   }
-
+  console.log("--- DEBUG: ID do chamado encontrado:", ticketId, "---");
   // Verificar se o token de autenticação existe
   const token = sessionStorage.getItem('authToken');
   if (!token) {
+    console.log("initTicketDetails: Token não encontrado, redirecionando para login.");
     toast("Sessão expirada. Faça login novamente.");
     return go("login-desktop.html");
   }
-
+  console.log("--- DEBUG: Token encontrado, buscando detalhes da API ---");
   try {
     // Buscar os detalhes do chamado da API
-    const response = await fetch(`${API_BASE}/api/chamados/${ticketId}`, {
+    const url = `${API_BASE}/api/chamados/${ticketId}`;
+    console.log("--- DEBUG: Fetching URL:", url, "---");
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
-
+    console.log("--- DEBUG: Resposta fetch Detalhes recebida. Status:", response.status, "---");
     if (response.ok) {
-      const chamado = await response.json();
+      const chamado = await response.json(); // A API retorna o objeto completo com $id/$values
+      console.log("--- DEBUG: Detalhes do chamado recebidos:", chamado, "---");
       
-      // Preencher os campos com os dados do chamado
-      $("#t-id").textContent = "#" + chamado.id;
-      $("#t-title").textContent = chamado.titulo || 'Sem Título';
-      $("#t-category").textContent = chamado.categoria ? chamado.categoria.nome : 'N/A';
-      $("#t-priority").textContent = chamado.prioridade ? chamado.prioridade.nome : 'N/A';
+      // Preencher os campos com os dados do chamado (leitura segura)
+      $("#t-id").textContent = `#${chamado?.id ?? 'N/A'}`;
+      $("#t-title").textContent = chamado?.titulo ?? 'Sem Título';
+      $("#t-category").textContent = chamado?.categoria?.nome ?? 'N/A';
+      $("#t-priority").textContent = chamado?.prioridade?.nome ?? 'N/A';
+      $("#t-solicitante").textContent = chamado?.solicitante?.nomeCompleto ?? 'Desconhecido'; // Atualiza o solicitante
       
-      const statusNome = chamado.status ? chamado.status.nome : 'N/A';
-      const statusClass = statusNome.toLowerCase().replace(/\s+/g, '-');
-      $("#t-status").innerHTML = `<span class="badge status-${statusClass}">${statusNome}</span>`;
+      const statusNome = chamado?.status?.nome ?? 'N/A';
+      const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
+      // Verifica se o elemento existe antes de tentar atualizar
+      const statusElement = $("#t-status"); 
+      if (statusElement) {
+          statusElement.innerHTML = `<span class="badge status-${statusClass}">${statusNome}</span>`;
+      } else {
+          console.error("Elemento #t-status não encontrado no HTML.");
+      }
       
-      $("#t-desc").textContent = chamado.descricao || 'Sem descrição';
-
-      // Renderizar comentários (se existirem)
-      renderComments(chamado);
-
-      // Configurar formulário de comentários
+      $("#t-desc").textContent = chamado?.descricao ?? 'Sem descrição';
+      // Renderizar comentários (se a API retornar comentários)
+      // A função renderComments precisará ser adaptada para a estrutura da API
+      // renderComments(chamado); 
+      console.warn("Renderização de comentários ainda não implementada para dados da API.");
+      $("#comments").innerHTML = `<li class="help">Funcionalidade de comentários via API ainda não implementada.</li>`;
+      // Configurar formulário de comentários (mantém placeholder por enquanto)
       const form = $("#comment-form");
       if (form) {
         form.addEventListener("submit", async (e) => {
-          console.log("--- DEBUG: Evento SUBMIT do login foi disparado! ---");
           e.preventDefault();
           const text = $("#comment-text").value.trim();
           if (!text) return toast("Digite um comentário.");
-
-          // TODO: Implementar adição de comentários via API
-          // Por enquanto, apenas mostra uma mensagem
-          toast("Funcionalidade de comentários será implementada em breve.");
+          toast("Funcionalidade de adicionar comentários via API será implementada em breve.");
           $("#comment-text").value = "";
         });
+      } else {
+          console.error("Elemento #comment-form não encontrado no HTML.");
       }
     } else if (response.status === 401) {
+      console.log("initTicketDetails: Token inválido (401), redirecionando para login.");
       sessionStorage.removeItem('authToken');
       toast("Sessão expirada. Faça login novamente.");
       return go("login-desktop.html");
     } else if (response.status === 404) {
+      console.error("initTicketDetails: Chamado não encontrado (404).");
       toast("Chamado não encontrado.");
-      return go("user-dashboard-desktop.html");
+      return go(document.referrer.includes("tecnico") ? "tecnico-dashboard.html" : "user-dashboard-desktop.html");
     } else {
+      console.error('initTicketDetails: Erro da API:', response.status, response.statusText);
       toast("Erro ao carregar detalhes do chamado.");
-      console.error('Erro da API:', response.status, response.statusText);
     }
   } catch (error) {
+    console.error('initTicketDetails: Erro de rede:', error);
     toast("Erro ao carregar detalhes do chamado.");
-    console.error('Erro de rede:', error);
   }
+  console.log("--- DEBUG: Saindo de initTicketDetails ---");
 }
 
 /* Renderiza lista de comentários (Atualizada para API) */
