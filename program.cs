@@ -34,12 +34,12 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
 });
 
-// Configurar CORS para permitir requisições do frontend
+// Configurar CORS para permitir o frontend (Live Server)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // Permite o Live Server
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
