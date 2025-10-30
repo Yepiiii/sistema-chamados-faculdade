@@ -375,6 +375,30 @@ async function initTicketDetails() {
       }
       
       $("#t-desc").textContent = chamado?.descricao ?? 'Sem descrição';
+      
+      // Buscar e preencher os Status disponíveis
+      try {
+        const statusResponse = await fetch(`${API_BASE}/api/status`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (statusResponse.ok) {
+          const statusList = await statusResponse.json();
+          const statusSelect = $("#t-status-select");
+          statusSelect.innerHTML = ""; // Limpa o "Carregando..."
+          statusList.$values.forEach(status => {
+            const option = document.createElement("option");
+            option.value = status.id;
+            option.textContent = status.nome;
+            if (status.id === chamado.status.id) {
+              option.selected = true; // Marca o status atual
+            }
+            statusSelect.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao buscar lista de status:", err);
+      }
+      
       // Renderizar comentários (se a API retornar comentários)
       // A função renderComments precisará ser adaptada para a estrutura da API
       // renderComments(chamado); 
@@ -392,6 +416,38 @@ async function initTicketDetails() {
         });
       } else {
           console.error("Elemento #comment-form não encontrado no HTML.");
+      }
+      
+      // Event listener para o botão de atualização de status
+      const btnAtualizar = $("#btn-atualizar-status");
+      if (btnAtualizar) {
+        btnAtualizar.addEventListener("click", async () => {
+          const novoStatusId = $("#t-status-select").value;
+          const tecnicoId = chamado.tecnicoId; // Pega o tecnicoId do chamado atual
+          console.log(`Atualizando chamado ${ticketId} para Status ID: ${novoStatusId}`);
+          try {
+            const updateResponse = await fetch(`${API_BASE}/api/chamados/${ticketId}`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                statusId: parseInt(novoStatusId),
+                tecnicoId: tecnicoId // Mantém o técnico atual
+              })
+            });
+            if (updateResponse.ok) {
+              toast("Status do chamado atualizado com sucesso!");
+              initTicketDetails(); // Recarrega os detalhes da página
+            } else {
+              toast("Erro ao atualizar o status. Tente novamente.");
+            }
+          } catch (err) {
+            console.error("Erro no fetch de atualização:", err);
+            toast("Erro de conexão ao atualizar o status.");
+          }
+        });
       }
     } else if (response.status === 401) {
       console.log("initTicketDetails: Token inválido (401), redirecionando para login.");
