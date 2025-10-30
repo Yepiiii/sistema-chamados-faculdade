@@ -451,6 +451,30 @@ function decodeJWT(token) {
   }
 }
 
+/* Função para atualizar saudação do usuário no cabeçalho */
+function atualizarSaudacaoUsuario() {
+  // Recuperar o token do sessionStorage
+  const token = sessionStorage.getItem('authToken');
+  
+  // Se não houver token, sair da função
+  if (!token) return;
+  
+  // Usar decodeJWT para obter o payload do token
+  const payload = decodeJWT(token);
+  
+  // Extrair o nome completo do utilizador da claim name
+  const nameClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
+  const nomeUsuario = payload && payload[nameClaim] ? payload[nameClaim] : 'Utilizador';
+  
+  // Encontrar o elemento HTML no cabeçalho que deve exibir a saudação
+  const userInfoElement = document.querySelector(".header .user-info");
+  
+  // Se o elemento for encontrado, atualizar o seu textContent
+  if (userInfoElement) {
+    userInfoElement.textContent = `Olá, ${nomeUsuario}`;
+  }
+}
+
 /* Função principal do painel do técnico */
 async function initTecnicoDashboard() {
   console.log("--- DEBUG: Entrando em initTecnicoDashboard ---"); // Log 1
@@ -695,12 +719,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (path.endsWith("login-desktop.html")) {
     initLogin();
     initPasswordToggles();
-  } else if (
-    path.endsWith("admin-dashboard-desktop.html") ||
-    path.endsWith("user-dashboard-desktop.html")
-  ) {
+  } else if (path.endsWith("admin-dashboard-desktop.html")) {
     initDashboard();
     initConfig();
+    atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
+  } else if (path.endsWith("user-dashboard-desktop.html")) {
+    initDashboard();
+    initConfig();
+    atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   } else if (path.endsWith("cadastro-desktop.html")) {
     initRegister();
   } else if (path.endsWith("new-ticket-desktop.html")) {
@@ -710,6 +736,7 @@ document.addEventListener("DOMContentLoaded", () => {
   } else if (path.endsWith("tecnico-dashboard.html")) {
     initTecnicoDashboard(); 
     initConfig(); // Mantém o logout
+    atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   }
 });
 
