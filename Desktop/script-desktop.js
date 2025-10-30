@@ -170,10 +170,30 @@ async function initDashboard() {
     return go("login-desktop.html");
   }
   console.log("initDashboard: Token encontrado, buscando chamados da API...");
-  
+
+  // --- INÍCIO DA NOVA LÓGICA DE FILTRO ---
+  let url = `${API_BASE}/api/chamados`; // URL padrão (para Admin)
+  const path = window.location.pathname;
+
+  // Se for a página do usuário comum, filtrar pelos chamados dele
+  if (path.endsWith("user-dashboard-desktop.html")) {
+    const payload = decodeJWT(token);
+    const nameIdentifierClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
+
+    if (payload && payload[nameIdentifierClaim]) {
+      const userId = parseInt(payload[nameIdentifierClaim]);
+      url = `${API_BASE}/api/chamados?solicitanteId=${userId}`; // Adiciona o filtro
+      console.log("initDashboard: Página de usuário detectada. Buscando chamados para o Solicitante ID:", userId);
+    } else {
+      console.error("initDashboard: Não foi possível obter o ID do usuário (solicitante) do token.");
+      return go("login-desktop.html"); // Falha ao ler o token, força o login
+    }
+  }
+  // --- FIM DA NOVA LÓGICA DE FILTRO ---
+
   try {
-    // Fazer chamada para a API para buscar os chamados
-    const response = await fetch(`${API_BASE}/api/chamados`, {
+    // Fazer chamada para a API (agora com a URL correta)
+    const response = await fetch(url, { // <-- Usa a URL modificada
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
