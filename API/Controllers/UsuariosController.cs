@@ -71,6 +71,46 @@ public class UsuariosController : ControllerBase
         return CreatedAtAction(nameof(RegistrarAdmin), new { id = usuario.Id }, response);
     }
 
+    [HttpPost("registrar")]
+    [AllowAnonymous]
+    public async Task<ActionResult<UsuarioResponseDto>> Registrar([FromBody] RegistrarUsuarioDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+        {
+            return BadRequest(new { message = "Email já está em uso" });
+        }
+
+        var usuario = new Usuario
+        {
+            NomeCompleto = dto.NomeCompleto,
+            Email = dto.Email,
+            SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
+            TipoUsuario = 1, // 1 = Usuário Comum
+            DataCadastro = DateTime.UtcNow,
+            Ativo = true
+        };
+
+        _context.Usuarios.Add(usuario);
+        await _context.SaveChangesAsync();
+
+        var response = new UsuarioResponseDto
+        {
+            Id = usuario.Id,
+            NomeCompleto = usuario.NomeCompleto,
+            Email = usuario.Email,
+            TipoUsuario = usuario.TipoUsuario,
+            DataCadastro = usuario.DataCadastro,
+            Ativo = usuario.Ativo
+        };
+
+        return CreatedAtAction(nameof(Registrar), new { id = usuario.Id }, response);
+    }
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto loginRequest)
     {
