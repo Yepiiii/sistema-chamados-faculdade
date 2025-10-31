@@ -598,6 +598,34 @@ function initConfig() {
       if (confirm("Deseja realmente sair?")) logout();
     });
   }
+
+  const voltarBtn = $("#btn-voltar-dashboard");
+  if (voltarBtn) {
+    voltarBtn.addEventListener("click", () => {
+      // Tenta descobrir para qual dashboard voltar
+      const token = sessionStorage.getItem('authToken');
+      if (!token) {
+        return go("login-desktop.html"); // Segurança: se não há token, vai para o login
+      }
+      
+      const payload = decodeJWT(token);
+      const nameIdentifierClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
+      const tipoUsuarioClaim = "TipoUsuario"; 
+      
+      let tipoUsuario = 1; // Padrão: Usuário Comum
+      if (payload && payload[tipoUsuarioClaim]) {
+        tipoUsuario = parseInt(payload[tipoUsuarioClaim]);
+      }
+      // Redireciona com base no TipoUsuario lido do token
+      if (tipoUsuario === 3) {
+        go("admin-dashboard-desktop.html");
+      } else if (tipoUsuario === 2) {
+        go("tecnico-dashboard.html");
+      } else {
+        go("user-dashboard-desktop.html");
+      }
+    });
+  }
 }
 
 /* ===========================================================
