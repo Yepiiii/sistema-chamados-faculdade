@@ -659,23 +659,55 @@ async function initTicketDetails() {
         console.error("Erro ao buscar lista de status:", err);
       }
       
-      // Renderizar comentários (se a API retornar comentários)
-      // A função renderComments precisará ser adaptada para a estrutura da API
-      // renderComments(chamado); 
-      console.warn("Renderização de comentários ainda não implementada para dados da API.");
-      $("#comments").innerHTML = `<li class="help">Funcionalidade de comentários via API ainda não implementada.</li>`;
-      // Configurar formulário de comentários (mantém placeholder por enquanto)
+      // Buscar e renderizar comentários (v2)
+      fetchAndRenderComments(ticketId, token);
+      // Configurar formulário de comentários (v2)
       const form = $("#comment-form");
       if (form) {
-        form.addEventListener("submit", async (e) => {
+        // Remove listeners antigos para evitar duplicação (boa prática)
+        form.replaceWith(form.cloneNode(true));
+        const newForm = $("#comment-form");
+        const submitButton = newForm.querySelector("button[type='submit']");
+        const textArea = $("#comment-text");
+
+        newForm.addEventListener("submit", async (e) => {
           e.preventDefault();
-          const text = $("#comment-text").value.trim();
-          if (!text) return toast("Digite um comentário.");
-          toast("Funcionalidade de adicionar comentários via API será implementada em breve.");
-          $("#comment-text").value = "";
+          const textoComentário = textArea.value.trim();
+          if (!textoComentário) return toast("Digite um comentário.");
+
+          const originalBtnText = submitButton.textContent;
+          submitButton.disabled = true;
+          submitButton.textContent = "Enviando...";
+
+          try {
+            const postResponse = await fetch(`${API_BASE}/api/chamados/${ticketId}/comentarios`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                Texto: textoComentário
+              })
+            });
+
+            if (postResponse.ok) {
+              const novoComentario = await postResponse.json();
+              addCommentToUI(novoComentario); // Adiciona o novo comentário na tela
+              textArea.value = ""; // Limpa o campo
+            } else {
+              toast("Erro ao enviar comentário. Tente novamente.");
+            }
+          } catch (error) {
+            console.error("Erro no fetch de postar comentário:", error);
+            toast("Erro de conexão ao enviar comentário.");
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = originalBtnText;
+          }
         });
       } else {
-          console.error("Elemento #comment-form não encontrado no HTML.");
+        console.error("Elemento #comment-form não encontrado no HTML.");
       }
       
       // Event listener para o botão de atualização de status
@@ -849,31 +881,6 @@ async function initTicketDetails() {
     toast("Erro ao carregar detalhes do chamado.");
   }
   console.log("--- DEBUG: Saindo de initTicketDetails ---");
-}
-
-/* Renderiza lista de comentários (Atualizada para API) */
-function renderComments(chamado) {
-  const list = $("#comments");
-  list.innerHTML = "";
-
-  // Verificar se existem comentários
-  if (!chamado.comentarios || !chamado.comentarios.length) {
-    list.innerHTML = `<li class="help">Nenhum comentário até o momento.</li>`;
-    return;
-  }
-
-  chamado.comentarios.forEach((comentario) => {
-    const li = document.createElement("li");
-    li.className = "card";
-    
-    // Adaptar para a estrutura da API
-    const autor = comentario.usuario ? comentario.usuario.nome : 'Usuário';
-    const data = comentario.dataComentario ? new Date(comentario.dataComentario).toLocaleString() : 'Data não disponível';
-    const texto = comentario.texto || 'Comentário sem texto';
-    
-    li.innerHTML = `<strong>${autor}</strong> — ${data}<br>${texto}`;
-    list.appendChild(li);
-  });
 }
 
 /* Função persistTicket removida - não é mais necessária com a API */
@@ -1219,6 +1226,104 @@ async function assumirChamado(chamadoId) {
     console.error('Erro na função assumirChamado:', error);
     toast("Erro ao tentar assumir o chamado.");
   }
+}
+
+/* ===========================================================
+   💬 COMENTÁRIOS (v2 - API)
+   =========================================================== */
+
+/**
+ * Busca comentários da API e chama a função para renderizá-los.
+ * @param {string} ticketId - O ID do chamado.
+ * @param {string} token - O token JWT.
+ */
+async function fetchAndRenderComments(ticketId, token) {
+  const list = $("#comments");
+  if (!list) return;
+
+  list.innerHTML = `<li class="help">Carregando comentários...</li>`;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/chamados/${ticketId}/comentarios`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const responseData = await response.json();
+      const comentarios = responseData.$values || responseData; // Lida com $values
+      renderCommentsUI(comentarios);
+    } else {
+      list.innerHTML = `<li class="help" style="color:var(--danger)">Erro ao carregar comentários.</li>`;
+    }
+  } catch (error) {
+    console.error("Erro no fetch de comentários:", error);
+    list.innerHTML = `<li class="help" style="color:var(--danger)">Erro de conexão ao buscar comentários.</li>`;
+  }
+}
+
+/**
+ * Renderiza a lista de comentários na UI.
+ * @param {Array} comentarios - A lista de objetos de comentário.
+ */
+function renderCommentsUI(comentarios) {
+  const list = $("#comments");
+  if (!list) return;
+
+  list.innerHTML = ""; // Limpa o "Carregando..."
+
+  if (!Array.isArray(comentarios) || comentarios.length === 0) {
+    list.innerHTML = `<li class="help">Nenhum comentário até o momento.</li>`;
+    return;
+  }
+
+  comentarios.forEach((comentario) => {
+    addCommentToUI(comentario);
+  });
+}
+
+/**
+ * Adiciona um único comentário ao final da lista na UI.
+ * @param {object} comentario - O objeto de comentário (formato ComentarioResponseDto).
+ */
+function addCommentToUI(comentario) {
+  const list = $("#comments");
+  if (!list) return;
+
+  // Se a mensagem "Nenhum comentário" estiver presente, remove-a
+  const helpText = list.querySelector(".help");
+  if (helpText) {
+    list.innerHTML = "";
+  }
+
+  const li = document.createElement("li");
+  li.className = "card"; // Reutiliza a classe 'card' para um bom estilo
+  li.style.marginBottom = "10px"; // Adiciona um espaçamento
+
+  const autor = comentario.usuarioNome || 'Usuário';
+  const data = new Date(comentario.dataCriacao).toLocaleString('pt-BR');
+  const texto = comentario.texto || 'Comentário sem texto';
+
+  // Usar .textContent para segurança contra XSS
+  const strong = document.createElement("strong");
+  strong.textContent = `${autor} `;
+  
+  const spanData = document.createElement("span");
+  spanData.style.color = "var(--muted)";
+  spanData.style.fontSize = "12px";
+  spanData.textContent = `— ${data}`;
+  
+  const pTexto = document.createElement("p");
+  pTexto.style.marginTop = "4px";
+  pTexto.textContent = texto;
+
+  li.appendChild(strong);
+  li.appendChild(spanData);
+  li.appendChild(pTexto);
+  
+  list.appendChild(li);
 }
 
 /* ===========================================================
