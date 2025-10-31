@@ -10,8 +10,8 @@ public class ApplicationDbContext : DbContext
     }
     
     public DbSet<Usuario> Usuarios { get; set; }
-    public DbSet<AlunoPerfil> AlunoPerfis { get; set; }
-    public DbSet<ProfessorPerfil> ProfessorPerfis { get; set; }
+    // DbSet<AlunoPerfil> removido
+    // DbSet<ProfessorPerfil> removido
     public DbSet<Chamado> Chamados { get; set; }
     public DbSet<Categoria> Categorias { get; set; }
     public DbSet<Prioridade> Prioridades { get; set; }
@@ -36,37 +36,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Ativo).IsRequired().HasDefaultValue(true);
         });
         
-        // Configuração da entidade AlunoPerfil
-        modelBuilder.Entity<AlunoPerfil>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.UsuarioId).IsRequired();
-            entity.HasIndex(e => e.UsuarioId).IsUnique();
-            entity.Property(e => e.Matricula).IsRequired().HasMaxLength(20);
-            entity.HasIndex(e => e.Matricula).IsUnique();
-            entity.Property(e => e.Curso).HasMaxLength(100);
-            
-            entity.HasOne(e => e.Usuario)
-                  .WithOne(u => u.AlunoPerfil)
-                  .HasForeignKey<AlunoPerfil>(e => e.UsuarioId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
+        // (Bloco de AlunoPerfil removido)
         
-        // Configuração da entidade ProfessorPerfil
-        modelBuilder.Entity<ProfessorPerfil>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.UsuarioId).IsRequired();
-            entity.HasIndex(e => e.UsuarioId).IsUnique();
-            entity.Property(e => e.CursoMinistrado).HasMaxLength(100);
-            
-            entity.HasOne(e => e.Usuario)
-                  .WithOne(u => u.ProfessorPerfil)
-                  .HasForeignKey<ProfessorPerfil>(e => e.UsuarioId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
+        // (Bloco de ProfessorPerfil removido)
         
         // Configuração da entidade Chamado
         modelBuilder.Entity<Chamado>(entity =>
