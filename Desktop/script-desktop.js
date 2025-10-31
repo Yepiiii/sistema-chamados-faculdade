@@ -677,6 +677,25 @@ async function initTicketDetails() {
           console.error("Elemento #t-status não encontrado no HTML.");
       }
       
+      // --- INÍCIO DO NOVO TRECHO (DATAS) ---
+      try {
+        // Formata Data de Abertura (já vem da API, que pegamos no 'chamado')
+        // A propriedade 'dataAbertura' está em minúsculo no JSON
+        $("#t-data-abertura").textContent = new Date(chamado.dataAbertura).toLocaleString('pt-BR');
+
+        // Formata Data de Atualização (verificando se é nula)
+        // A propriedade 'dataUltimaAtualizacao' está em minúsculo no JSON
+        $("#t-data-atualizacao").textContent = chamado.dataUltimaAtualizacao
+          ? new Date(chamado.dataUltimaAtualizacao).toLocaleString('pt-BR')
+          : 'N/A'; // Exibe 'N/A' se a data for nula
+
+      } catch (e) {
+        console.error("Erro ao formatar datas:", e);
+        $("#t-data-abertura").textContent = "Data inválida";
+        $("#t-data-atualizacao").textContent = "Data inválida";
+      }
+      // --- FIM DO NOVO TRECHO (DATAS) ---
+      
       $("#t-desc").textContent = chamado?.descricao ?? 'Sem descrição';
       
       // Buscar e preencher os Status disponíveis
