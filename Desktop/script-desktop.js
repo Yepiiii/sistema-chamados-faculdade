@@ -709,6 +709,128 @@ async function initTicketDetails() {
           }
         });
       }
+
+      
+      // ===============================================
+      // INÍCIO - LÓGICA DE ADMIN PARA REATRIBUIR TÉCNICO
+      // ===============================================
+
+      // 1. Verificar se o usuário é Admin (TipoUsuario 3)
+      const payload = decodeJWT(token);
+      const tipoUsuarioClaim = "TipoUsuario";
+      const tipoUsuario = payload && payload[tipoUsuarioClaim] ? payload[tipoUsuarioClaim] : null;
+
+      if (tipoUsuario === "3") {
+        console.log("--- DEBUG: Usuário é Admin, habilitando controles ---");
+
+        // 2. Tornar o bloco de admin visível
+        const adminActionsBlock = $("#admin-actions");
+        if (adminActionsBlock) {
+          adminActionsBlock.style.display = "block";
+        }
+
+        // 3. Função para carregar os técnicos no dropdown
+        const carregarTecnicos = async () => {
+          const selectTecnico = $("#t-tecnico-select");
+          if (!selectTecnico) return;
+
+          try {
+            const tecnicosResponse = await fetch(`${API_BASE}/api/usuarios/tecnicos`, {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (tecnicosResponse.ok) {
+              const responseData = await tecnicosResponse.json();
+              const tecnicosList = responseData.$values || responseData; // Lida com a estrutura $values
+              
+              selectTecnico.innerHTML = ""; // Limpa o "Carregando..."
+
+              // Adiciona uma opção padrão "Selecione"
+              const defaultOption = document.createElement("option");
+              defaultOption.value = "";
+              defaultOption.textContent = "Selecione para reatribuir...";
+              selectTecnico.appendChild(defaultOption);
+
+              // Adiciona os técnicos
+              tecnicosList.forEach(tecnico => {
+                const option = document.createElement("option");
+                option.value = tecnico.id;
+                option.textContent = tecnico.nomeCompleto;
+                selectTecnico.appendChild(option);
+              });
+
+              // Pré-seleciona o técnico atual do chamado (se houver)
+              if (chamado.tecnicoId) {
+                selectTecnico.value = chamado.tecnicoId;
+              }
+              
+            } else {
+              selectTecnico.innerHTML = "<option value=''>Erro ao carregar técnicos</option>";
+            }
+          } catch (err) {
+            console.error("Erro ao buscar lista de técnicos:", err);
+            selectTecnico.innerHTML = "<option value=''>Erro de conexão</option>";
+          }
+        };
+
+        // 4. Chamar a função para carregar os técnicos
+        carregarTecnicos();
+
+        // 5. Adicionar listener ao botão "Atualizar Técnico"
+        const btnAtualizarTecnico = $("#btn-atualizar-tecnico");
+        if (btnAtualizarTecnico) {
+          btnAtualizarTecnico.addEventListener("click", async () => {
+            
+            const novoTecnicoId = $("#t-tecnico-select").value;
+            // Pegar o StatusId ATUAL do chamado (que já carregamos na variável 'chamado')
+            const statusIdAtual = chamado.status.id; 
+
+            if (!novoTecnicoId) {
+              toast("Por favor, selecione um técnico para atribuir.");
+              return;
+            }
+
+            console.log(`Admin atualizando Chamado ${ticketId} - Novo Técnico ID: ${novoTecnicoId}, Status ID Atual: ${statusIdAtual}`);
+
+            try {
+              const updateResponse = await fetch(`${API_BASE}/api/chamados/${ticketId}`, {
+                method: 'PUT',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  statusId: statusIdAtual, // <-- Envia o status atual
+                  tecnicoId: parseInt(novoTecnicoId) // <-- Envia o novo técnico
+                })
+              });
+
+              if (updateResponse.ok) {
+                toast("Técnico atualizado com sucesso!");
+                
+                // Atualiza o nome do técnico na tela imediatamente
+                const spanTecnicoNome = $("#t-tecnico");
+                if (spanTecnicoNome) {
+                   const select = $("#t-tecnico-select");
+                   spanTecnicoNome.textContent = select.options[select.selectedIndex].text;
+                }
+                // Recarrega os dados da página para garantir consistência
+                initTicketDetails();
+              } else {
+                toast("Erro ao atualizar o técnico. Tente novamente.");
+              }
+            } catch (err) {
+              console.error("Erro no fetch de atualização do técnico:", err);
+              toast("Erro de conexão ao atualizar o técnico.");
+            }
+          });
+        }
+      }
+      // ===============================================
+      // FIM - LÓGICA DE ADMIN
+      // ===============================================
+
     } else if (response.status === 401) {
       console.log("initTicketDetails: Token inválido (401), redirecionando para login.");
       sessionStorage.removeItem('authToken');
