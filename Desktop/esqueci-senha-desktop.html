@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Sistema de Chamados (Desktop)</title>
+    <title>Recuperar Senha - Sistema de Chamados (Desktop)</title>
 
     <!-- Importa o CSS global -->
     <link rel="stylesheet" href="style-desktop.css" />
@@ -22,13 +22,13 @@
         </div>
 
         <!-- Título -->
-        <h1 class="auth-title">Acesso ao Sistema</h1>
+        <h1 class="auth-title">Recuperar Senha</h1>
         <p style="color: #64748b; margin-bottom: 20px">
-          Faça login para acessar seus chamados
+          Digite seu e-mail e enviaremos um link para redefinir sua senha.
         </p>
 
         <!-- Formulário -->
-        <form id="login-form">
+        <form id="esqueci-senha-form">
           <!-- Campo de e-mail -->
           <div class="form-group">
             <label for="email">E-mail</label>
@@ -42,46 +42,15 @@
             />
           </div>
 
-          <!-- Campo de senha com botão de mostrar/ocultar -->
-          <div class="form-group password-wrapper">
-            <label for="password">Senha</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Digite sua senha"
-              required
-              autocomplete="current-password"
-            />
-            <button
-              type="button"
-              class="toggle-btn"
-              data-target="password"
-              title="Mostrar/ocultar senha"
-            >
-              👁️
-            </button>
-          </div>
-
-          <!-- Botão de login -->
+          <!-- Botão de envio -->
           <button type="submit" class="btn btn-primary" style="width: 100%">
-            Entrar
+            Enviar Link de Recuperação
           </button>
         </form>
 
-        <!-- Link para cadastro -->
+        <!-- Link para voltar ao login -->
         <p style="text-align: center; margin-top: 16px">
-          Não possui conta?
-          <a
-            href="cadastro-desktop.html"
-            style="color: var(--primary); font-weight: 600"
-            >Criar conta</a
-          >
-        </p>
-
-        <!-- Link para recuperar senha -->
-        <p style="text-align: center; margin-top: 8px">
-          <a href="esqueci-senha-desktop.html">Esqueceu a senha?</a>
+          <a href="login-desktop.html">Voltar para o Login</a>
         </p>
       </div>
     </main>
