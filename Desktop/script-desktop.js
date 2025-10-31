@@ -29,6 +29,30 @@ function debounce(func, delay = 300) {
   };
 }
 
+// ===========================================================
+// INÍCIO - LÓGICA DE TEMA (DARK MODE)
+// ===========================================================
+
+/**
+ * Aplica o tema (light/dark) salvo assim que o script carrega.
+ * Previne o "flash" de tema incorreto.
+ */
+function applyInitialTheme() {
+  // Usamos a função 'load' existente, default 'light'
+  const savedTheme = load('theme-preference', 'light'); 
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+}
+// Chama imediatamente para aplicar o tema ANTES da página renderizar
+applyInitialTheme();
+
+// ===========================================================
+// FIM - LÓGICA DE TEMA (DARK MODE)
+// ===========================================================
+
 /* URL base da API */
 const API_BASE = "http://localhost:5246";
 
@@ -1457,6 +1481,34 @@ async function initAdminTicketsPage() {
 }
 
 /* ===========================================================
+   🎨 SELETOR DE TEMA (DARK MODE)
+   =========================================================== */
+function initThemeSwitcher() {
+  const toggle = $("#theme-toggle");
+  if (!toggle) {
+    // Não está na página de configurações, não faz nada.
+    return;
+  }
+
+  // 1. Definir o estado inicial do toggle
+  const currentTheme = load('theme-preference', 'light');
+  toggle.checked = (currentTheme === 'dark');
+
+  // 2. Adicionar o listener para mudanças
+  toggle.addEventListener('change', () => {
+    if (toggle.checked) {
+      // Mudar para Dark Mode
+      document.body.classList.add('dark-mode');
+      save('theme-preference', 'dark'); // Usa a função 'save' existente
+    } else {
+      // Mudar para Light Mode
+      document.body.classList.remove('dark-mode');
+      save('theme-preference', 'light');
+    }
+  });
+}
+
+/* ===========================================================
    🧭 NAVEGAÇÃO GLOBAL
    =========================================================== */
 function go(page) {
@@ -1687,9 +1739,11 @@ document.addEventListener("DOMContentLoaded", () => {
   } else if (path.endsWith("config-desktop.html")) { // Página do Utilizador Comum
     initConfig();
     atualizarSaudacaoUsuario();
+    initThemeSwitcher(); // <-- ADICIONAR ESTA LINHA
   } else if (path.endsWith("tecnico-config-desktop.html")) { // Página do Técnico
     initConfig();
     atualizarSaudacaoUsuario();
+    initThemeSwitcher(); // <-- ADICIONAR ESTA LINHA
   } else if (path.endsWith("tecnico-dashboard.html")) {
     initTecnicoDashboard(); 
     initConfig(); // Mantém o logout
