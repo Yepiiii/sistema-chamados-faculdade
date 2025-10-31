@@ -260,6 +260,106 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
         return StatusCode(500, "Ocorreu um erro inesperado ao processar seu chamado.");
     }
 }
+
+// ===============================================
+// INÍCIO - NOVOS ENDPOINTS DE COMENTÁRIOS
+// ===============================================
+
+[HttpGet("{chamadoId}/comentarios")]
+public async Task<IActionResult> GetComentarios(int chamadoId)
+{
+    // Verifica se o chamado existe
+    var chamadoExiste = await _context.Chamados.AnyAsync(c => c.Id == chamadoId);
+    if (!chamadoExiste)
+    {
+        return NotFound("Chamado não encontrado.");
+    }
+
+    var comentarios = await _context.Comentarios
+        .Where(c => c.ChamadoId == chamadoId)
+        .Include(c => c.Usuario) // Inclui dados do usuário
+        .OrderBy(c => c.DataCriacao)
+        .Select(c => new ComentarioResponseDto
+        {
+            Id = c.Id,
+            Texto = c.Texto,
+            DataCriacao = c.DataCriacao,
+            UsuarioId = c.UsuarioId,
+            UsuarioNome = c.Usuario.NomeCompleto, // Pega o nome do usuário
+            ChamadoId = c.ChamadoId
+        })
+        .ToListAsync();
+        
+    // Lidar com a serialização $values
+    if (!comentarios.Any())
+    {
+        return Ok(new List<ComentarioResponseDto>());
+    }
+
+    return Ok(comentarios);
+}
+
+[HttpPost("{chamadoId}/comentarios")]
+public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] CriarComentarioDto request)
+{
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(ModelState);
+    }
+
+    // Pega o ID do usuário logado a partir do token
+    var usuarioIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (usuarioIdStr == null)
+    {
+        return Unauthorized();
+    }
+    var usuarioId = int.Parse(usuarioIdStr);
+
+    // Verifica se o chamado existe
+    var chamado = await _context.Chamados.FindAsync(chamadoId);
+    if (chamado == null)
+    {
+        return NotFound("Chamado não encontrado.");
+    }
+
+    var novoComentario = new Comentario
+    {
+        Texto = request.Texto,
+        ChamadoId = chamadoId,
+        UsuarioId = usuarioId,
+        DataCriacao = DateTime.UtcNow
+    };
+
+    // Atualiza a data de última atualização do chamado
+    chamado.DataUltimaAtualizacao = DateTime.UtcNow;
+    _context.Chamados.Update(chamado);
+
+    _context.Comentarios.Add(novoComentario);
+    await _context.SaveChangesAsync();
+
+    // Busca o nome do usuário para retornar no DTO
+    var nomeUsuario = await _context.Usuarios
+        .Where(u => u.Id == usuarioId)
+        .Select(u => u.NomeCompleto)
+        .FirstOrDefaultAsync();
+
+    var responseDto = new ComentarioResponseDto
+    {
+        Id = novoComentario.Id,
+        Texto = novoComentario.Texto,
+        DataCriacao = novoComentario.DataCriacao,
+        UsuarioId = novoComentario.UsuarioId,
+        UsuarioNome = nomeUsuario ?? "Usuário",
+        ChamadoId = novoComentario.ChamadoId
+    };
+
+    return CreatedAtAction(nameof(GetComentarios), new { chamadoId = chamadoId }, responseDto);
+}
+
+// ===============================================
+// FIM - NOVOS ENDPOINTS DE COMENTÁRIOS
+// ===============================================
+
 }
 
 // DTO para requisição de análise

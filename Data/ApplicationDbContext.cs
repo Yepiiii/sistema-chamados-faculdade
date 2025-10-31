@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Categoria> Categorias { get; set; }
     public DbSet<Prioridade> Prioridades { get; set; }
     public DbSet<Status> Status { get; set; }
+    public DbSet<Comentario> Comentarios { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -150,5 +151,24 @@ public class ApplicationDbContext : DbContext
             .WithMany(s => s.Chamados)
             .HasForeignKey(c => c.StatusId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Configuração da entidade Comentario
+        modelBuilder.Entity<Comentario>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.Texto).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.DataCriacao).IsRequired().HasDefaultValueSql("GETDATE()");
+
+            entity.HasOne(c => c.Chamado)
+                  .WithMany() // Um chamado pode ter muitos comentários
+                  .HasForeignKey(c => c.ChamadoId)
+                  .OnDelete(DeleteBehavior.Cascade); // Deletar comentários se o chamado for deletado
+
+            entity.HasOne(c => c.Usuario)
+                  .WithMany() // Um usuário pode fazer muitos comentários
+                  .HasForeignKey(c => c.UsuarioId)
+                  .OnDelete(DeleteBehavior.Restrict); // Não deletar usuário se ele tiver comentários
+        });
     }
 }
