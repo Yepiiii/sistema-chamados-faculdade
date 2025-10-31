@@ -823,7 +823,7 @@ function renderTabelaMeusChamados(chamados, tbody) {
       const id = btn.dataset.id;
       if (id && id !== '#ERR') {
         sessionStorage.setItem('currentTicketId', id);
-        go("ticket-detalhes-desktop.html");
+        go("tecnico-detalhes-desktop.html");
       } else {
         console.error("Tentativa de ver detalhes com ID inválido.");
         toast("Erro ao tentar abrir detalhes do chamado.");
@@ -1125,6 +1125,14 @@ document.addEventListener("DOMContentLoaded", () => {
     initNewTicket();
   } else if (path.endsWith("ticket-detalhes-desktop.html")) {
     initTicketDetails();
+  } else if (path.endsWith("tecnico-detalhes-desktop.html")) {
+    initTicketDetails(); // Reutiliza a mesma função de detalhes
+  } else if (path.endsWith("config-desktop.html")) { // Página do Utilizador Comum
+    initConfig();
+    atualizarSaudacaoUsuario();
+  } else if (path.endsWith("tecnico-config-desktop.html")) { // Página do Técnico
+    initConfig();
+    atualizarSaudacaoUsuario();
   } else if (path.endsWith("tecnico-dashboard.html")) {
     initTecnicoDashboard(); 
     initConfig(); // Mantém o logout

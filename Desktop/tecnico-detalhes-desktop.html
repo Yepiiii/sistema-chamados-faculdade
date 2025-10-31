@@ -12,9 +12,9 @@
       <aside class="sidebar">
         <img src="img/logo-h2o.png" alt="Logo H2O" class="logo" />
         <nav>
-          <a href="dashboard-desktop.html">🏠 Início</a>
+          <a href="tecnico-dashboard.html">🏠 Início</a>
           <a href="novo-ticket-desktop.html">🆕 Novo Chamado</a>
-          <a href="config-desktop.html">⚙️ Configurações</a>
+          <a href="tecnico-config-desktop.html">⚙️ Configurações</a>
           <a href="login-desktop.html" id="nav-logout">🚪 Sair</a>
         </nav>
       </aside>
@@ -46,7 +46,19 @@
             <p><strong>Descrição:</strong> <span id="t-desc">Carregando...</span></p>
           </div>
 
-
+          <!-- Ações do Técnico -->
+          <div class="card" id="tecnico-actions">
+            <h2 style="margin-bottom: 10px">Ações do Técnico</h2>
+            <div class="form-group">
+              <label for="t-status-select">Alterar Status:</label>
+              <select id="t-status-select">
+                <option value="">Carregando status...</option>
+              </select>
+            </div>
+            <button id="btn-atualizar-status" class="btn btn-primary" style="margin-top: 10px;">
+              Atualizar Status
+            </button>
+          </div>
 
           <!-- Comentários -->
           <div class="card">
