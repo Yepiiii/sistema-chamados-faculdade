@@ -35,7 +35,5 @@ public class Usuario
     
     public DateTime? ResetTokenExpires { get; set; }
     
-    // Propriedades de navegação
-    public AlunoPerfil? AlunoPerfil { get; set; }
-    public ProfessorPerfil? ProfessorPerfil { get; set; }
+    // Propriedades de navegação (AlunoPerfil e ProfessorPerfil removidos)
 }
