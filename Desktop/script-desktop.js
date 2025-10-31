@@ -208,7 +208,7 @@ async function initEsqueciSenha() {
       });
 
       // Independentemente da resposta, mostrar mensagem de segurança padrão
-      toast("Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado.");
+      toast("Um link de redefinição de senha foi enviado.");
       
       // Redirecionar para o login
       setTimeout(() => {
@@ -218,7 +218,7 @@ async function initEsqueciSenha() {
     } catch (error) {
       console.error('Erro ao solicitar recuperação de senha:', error);
       // Mesmo em caso de erro, mostrar a mensagem de segurança
-      toast("Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado.");
+      toast("Não foi possivel encontrar o e-mail solicitado, por favor contacte o administrador.");
       
       // Redirecionar para o login
       setTimeout(() => {
@@ -681,12 +681,12 @@ async function initTicketDetails() {
       try {
         // Formata Data de Abertura (já vem da API, que pegamos no 'chamado')
         // A propriedade 'dataAbertura' está em minúsculo no JSON
-        $("#t-data-abertura").textContent = new Date(chamado.dataAbertura).toLocaleString('pt-BR');
+        $("#t-data-abertura").textContent = new Date(chamado.dataAbertura).toLocaleDateString('pt-BR');
 
         // Formata Data de Atualização (verificando se é nula)
         // A propriedade 'dataUltimaAtualizacao' está em minúsculo no JSON
         $("#t-data-atualizacao").textContent = chamado.dataUltimaAtualizacao
-          ? new Date(chamado.dataUltimaAtualizacao).toLocaleString('pt-BR')
+          ? new Date(chamado.dataUltimaAtualizacao).toLocaleDateString('pt-BR')
           : 'N/A'; // Exibe 'N/A' se a data for nula
 
       } catch (e) {
