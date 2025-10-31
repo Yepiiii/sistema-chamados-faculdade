@@ -79,9 +79,9 @@ public class ChamadosController : ControllerBase
         return Ok(novoChamado);
     }
 [HttpGet]
-public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId, [FromQuery] int? solicitanteId)
+public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId, [FromQuery] int? solicitanteId, [FromQuery] int? prioridadeId, [FromQuery] string? termoBusca)
 {
-    _logger.LogInformation("GetChamados - Recebido pedido com filtros: statusId={StatusId}, tecnicoId={TecnicoId}, solicitanteId={SolicitanteId}", statusId, tecnicoId, solicitanteId);
+    _logger.LogInformation("GetChamados - Recebido pedido com filtros: statusId={StatusId}, tecnicoId={TecnicoId}, solicitanteId={SolicitanteId}, prioridadeId={PrioridadeId}, termoBusca={TermoBusca}", statusId, tecnicoId, solicitanteId, prioridadeId, termoBusca);
     try
     {
         // 1. Começa com a consulta base
@@ -112,7 +112,31 @@ public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQue
             query = query.Where(c => c.SolicitanteId == solicitanteId.Value);
             _logger.LogInformation("Filtro SolicitanteId={SolicitanteId} aplicado.", solicitanteId.Value);
         }
-        // 5. Executa a consulta com todos os filtros e projeta para o DTO
+
+        // 5. Aplica filtro de PrioridadeId se fornecido
+        if (prioridadeId.HasValue)
+        {
+            query = query.Where(c => c.PrioridadeId == prioridadeId.Value);
+            _logger.LogInformation("Filtro PrioridadeId={PrioridadeId} aplicado.", prioridadeId.Value);
+        }
+
+        // 6. Aplica filtro de Termo de Busca se fornecido
+        if (!string.IsNullOrWhiteSpace(termoBusca))
+        {
+            string busca = termoBusca.ToLower().Trim();
+            _logger.LogInformation("Filtro termoBusca='{TermoBusca}' aplicado.", busca);
+
+            // Tenta converter a busca para ID
+            int.TryParse(busca, out int idBusca);
+
+            query = query.Where(c => 
+                c.Id == idBusca || // Busca por ID
+                c.Titulo.ToLower().Contains(busca) || // Busca no Título
+                c.Categoria.Nome.ToLower().Contains(busca) // Busca no Nome da Categoria
+            );
+        }
+
+        // 7. Executa a consulta com todos os filtros e projeta para o DTO
         var chamadosDto = await query
             .Include(c => c.Categoria)
             .Include(c => c.Status)
