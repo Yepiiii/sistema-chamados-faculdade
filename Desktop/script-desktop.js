@@ -485,7 +485,7 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
   // Verifica apenas se a lista é válida e tem itens
   if (!Array.isArray(chamados) || chamados.length === 0) {
     console.log("renderTicketsTable: A lista de chamados está vazia ou inválida.", chamados);
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum chamado encontrado.</td></tr>`;
     return;
   }
 
@@ -504,16 +504,20 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
       const titulo = chamado?.titulo ?? 'Sem Título';
       const categoriaNome = chamado?.categoriaNome ?? 'N/A'; // Usa a propriedade direta do DTO
       const statusNome = chamado?.statusNome ?? 'N/A';       // Usa a propriedade direta do DTO
+      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A'; // <-- 1. ADICIONAR LEITURA DA PRIORIDADE
 
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
-      console.log(`ID Lido: ${chamadoId}, Título: ${titulo}, Categoria: ${categoriaNome}, Status: ${statusNome}`);
+      // 2. ATUALIZAR O LOG
+      console.log(`ID Lido: ${chamadoId}, Título: ${titulo}, Categoria: ${categoriaNome}, Status: ${statusNome}, Prioridade: ${prioridadeNome}`);
 
+      // 3. CORRIGIR O HTML PARA 6 COLUNAS
       tr.innerHTML = `
         <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
         <td>${titulo}</td>
         <td>${categoriaNome}</td>
         <td><span class="badge status-${statusClass}">${statusNome}</span></td>
+        <td>${prioridadeNome}</td>
         <td><button class="btn btn-outline btn-sm" data-id="${chamadoId}">Abrir</button></td>
       `;
       tbody.appendChild(tr);
@@ -521,7 +525,7 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
       console.error(`Erro ao processar o chamado no índice ${index}:`, chamado, error);
       // Opcional: Adicionar uma linha de erro na tabela
       const trError = document.createElement("tr");
-      trError.innerHTML = `<td colspan="5" style="color: red; text-align: center;">Erro ao renderizar este chamado. Verifique o console.</td>`;
+      trError.innerHTML = `<td colspan="6" style="color: red; text-align: center;">Erro ao renderizar este chamado. Verifique o console.</td>`;
       tbody.appendChild(trError);
     }
   });
