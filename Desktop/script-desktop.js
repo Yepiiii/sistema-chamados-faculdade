@@ -614,6 +614,16 @@ async function initTicketDetails() {
       $("#t-priority").textContent = chamado?.prioridade?.nome ?? 'N/A';
       $("#t-solicitante").textContent = chamado?.solicitante?.nomeCompleto ?? 'Desconhecido'; // Atualiza o solicitante
       
+      // --- INÍCIO DO NOVO TRECHO ---
+      // Preenche o nome do técnico
+      const tecnicoElement = $("#t-tecnico"); 
+      if (tecnicoElement) {
+        // A API (GET /api/chamados/{id}) já inclui o objeto 'tecnico'
+        // Se o objeto 'tecnico' for nulo (não atribuído), exibe 'Não atribuído'
+        tecnicoElement.textContent = chamado?.tecnico?.nomeCompleto ?? 'Não atribuído';
+      }
+      // --- FIM DO NOVO TRECHO ---
+
       const statusNome = chamado?.status?.nome ?? 'N/A';
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
       // Verifica se o elemento existe antes de tentar atualizar
