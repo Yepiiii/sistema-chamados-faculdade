@@ -130,6 +130,70 @@ function initLogin() {
 }
 
 /* ===========================================================
+   🔑 ESQUECI SENHA
+   =========================================================== */
+async function initEsqueciSenha() {
+  const form = $("#esqueci-senha-form");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = $("#email").value.trim();
+    
+    // Validação simples de email
+    if (!email) {
+      return toast("Por favor, digite seu e-mail.");
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return toast("Por favor, digite um e-mail válido.");
+    }
+
+    // Desativar botão e mostrar "Enviando..."
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Enviando...";
+
+    try {
+      const response = await fetch(`${API_BASE}/api/usuarios/esqueci-senha`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Email: email
+        })
+      });
+
+      // Independentemente da resposta, mostrar mensagem de segurança padrão
+      toast("Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado.");
+      
+      // Redirecionar para o login
+      setTimeout(() => {
+        go("login-desktop.html");
+      }, 2000);
+
+    } catch (error) {
+      console.error('Erro ao solicitar recuperação de senha:', error);
+      // Mesmo em caso de erro, mostrar a mensagem de segurança
+      toast("Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado.");
+      
+      // Redirecionar para o login
+      setTimeout(() => {
+        go("login-desktop.html");
+      }, 2000);
+    } finally {
+      // Reativar botão
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  });
+}
+
+/* ===========================================================
    🧾 CADASTRO (Atualizado para API)
    =========================================================== */
 async function initRegister() {
@@ -1139,6 +1203,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (path.endsWith("login-desktop.html")) {
     initLogin();
     initPasswordToggles();
+  } else if (path.endsWith("esqueci-senha-desktop.html")) {
+    initEsqueciSenha();
   } else if (path.endsWith("admin-dashboard-desktop.html")) {
     initDashboard();
     initConfig();
