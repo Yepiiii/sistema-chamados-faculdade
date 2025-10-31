@@ -14,6 +14,21 @@ const load = (key, fallback = []) => {
 };
 const toast = (msg) => alert(msg);
 
+/**
+ * Atrasa a execução de uma função (para barras de busca)
+ * @param {Function} func - A função a ser executada.
+ * @param {number} delay - O tempo em milissegundos.
+ */
+function debounce(func, delay = 300) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+}
+
 /* URL base da API */
 const API_BASE = "http://localhost:5246";
 
@@ -1327,6 +1342,121 @@ function addCommentToUI(comentario) {
 }
 
 /* ===========================================================
+   🎫 PÁGINA DE GERENCIAMENTO DE TICKETS (ADMIN)
+   =========================================================== */
+async function initAdminTicketsPage() {
+  console.log("--- DEBUG: Entrando em initAdminTicketsPage ---");
+  const token = sessionStorage.getItem("authToken");
+  if (!token) {
+    go("login-desktop.html");
+    return;
+  }
+
+  // Referências aos elementos do DOM
+  const selectStatus = $("#flt-status-admin");
+  const selectPrioridade = $("#flt-prio-admin");
+  const inputSearch = $("#flt-search-admin");
+  const tableBody = $("#tickets-body-admin tbody");
+
+  if (!selectStatus || !selectPrioridade || !inputSearch || !tableBody) {
+    console.error("Erro: Elementos de filtro ou tabela não encontrados.");
+    return;
+  }
+
+  /**
+   * Preenche os dropdowns de Status e Prioridade com dados da API.
+   */
+  async function populateFilterDropdowns() {
+    try {
+      // 1. Buscar Status
+      const statusResponse = await fetch(`${API_BASE}/api/status`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (statusResponse.ok) {
+        const statusList = await statusResponse.json();
+        (statusList.$values || statusList).forEach(status => {
+          const option = document.createElement("option");
+          option.value = status.id;
+          option.textContent = status.nome;
+          selectStatus.appendChild(option);
+        });
+      }
+
+      // 2. Buscar Prioridades
+      const prioResponse = await fetch(`${API_BASE}/api/prioridades`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (prioResponse.ok) {
+        const prioList = await prioResponse.json();
+        (prioList.$values || prioList).forEach(prio => {
+          const option = document.createElement("option");
+          option.value = prio.id;
+          option.textContent = prio.nome;
+          selectPrioridade.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao popular dropdowns:", error);
+    }
+  }
+
+  /**
+   * Busca os chamados na API com base nos filtros e renderiza a tabela.
+   */
+  async function fetchAndRenderAdminTickets() {
+    // 1. Obter valores dos filtros
+    const statusId = selectStatus.value;
+    const prioridadeId = selectPrioridade.value;
+    const termoBusca = inputSearch.value.trim();
+
+    // 2. Construir a URL com parâmetros de busca
+    const params = new URLSearchParams();
+    if (statusId) params.append("statusId", statusId);
+    if (prioridadeId) params.append("prioridadeId", prioridadeId);
+    if (termoBusca) params.append("termoBusca", termoBusca);
+
+    const url = `${API_BASE}/api/chamados?${params.toString()}`;
+    console.log("--- DEBUG: Buscando URL de filtros:", url, "---");
+
+    tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        const chamados = responseData.$values || responseData;
+        // Reutiliza a função de renderização de tabela que já existe!
+        renderTicketsTable(chamados, tableBody); 
+      } else {
+         tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Erro ao carregar chamados.</td></tr>`;
+      }
+    } catch (error) {
+      console.error("Erro no fetch de chamados (admin):", error);
+      tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger)">Erro de conexão.</td></tr>`;
+    }
+  }
+
+  // 3. Criar uma versão "debounce" da função de busca para o campo de texto
+  const debouncedFetch = debounce(fetchAndRenderAdminTickets, 500);
+
+  // 4. Adicionar Event Listeners
+  selectStatus.addEventListener("change", fetchAndRenderAdminTickets);
+  selectPrioridade.addEventListener("change", fetchAndRenderAdminTickets);
+  inputSearch.addEventListener("keyup", debouncedFetch);
+
+  // 5. Carga Inicial
+  await populateFilterDropdowns(); // Espera os filtros carregarem
+  fetchAndRenderAdminTickets();  // Busca os chamados
+}
+
+/* ===========================================================
    🧭 NAVEGAÇÃO GLOBAL
    =========================================================== */
 function go(page) {
@@ -1567,6 +1697,9 @@ document.addEventListener("DOMContentLoaded", () => {
   } else if (path.endsWith("admin-cadastrar-tecnico.html")) {
     initCadastrarTecnico();
     initConfig(); // Mantém o logout
+  } else if (path.endsWith("admin-tickets-desktop.html")) { // <-- ADICIONAR ESTE BLOCO
+    initAdminTicketsPage();
+    initConfig(); // Para o logout funcionar
   }
 });
 
