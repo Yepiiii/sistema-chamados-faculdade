@@ -317,4 +317,28 @@ public class UsuariosController : ControllerBase
         
         return Ok(new { message = "Senha redefinida com sucesso." });
     }
+
+    [HttpGet("tecnicos")]
+    [Authorize] // Apenas usuários logados podem ver a lista
+    public async Task<ActionResult<IEnumerable<UsuarioResponseDto>>> GetTecnicosAtivos()
+    {
+        _logger.LogInformation("Buscando lista de técnicos (TipoUsuario == 2) ativos.");
+        
+        var tecnicos = await _context.Usuarios
+            .Where(u => u.TipoUsuario == 2 && u.Ativo)
+            .Select(u => new UsuarioResponseDto
+            {
+                Id = u.Id,
+                NomeCompleto = u.NomeCompleto,
+                Email = u.Email,
+                TipoUsuario = u.TipoUsuario,
+                DataCadastro = u.DataCadastro,
+                Ativo = u.Ativo
+            })
+            .ToListAsync();
+            
+        _logger.LogInformation("Encontrados {Count} técnicos ativos.", tecnicos.Count);
+
+        return Ok(tecnicos);
+    }
 }
