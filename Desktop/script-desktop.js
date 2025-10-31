@@ -194,6 +194,100 @@ async function initEsqueciSenha() {
 }
 
 /* ===========================================================
+   🔄 RESETAR SENHA
+   =========================================================== */
+async function initResetarSenha() {
+  // 1. Ler o token da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  
+  // 2. Se o token não existir, mostrar erro e redirecionar
+  if (!token) {
+    toast("Token inválido ou em falta.");
+    setTimeout(() => {
+      go("login-desktop.html");
+    }, 2000);
+    return;
+  }
+
+  // 3. Encontrar o formulário
+  const form = $("#resetar-senha-form");
+  if (!form) return;
+
+  // 4. Adicionar event listener para o submit
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // 5. Ler os valores dos campos
+    const novaSenha = $("#nova-senha").value.trim();
+    const confirmarSenha = $("#confirmar-senha").value.trim();
+
+    // 6. Validações
+    if (!novaSenha || !confirmarSenha) {
+      return toast("Preencha todos os campos.");
+    }
+
+    if (novaSenha.length < 6) {
+      return toast("A senha deve ter pelo menos 6 caracteres.");
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      return toast("As senhas não coincidem.");
+    }
+
+    // 7. Desativar botão e mostrar "Alterando..."
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Alterando...";
+
+    try {
+      // 8. Fazer chamada para a API
+      const response = await fetch(`${API_BASE}/api/usuarios/resetar-senha`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Token: token,
+          NovaSenha: novaSenha
+        })
+      });
+
+      if (response.ok) {
+        // 9. Sucesso - mostrar mensagem e redirecionar
+        toast("Senha redefinida com sucesso!");
+        setTimeout(() => {
+          go("login-desktop.html");
+        }, 2000);
+      } else {
+        // 10. Erro - mostrar mensagem de erro
+        let errorMessage = "Erro ao redefinir a senha. O token pode ter expirado.";
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          // Se não conseguir ler a mensagem de erro, usar a mensagem padrão
+        }
+        toast(errorMessage);
+      }
+    } catch (error) {
+      console.error('Erro ao redefinir senha:', error);
+      toast("Erro de conexão. Verifique sua internet e tente novamente.");
+    } finally {
+      // 11. Reativar botão
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  });
+
+  // Inicializar toggles de senha
+  initPasswordToggles();
+}
+
+/* ===========================================================
    🧾 CADASTRO (Atualizado para API)
    =========================================================== */
 async function initRegister() {
@@ -1205,6 +1299,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initPasswordToggles();
   } else if (path.endsWith("esqueci-senha-desktop.html")) {
     initEsqueciSenha();
+  } else if (path.endsWith("resetar-senha-desktop.html")) {
+    initResetarSenha();
   } else if (path.endsWith("admin-dashboard-desktop.html")) {
     initDashboard();
     initConfig();

@@ -260,7 +260,7 @@ public class UsuariosController : ControllerBase
         await _context.SaveChangesAsync();
 
         // 3. Montar o link de redefinição (a URL do seu frontend)
-        var resetLink = $"http://localhost:3000/resetar-senha?token={token}"; // Exemplo de URL de frontend
+        var resetLink = $"http://127.0.0.1:5500/Desktop/resetar-senha-desktop.html?token={token}";
 
         // 4. Enviar o e-mail usando o IEmailService
         var subject = "Redefinição de Senha - Sistema de Chamados";
