@@ -78,6 +78,7 @@ CREATE TABLE Chamados (
     StatusId INT NOT NULL,
     PrioridadeId INT NOT NULL,
     CategoriaId INT NOT NULL,
+    SlaDataExpiracao DATETIME NULL, -- ADICIONAR ESTA LINHA
     CONSTRAINT FK_Chamados_Usuario_Solicitante FOREIGN KEY (SolicitanteId) REFERENCES Usuarios(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_Chamados_Usuario_Tecnico FOREIGN KEY (TecnicoId) REFERENCES Usuarios(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_Chamados_Status FOREIGN KEY (StatusId) REFERENCES Status(Id) ON DELETE NO ACTION,
@@ -110,7 +111,8 @@ INSERT INTO dbo.Status (Nome, Descricao) VALUES
 ('Aberto', 'Chamado recém criado e aguardando atribuição.'),
 ('Em Andamento', 'Um técnico já está trabalhando no chamado.'),
 ('Aguardando Resposta', 'Aguardando mais informações do usuário.'),
-('Fechado', 'O chamado foi resolvido.');
+('Fechado', 'O chamado foi resolvido.'),
+('Violado', 'O prazo de resolução (SLA) do chamado foi excedido.'); -- ADICIONAR ESTA LINHA
 GO
 
 INSERT INTO dbo.Prioridades (Nome, Nivel, Descricao) VALUES 
