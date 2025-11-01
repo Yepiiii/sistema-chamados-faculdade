@@ -15,6 +15,7 @@ public class Chamado
     public int CategoriaId { get; set; }
     public int PrioridadeId { get; set; }
     public int StatusId { get; set; }
+    public DateTime? SlaDataExpiracao { get; set; } // <-- ADICIONAR ESTA LINHA
     
     // Propriedades de navegação
     public virtual Usuario Solicitante { get; set; } = null!;

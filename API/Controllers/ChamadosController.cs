@@ -61,6 +61,15 @@ public class ChamadosController : ControllerBase
         {
             return Unauthorized("Usuário não encontrado ou inativo");
         }
+        
+        // --- INÍCIO LÓGICA SLA (POST) ---
+        // Busca o 'Nivel' da prioridade para o cálculo
+        var prioridadeSla = await _context.Prioridades.FindAsync(request.PrioridadeId);
+        if (prioridadeSla == null)
+        {
+            return BadRequest("PrioridadeId inválido.");
+        }
+        // --- FIM LÓGICA SLA (POST) ---
 
         var novoChamado = new Chamado
         {
@@ -70,7 +79,9 @@ public class ChamadosController : ControllerBase
             SolicitanteId = solicitanteId,
             StatusId = 1, // Assumindo que o ID 1 seja "Aberto"
             PrioridadeId = request.PrioridadeId,
-            CategoriaId = request.CategoriaId
+            CategoriaId = request.CategoriaId,
+            // --- ADICIONAR ESTA LINHA ---
+            SlaDataExpiracao = CalcularSla(prioridadeSla.Nivel, DateTime.UtcNow)
         };
 
         _context.Chamados.Add(novoChamado);
@@ -84,6 +95,30 @@ public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQue
     _logger.LogInformation("GetChamados - Recebido pedido com filtros: statusId={StatusId}, tecnicoId={TecnicoId}, solicitanteId={SolicitanteId}, prioridadeId={PrioridadeId}, termoBusca={TermoBusca}", statusId, tecnicoId, solicitanteId, prioridadeId, termoBusca);
     try
     {
+        // --- INÍCIO LÓGICA VERIFICAÇÃO SLA ---
+        // IDs: 1=Aberto, 2=Em Andamento, 3=Aguardando Resposta, 5=Violado
+        var statusParaVerificar = new[] { 1, 2, 3 };
+        var statusVioladoId = 5; 
+        
+        // Busca chamados abertos/em andamento/aguardando que passaram do prazo
+        var chamadosViolados = await _context.Chamados
+            .Where(c => statusParaVerificar.Contains(c.StatusId) &&
+                        c.SlaDataExpiracao.HasValue &&
+                        c.SlaDataExpiracao < DateTime.UtcNow)
+            .ToListAsync();
+
+        if (chamadosViolados.Any())
+        {
+            foreach (var chamado in chamadosViolados)
+            {
+                _logger.LogWarning("SLA VIOLADO: Chamado ID {ChamadoId} movido para status 'Violado'.", chamado.Id);
+                chamado.StatusId = statusVioladoId;
+                chamado.DataUltimaAtualizacao = DateTime.UtcNow;
+            }
+            await _context.SaveChangesAsync(); // Salva as alterações de status
+        }
+        // --- FIM LÓGICA VERIFICAÇÃO SLA ---
+
         // 1. Começa com a consulta base
         var query = _context.Chamados.AsQueryable();
         // 2. Aplica filtro de StatusId se fornecido
@@ -257,6 +292,15 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
         }
         var solicitanteId = int.Parse(solicitanteIdStr);
 
+        // --- INÍCIO LÓGICA SLA (ANALISAR) ---
+        // Busca o 'Nivel' da prioridade para o cálculo
+        var prioridadeSla = await _context.Prioridades.FindAsync(analise.PrioridadeId);
+        if (prioridadeSla == null)
+        {
+            return StatusCode(500, "A IA retornou uma PrioridadeId inválida.");
+        }
+        // --- FIM LÓGICA SLA (ANALISAR) ---
+
         // 3. Cria o novo chamado com os dados da IA e do usuário
         var novoChamado = new Chamado
         {
@@ -267,7 +311,9 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
             StatusId = 1, // Padrão: "Aberto"
             PrioridadeId = analise.PrioridadeId,
             CategoriaId = analise.CategoriaId,
-            TecnicoId = analise.TecnicoId // Adicionar esta linha
+            TecnicoId = analise.TecnicoId,
+             // --- ADICIONAR ESTA LINHA ---
+            SlaDataExpiracao = CalcularSla(prioridadeSla.Nivel, DateTime.UtcNow)
         };
 
         // 4. Salva o novo chamado no banco de dados
@@ -382,6 +428,68 @@ public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] C
 
 // ===============================================
 // FIM - NOVOS ENDPOINTS DE COMENTÁRIOS
+// ===============================================
+
+// ===============================================
+// INÍCIO - FUNÇÕES HELPER DO SLA
+// ===============================================
+
+/**
+ * Calcula a data de expiração do SLA baseado no nível de prioridade.
+ * Nivel 3 (Alto) = 1 dia útil
+ * Nivel 2 (Médio) = 3 dias úteis
+ * Nivel 1 (Baixo) = 5 dias úteis
+ */
+private DateTime? CalcularSla(int nivelPrioridade, DateTime dataAbertura)
+{
+    int diasUteisParaAdicionar;
+
+    switch (nivelPrioridade)
+    {
+        case 3: // Alta
+            diasUteisParaAdicionar = 1;
+            break;
+        case 2: // Média
+            diasUteisParaAdicionar = 3;
+            break;
+        case 1: // Baixa
+            diasUteisParaAdicionar = 5;
+            break;
+        default: // Prioridade desconhecida, não define SLA
+            return null;
+    }
+
+    // Define a data de expiração para o final do dia de trabalho
+    var dataExpiracao = AddBusinessDays(dataAbertura, diasUteisParaAdicionar);
+    
+    // Retorna a data no final do dia (ex: 23:59:59)
+    return dataExpiracao.Date.AddDays(1).AddTicks(-1);
+}
+
+/**
+ * Adiciona um número de dias úteis (Seg-Sex) a uma data.
+ */
+private DateTime AddBusinessDays(DateTime date, int days)
+{
+    if (days == 0) return date;
+
+    DateTime result = date;
+    int daysAdded = 0;
+    
+    while (daysAdded < days)
+    {
+        result = result.AddDays(1);
+        // Só incrementa o contador se o dia não for Sábado (6) ou Domingo (0)
+        if (result.DayOfWeek != DayOfWeek.Saturday && result.DayOfWeek != DayOfWeek.Sunday)
+        {
+            daysAdded++;
+        }
+    }
+    return result;
+}
+
+// ===============================================
+// FIM - FUNÇÕES HELPER DO SLA
 // ===============================================
 
 }
