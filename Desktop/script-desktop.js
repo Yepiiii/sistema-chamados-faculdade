@@ -391,13 +391,15 @@ function atualizarKPIs(chamados) {
   const emAndamento = chamados.filter(c => c.statusNome.toLowerCase() === 'em andamento').length;
   const resolvidos = chamados.filter(c => c.statusNome.toLowerCase() === 'fechado' || c.statusNome.toLowerCase() === 'resolvido').length;
   const pendentes = chamados.filter(c => c.statusNome.toLowerCase() === 'aguardando resposta').length;
-  
+  const violados = chamados.filter(c => c.statusNome.toLowerCase() === 'violado').length; // <-- 1. ADICIONE ESTA LINHA
+
   // Atualiza os elementos do DOM (ignora se não encontrar o elemento)
   (document.getElementById('kpi-total') || {}).textContent = total;
   (document.getElementById('kpi-aberto') || {}).textContent = abertos;
   (document.getElementById('kpi-andamento') || {}).textContent = emAndamento;
   (document.getElementById('kpi-resolvido') || {}).textContent = resolvidos;
   (document.getElementById('kpi-pendente') || {}).textContent = pendentes;
+  (document.getElementById('kpi-violado') || {}).textContent = violados; // <-- 2. ADICIONE ESTA LINHA
 }
 
 /* ===========================================================
