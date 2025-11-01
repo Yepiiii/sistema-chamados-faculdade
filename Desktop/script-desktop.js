@@ -688,11 +688,20 @@ async function initTicketDetails() {
         $("#t-data-atualizacao").textContent = chamado.dataUltimaAtualizacao
           ? new Date(chamado.dataUltimaAtualizacao).toLocaleDateString('pt-BR')
           : 'N/A'; // Exibe 'N/A' se a data for nula
+          
+        // --- ADICIONAR ESTE TRECHO ---
+        // Formata Data de Expiração do SLA (verificando se é nula)
+        // A API envia 'slaDataExpiracao' (camelCase)
+        $("#t-sla-expiracao").textContent = chamado.slaDataExpiracao
+          ? new Date(chamado.slaDataExpiracao).toLocaleDateString('pt-BR')
+          : 'N/A';
+        // --- FIM DO TRECHO ADICIONADO ---
 
       } catch (e) {
         console.error("Erro ao formatar datas:", e);
         $("#t-data-abertura").textContent = "Data inválida";
         $("#t-data-atualizacao").textContent = "Data inválida";
+        $("#t-sla-expiracao").textContent = "Data inválida";
       }
       // --- FIM DO NOVO TRECHO (DATAS) ---
       
