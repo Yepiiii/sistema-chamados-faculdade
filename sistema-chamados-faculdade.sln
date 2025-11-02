@@ -4,6 +4,8 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SistemaChamados", "SistemaChamados.csproj", "{3ECD2509-A0BF-8F89-CC95-856072534644}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SistemaChamados.Mobile", "SistemaChamados.Mobile\SistemaChamados.Mobile.csproj", "{99106F87-8868-4455-9422-C118EF5B23D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,6 +16,10 @@ Global
 		{3ECD2509-A0BF-8F89-CC95-856072534644}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3ECD2509-A0BF-8F89-CC95-856072534644}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3ECD2509-A0BF-8F89-CC95-856072534644}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99106F87-8868-4455-9422-C118EF5B23D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99106F87-8868-4455-9422-C118EF5B23D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99106F87-8868-4455-9422-C118EF5B23D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99106F87-8868-4455-9422-C118EF5B23D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
