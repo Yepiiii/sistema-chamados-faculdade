@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SistemaChamados.Mobile</name>
+    </assembly>
+    <members>
+        <member name="T:SistemaChamados.Mobile.Converters.BoolToTextConverter">
+            <summary>
+            Converte booleano para texto de botão de filtro
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Converters.GreaterThanZeroConverter">
+            <summary>
+            Converte número para booleano (maior que zero = true)
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Converters.IsNotNullConverter">
+            <summary>
+            Verifica se um valor não é nulo
+            Útil para controlar visibilidade de elementos baseado em valores opcionais
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Converters.PluralSuffixConverter">
+            <summary>
+            Converte número para sufixo plural ("s" se maior que 1, string vazia caso contrário)
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Converters.UtcToLocalConverter">
+            <summary>
+            Converte DateTime UTC para horário local
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Converters.UtcToLocalDateTimeConverter">
+            <summary>
+            Converte DateTime UTC para horário local do dispositivo.
+            A API retorna datas em UTC, mas precisamos exibir no fuso horário do usuário.
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Models.DTOs.AtualizacaoDto">
+            <summary>
+            DTO para verificação de atualizações de chamados
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Models.DTOs.VerificacaoAtualizacoesDto">
+            <summary>
+            Resposta do endpoint de verificação de atualizações
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.Models.DTOs.HistoricoItemDto">
+            <summary>
+            Representa um item na timeline de histórico do chamado
+            </summary>
+        </member>
+        <member name="T:SistemaChamados.Mobile.ViewModels.DashboardViewModel">
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+            <inheritdoc/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.Saudacao">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.saudacao"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.NomeUsuario">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.nomeUsuario"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.TotalAbertos">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.totalAbertos"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.TotalEmAndamento">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.totalEmAndamento"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.TotalEncerrados">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.totalEncerrados"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.TempoMedioAtendimento">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.tempoMedioAtendimento"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.ChamadosRecentes">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.chamadosRecentes"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.ErrorMessage">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.errorMessage"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.IsBusy">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.isBusy"/>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.Title">
+            <inheritdoc cref="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.title"/>
+        </member>
+        <member name="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.loadDataCommand">
+            <summary>The backing field for <see cref="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.LoadDataCommand"/>.</summary>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.LoadDataCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:SistemaChamados.Mobile.ViewModels.DashboardViewModel.LoadData"/>.</summary>
+        </member>
+        <member name="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.verTodosChamadosCommand">
+            <summary>The backing field for <see cref="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.VerTodosChamadosCommand"/>.</summary>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.VerTodosChamadosCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:SistemaChamados.Mobile.ViewModels.DashboardViewModel.VerTodosChamados"/>.</summary>
+        </member>
+        <member name="F:SistemaChamados.Mobile.ViewModels.DashboardViewModel.abrirChamadoCommand">
+            <summary>The backing field for <see cref="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.AbrirChamadoCommand"/>.</summary>
+        </member>
+        <member name="P:SistemaChamados.Mobile.ViewModels.DashboardViewModel.AbrirChamadoCommand">
+            <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand`1"/> instance wrapping <see cref="M:SistemaChamados.Mobile.ViewModels.DashboardViewModel.AbrirChamado(SistemaChamados.Mobile.Models.DTOs.ChamadoDto)"/>.</summary>
+        </member>
+        <member name="M:SistemaChamados.Mobile.ViewModels.NovoChamadoViewModel.GerarTituloAutomatico(System.String)">
+            <summary>
+            Gera um título automático baseado na descrição do chamado
+            Extrai as primeiras palavras significativas da descrição
+            </summary>
+        </member>
+        <member name="T:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs">
+            <summary>
+            A helper type providing cached, reusable <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instances
+            for all properties generated with <see cref="T:CommunityToolkit.Mvvm.ComponentModel.ObservablePropertyAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Saudacao">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Saudacao" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.NomeUsuario">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "NomeUsuario" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.TotalAbertos">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "TotalAbertos" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.TotalEmAndamento">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "TotalEmAndamento" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.TotalEncerrados">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "TotalEncerrados" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.TempoMedioAtendimento">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "TempoMedioAtendimento" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ChamadosRecentes">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ChamadosRecentes" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.ErrorMessage">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "ErrorMessage" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.IsBusy">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "IsBusy" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Title">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Title" generated properties.</summary>
+        </member>
+        <member name="T:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs">
+            <summary>
+            A helper type providing cached, reusable <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instances
+            for all properties generated with <see cref="T:CommunityToolkit.Mvvm.ComponentModel.ObservablePropertyAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Saudacao">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Saudacao" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.NomeUsuario">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "NomeUsuario" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.TotalAbertos">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "TotalAbertos" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.TotalEmAndamento">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "TotalEmAndamento" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.TotalEncerrados">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "TotalEncerrados" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.TempoMedioAtendimento">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "TempoMedioAtendimento" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ChamadosRecentes">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ChamadosRecentes" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.ErrorMessage">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "ErrorMessage" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.IsBusy">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "IsBusy" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Title">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Title" generated properties.</summary>
+        </member>
+    </members>
+</doc>
