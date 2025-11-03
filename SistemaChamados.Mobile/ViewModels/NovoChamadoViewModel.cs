@@ -3,9 +3,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Maui.Controls;
+using SistemaChamados.Mobile.Helpers;
 using SistemaChamados.Mobile.Models.DTOs;
 using SistemaChamados.Mobile.Services.Chamados;
 using SistemaChamados.Mobile.Services.Categorias;
+using SistemaChamados.Mobile.Services.Api;
 using SistemaChamados.Mobile.Services.Prioridades;
 
 namespace SistemaChamados.Mobile.ViewModels;
@@ -15,6 +17,7 @@ public class NovoChamadoViewModel : BaseViewModel
     private readonly IChamadoService _chamadoService;
     private readonly ICategoriaService _categoriaService;
     private readonly IPrioridadeService _prioridadeService;
+    private readonly bool _podeClassificacaoManual;
 
     public string Descricao { get; set; } = string.Empty;
     public string Titulo { get; set; } = string.Empty;
@@ -61,12 +64,17 @@ public class NovoChamadoViewModel : BaseViewModel
             _usarAnaliseAutomatica = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ExibirClassificacaoManual));
+            OnPropertyChanged(nameof(DeveExibirMensagemAnaliseAutomatica));
         }
     }
 
-    public bool PodeUsarClassificacaoManual => true; // Sempre true para Admin/Técnico
-    
+    public bool PodeUsarClassificacaoManual => _podeClassificacaoManual;
+
+    public bool MostrarTituloOpcional => PodeUsarClassificacaoManual;
+
     public bool ExibirClassificacaoManual => !UsarAnaliseAutomatica && PodeUsarClassificacaoManual;
+
+    public bool DeveExibirMensagemAnaliseAutomatica => !PodeUsarClassificacaoManual || UsarAnaliseAutomatica;
 
     public bool HasCategorias => Categorias.Any();
     public bool IsCategoriasEmpty => !HasCategorias;
@@ -81,7 +89,11 @@ public class NovoChamadoViewModel : BaseViewModel
     public string RetryIcon => "🔄";
     public string RetryText => "Tentar novamente";
 
-    public string DescricaoHeader => "Preencha os campos abaixo para criar um novo chamado";
+    public string DescricaoHeader => PodeUsarClassificacaoManual
+        ? "Descreva o problema ou ajuste a classificação manualmente."
+        : "Descreva o problema; a IA fará a triagem completa para você.";
+
+    public string MensagemModoAutomatico => "A IA analisará sua descrição e definirá categoria, prioridade e técnico automaticamente.";
 
     public ICommand CriarCommand { get; }
     public ICommand RetryLoadCommand { get; }
@@ -95,12 +107,26 @@ public class NovoChamadoViewModel : BaseViewModel
         _categoriaService = categoriaService;
         _prioridadeService = prioridadeService;
 
+        _podeClassificacaoManual = Settings.TipoUsuario != 1;
+
         CriarCommand = new Command(async () => await CriarChamadoAsync());
         RetryLoadCommand = new Command(async () => await LoadDataAsync());
     }
 
     public async Task LoadDataAsync()
     {
+        if (!_podeClassificacaoManual)
+        {
+            // Usuário comum não utiliza classificação manual, então não carrega listas.
+            Categorias.Clear();
+            Prioridades.Clear();
+            OnPropertyChanged(nameof(HasCategorias));
+            OnPropertyChanged(nameof(IsCategoriasEmpty));
+            OnPropertyChanged(nameof(HasPrioridades));
+            OnPropertyChanged(nameof(IsPrioridadesEmpty));
+            return;
+        }
+
         if (IsBusy) return;
 
         IsBusy = true;
@@ -130,6 +156,13 @@ public class NovoChamadoViewModel : BaseViewModel
             OnPropertyChanged(nameof(HasPrioridades));
             OnPropertyChanged(nameof(IsPrioridadesEmpty));
         }
+        catch (ApiException ex)
+        {
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ex.Message, "OK");
+            }
+        }
         catch (System.Exception ex)
         {
             if (Application.Current?.MainPage != null)
@@ -154,8 +187,9 @@ public class NovoChamadoViewModel : BaseViewModel
             return;
         }
 
-        // Se IA desativada, validar seleção manual
-        if (!UsarAnaliseAutomatica)
+        var usarAnaliseAutomatica = UsarAnaliseAutomatica || !PodeUsarClassificacaoManual;
+
+        if (!usarAnaliseAutomatica)
         {
             if (!CategoriaId.HasValue)
             {
@@ -179,34 +213,20 @@ public class NovoChamadoViewModel : BaseViewModel
         IsBusy = true;
         try
         {
-            // Se UsarAnaliseAutomatica = true, deixa o Backend/IA gerar o título
-            // Se UsarAnaliseAutomatica = false (admin), usa o título informado manualmente
-            string? tituloFinal = Titulo?.Trim();
-            
-            // Se não tem título E análise automática está DESATIVADA, gera título local
-            // (quando IA está ativada, o backend que gera o título via Gemini)
-            if (string.IsNullOrWhiteSpace(tituloFinal) && !UsarAnaliseAutomatica)
+            if (usarAnaliseAutomatica)
             {
-                tituloFinal = GerarTituloAutomatico(Descricao);
+                await CriarChamadoComAnaliseAutomaticaAsync();
             }
-
-            var dto = new CriarChamadoRequestDto
+            else
             {
-                Titulo = tituloFinal ?? "", // Envia vazio para IA gerar
-                Descricao = Descricao,
-                CategoriaId = CategoriaId ?? 1, // Valor padrão se IA ativada
-                PrioridadeId = PrioridadeId ?? 1, // Valor padrão se IA ativada
-                UsarAnaliseAutomatica = UsarAnaliseAutomatica
-            };
-
-            var chamado = await _chamadoService.Create(dto);
-            if (chamado != null)
+                await CriarChamadoComClassificacaoManualAsync();
+            }
+        }
+        catch (ApiException ex)
+        {
+            if (Application.Current?.MainPage != null)
             {
-                if (Application.Current?.MainPage != null)
-                {
-                    await Application.Current.MainPage.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
-                }
-                await Shell.Current.GoToAsync("..");
+                await Application.Current.MainPage.DisplayAlert("Erro", ex.Message, "OK");
             }
         }
         catch (System.Exception ex)
@@ -252,5 +272,56 @@ public class NovoChamadoViewModel : BaseViewModel
 
         // Se não encontrou espaço, corta direto e adiciona reticências
         return texto.Substring(0, maxLength) + "...";
+    }
+
+    private async Task CriarChamadoComAnaliseAutomaticaAsync()
+    {
+        var chamado = await _chamadoService.CreateComAnaliseAutomatica(Descricao);
+        await ExibirResultadoAsync(chamado);
+    }
+
+    private async Task CriarChamadoComClassificacaoManualAsync()
+    {
+        if (!CategoriaId.HasValue || !PrioridadeId.HasValue)
+        {
+            return;
+        }
+
+        var tituloFinal = string.IsNullOrWhiteSpace(Titulo)
+            ? GerarTituloAutomatico(Descricao)
+            : Titulo.Trim();
+
+        var dto = new CriarChamadoRequestDto
+        {
+            Titulo = tituloFinal,
+            Descricao = Descricao,
+            CategoriaId = CategoriaId.Value,
+            PrioridadeId = PrioridadeId.Value
+        };
+
+        var chamado = await _chamadoService.Create(dto);
+        await ExibirResultadoAsync(chamado);
+    }
+
+    private static async Task ExibirResultadoAsync(ChamadoDto? chamado)
+    {
+        if (chamado == null)
+        {
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", "Não foi possível criar o chamado. Tente novamente.", "OK");
+            }
+            return;
+        }
+
+        if (Application.Current?.MainPage != null)
+        {
+            await Application.Current.MainPage.DisplayAlert("Sucesso", "Chamado criado com sucesso!", "OK");
+        }
+
+        if (Shell.Current != null)
+        {
+            await Shell.Current.GoToAsync("..");
+        }
     }
 }

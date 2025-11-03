@@ -7,8 +7,11 @@ public class ComentarioDto
     public int Id { get; set; }
     public int ChamadoId { get; set; }
     public string Texto { get; set; } = string.Empty;
+    public DateTime DataCriacao { get; set; }
     public DateTime DataHora { get; set; }
     public UsuarioResumoDto? Usuario { get; set; }
+    public int UsuarioId { get; set; }
+    public string UsuarioNome { get; set; } = string.Empty;
     public bool IsInterno { get; set; } // Comentário interno (apenas técnicos/admin)
     
     // UI Helpers - Converte UTC para horário local
@@ -50,7 +53,10 @@ public class ComentarioDto
         }
     }
     
-    public string NomeUsuario => Usuario?.NomeCompleto ?? "Usuário";
+    public string NomeUsuario =>
+        !string.IsNullOrWhiteSpace(Usuario?.NomeCompleto)
+            ? Usuario!.NomeCompleto
+            : string.IsNullOrWhiteSpace(UsuarioNome) ? "Usuário" : UsuarioNome;
     public string InicialUsuario => string.IsNullOrEmpty(NomeUsuario) ? "?" : NomeUsuario[0].ToString().ToUpper();
     
     // Cor do avatar baseada no tipo de usuário

@@ -59,6 +59,65 @@ SistemaChamados/
 }
 ```
 
+### ✅ Registro de Usuário Padrão
+
+- **Endpoint**: `POST /api/usuarios/registrar`
+- **Descrição**: Cria um usuário padrão (TipoUsuario = 1) sem necessidade de autenticação prévia
+- **Regras**: Mesmo conjunto de validações do endpoint de administrador
+- **Resposta**: Estrutura idêntica ao exemplo anterior, alterando `tipoUsuario` para `1`
+
+```json
+{
+  "nomeCompleto": "Aluno Teste",
+  "email": "aluno@faculdade.edu.br",
+  "senha": "Aluno123!"
+}
+```
+
+### ✅ Registro de Técnico
+
+- **Endpoint**: `POST /api/usuarios/registrar-tecnico`
+- **Autorização**: Requer token JWT de um administrador (`Authorization: Bearer {token}`)
+- **Campos adicionais**: `especialidadeCategoriaId` define a categoria em que o técnico é especialista
+- **Resposta**: Mesmo contrato de `UsuarioResponseDto`
+
+```json
+{
+  "nomeCompleto": "Técnico Nível 1",
+  "email": "tecnico@faculdade.edu.br",
+  "senha": "Tecnico123!",
+  "especialidadeCategoriaId": 2
+}
+```
+
+### ✅ Autenticação (Login)
+
+- **Endpoint**: `POST /api/usuarios/login`
+- **Descrição**: Autentica o usuário e retorna o token JWT gerado com as *claims* de perfil
+- **Resposta**:
+
+```json
+{
+  "token": "{jwt}",
+  "tipoUsuario": 3
+}
+```
+
+### ✅ Recuperação de Senha
+
+- `POST /api/usuarios/esqueci-senha` — Envia email com link de redefinição (resposta sempre `200 OK` por segurança)
+- `POST /api/usuarios/resetar-senha` — Válida o token e grava a nova senha criptografada
+
+### ✅ Gestão de Chamados
+
+- `GET /api/chamados` — Retorna projeção `ChamadoDto` com histórico, suporta filtros (`statusId`, `tecnicoId`, `solicitanteId`, `prioridadeId`, `termoBusca`) e, para administradores, `incluirTodos=true`
+- `GET /api/chamados/{id}` — Retorna o chamado com as relações carregadas
+- `POST /api/chamados` — Cria chamado para o usuário autenticado e retorna `ChamadoDto`
+- `PUT /api/chamados/{id}` — Atualiza status/técnico e devolve `ChamadoDto`
+- `POST /api/chamados/{id}/fechar` — Força o fechamento do chamado com carimbo de data
+- `POST /api/chamados/analisar` — Cria um chamado sugerido pela IA a partir da descrição
+- `GET /api/chamados/{id}/comentarios` / `POST /api/chamados/{id}/comentarios` — Histórico e inclusão de comentários vinculados ao chamado
+
 ## 🗄️ Banco de Dados
 
 ### Script de Criação
@@ -123,15 +182,16 @@ Use o arquivo `test-admin-register.http` para testar os endpoints com diferentes
 
 ## 🔒 Segurança
 
-- **Hash de Senhas**: Utiliza BCrypt com salt automático
-- **Validação de Entrada**: Data Annotations para validação
-- **CORS**: Configurado para desenvolvimento
-- **HTTPS**: Redirecionamento automático
+- **Autenticação**: JWT Bearer Token emitido em `POST /api/usuarios/login`
+- **Autorização**: Políticas baseadas em `TipoUsuario`; o cadastro de técnicos exige perfil administrativo
+- **Hash de Senhas**: BCrypt com salt automático para todos os fluxos de registro/reset
+- **Validação de Entrada**: Data Annotations protegem os DTOs de entrada
+- **CORS**: Configuração liberada para desenvolvimento
+- **HTTPS**: Redirecionamento automático habilitado
 
 ## 📝 Próximos Passos
 
-- [ ] Implementar autenticação JWT
-- [ ] Adicionar endpoints para alunos e professores
-- [ ] Implementar sistema de chamados
-- [ ] Adicionar testes unitários
-- [ ] Configurar logging estruturado
+- [ ] Automatizar testes de integração dos fluxos autenticados
+- [ ] Documentar o consumo dos tokens de redefinição de senha no front-end
+- [ ] Publicar exemplos de uso da API de comentários e fechamento
+- [ ] Configurar logging estruturado e monitoramento de SLA

@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using SistemaChamados.Mobile.Models.DTOs;
 using SistemaChamados.Mobile.Services.Chamados;
 using System.Collections.ObjectModel;
+using SistemaChamados.Mobile.Services.Api;
+using Microsoft.Maui.Controls;
 
 namespace SistemaChamados.Mobile.ViewModels;
 
@@ -24,6 +26,9 @@ public partial class DashboardViewModel : ObservableObject
 
     [ObservableProperty]
     private int totalEncerrados;
+
+    [ObservableProperty]
+    private int totalViolados;
 
     [ObservableProperty]
     private string tempoMedioAtendimento = "N/A";
@@ -71,13 +76,20 @@ public partial class DashboardViewModel : ObservableObject
             {
                 var listaUsuario = chamados.ToList();
 
+                static string NormalizeStatus(ChamadoDto chamado) => string.IsNullOrWhiteSpace(chamado.Status?.Nome)
+                    ? string.Empty
+                    : chamado.Status.Nome.Trim().ToLowerInvariant();
+
                 // Calcula estatísticas
-                TotalAbertos = listaUsuario.Count(c => c.Status?.Nome?.ToLower() == "aberto");
-                TotalEmAndamento = listaUsuario.Count(c => c.Status?.Nome?.ToLower() == "em andamento");
-                TotalEncerrados = listaUsuario.Count(c => c.Status?.Nome?.ToLower() == "encerrado");
+                TotalAbertos = listaUsuario.Count(c => NormalizeStatus(c) == "aberto");
+                TotalEmAndamento = listaUsuario.Count(c => NormalizeStatus(c) == "em andamento");
+                TotalEncerrados = listaUsuario.Count(c => NormalizeStatus(c) == "fechado");
+                TotalViolados = listaUsuario.Count(c => NormalizeStatus(c) == "violado");
 
                 // Calcula tempo médio (chamados encerrados)
-                var encerrados = listaUsuario.Where(c => c.Status?.Nome?.ToLower() == "encerrado" && c.DataFechamento.HasValue).ToList();
+                var encerrados = listaUsuario
+                    .Where(c => NormalizeStatus(c) == "fechado" && c.DataFechamento.HasValue)
+                    .ToList();
                 if (encerrados.Any())
                 {
                     var tempoMedio = encerrados.Average(c => (c.DataFechamento!.Value - c.DataAbertura).TotalHours);
@@ -96,9 +108,21 @@ public partial class DashboardViewModel : ObservableObject
                 ErrorMessage = "Erro ao carregar dados";
             }
         }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Message;
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ErrorMessage, "OK");
+            }
+        }
         catch (Exception ex)
         {
             ErrorMessage = $"Erro: {ex.Message}";
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ErrorMessage, "OK");
+            }
         }
         finally
         {
@@ -123,6 +147,14 @@ public partial class DashboardViewModel : ObservableObject
         try
         {
             await Shell.Current.GoToAsync($"///chamados/detail?id={chamado.Id}");
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Message;
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ErrorMessage, "OK");
+            }
         }
         catch (Exception ex)
         {

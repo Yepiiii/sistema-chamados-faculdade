@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace SistemaChamados.Mobile.Models.DTOs;
 
@@ -26,6 +27,23 @@ public class ChamadoDto
     // Histórico de atualizações
     public List<HistoricoItemDto>? Historico { get; set; }
 
+    private AnaliseChamadoResponseDto? _analiseInterna;
+
+    [JsonProperty("analise")]
+    public AnaliseChamadoResponseDto? Analise
+    {
+        get => _analiseInterna;
+        set => _analiseInterna = value;
+    }
+
+    // Alias para compatibilidade com possíveis nomes diferentes enviados pela API.
+    [JsonProperty("analiseAutomatica")]
+    private AnaliseChamadoResponseDto? AnaliseAutomaticaAlias
+    {
+        get => _analiseInterna;
+        set => _analiseInterna = value;
+    }
+
     // Convenience helpers for UI bindings.
     public bool HasSolicitante => Solicitante != null;
     public string SolicitanteDisplay => Solicitante is null
@@ -35,4 +53,6 @@ public class ChamadoDto
     public bool HasTecnicoAtribuido => !string.IsNullOrEmpty(TecnicoAtribuidoNome);
     
     public bool HasHistorico => Historico != null && Historico.Count > 0;
+
+    public bool HasAnalise => Analise != null;
 }

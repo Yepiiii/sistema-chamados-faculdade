@@ -1,0 +1,1 @@
+- ~~centralize tecncio atribuido mapping~~

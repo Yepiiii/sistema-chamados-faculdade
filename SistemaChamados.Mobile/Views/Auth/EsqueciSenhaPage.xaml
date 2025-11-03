@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SistemaChamados.Mobile.Views.Auth.EsqueciSenhaPage"
+             Title="Recuperar acesso">
+  <ContentPage.Resources>
+    <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#2A5FDF" Offset="0" />
+      <GradientStop Color="#3FA5F5" Offset="1" />
+    </LinearGradientBrush>
+
+    <Style x:Key="FormBorderStyle" TargetType="Border">
+      <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+      <Setter Property="StrokeThickness" Value="1" />
+      <Setter Property="Stroke" Value="{DynamicResource Gray200Brush}" />
+      <Setter Property="BackgroundColor" Value="{DynamicResource White}" />
+      <Setter Property="Padding" Value="16,14" />
+      <Setter Property="Margin" Value="0,8,0,0" />
+    </Style>
+
+    <Style x:Key="SectionLabelStyle" TargetType="Label">
+      <Setter Property="FontAttributes" Value="Bold" />
+      <Setter Property="TextColor" Value="{DynamicResource PrimaryDarkText}" />
+      <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style x:Key="LinkLabelStyle" TargetType="Label">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{StaticResource Primary}" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="Margin" Value="0,16,0,0" />
+      <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="24" Spacing="32">
+      <Border Background="{StaticResource HeaderGradient}" StrokeThickness="0" Padding="20" StrokeShape="RoundRectangle 28">
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Recuperar acesso"
+                 FontSize="28"
+                 FontAttributes="Bold"
+                 TextColor="{DynamicResource White}" />
+          <Label Text="Informe seu e-mail institucional para receber o link de redefinição."
+                 TextColor="{DynamicResource White}" />
+        </VerticalStackLayout>
+      </Border>
+
+      <Frame BackgroundColor="{DynamicResource Secondary}"
+             BorderColor="Transparent"
+             CornerRadius="24"
+             Padding="24">
+        <VerticalStackLayout Spacing="18">
+          <Label Text="Enviar link de redefinição"
+                 Style="{StaticResource SectionLabelStyle}" />
+
+          <Border Style="{StaticResource FormBorderStyle}">
+            <Entry Placeholder="Email institucional"
+                   Text="{Binding Email}"
+                   Keyboard="Email"
+                   TextColor="{DynamicResource Gray900}"
+                   PlaceholderColor="{DynamicResource Gray400}" />
+          </Border>
+
+          <Button Text="Enviar"
+                  Command="{Binding EnviarCommand}"
+                  HeightRequest="52" />
+
+          <ActivityIndicator IsRunning="{Binding IsBusy}"
+                             IsVisible="{Binding IsBusy}" />
+
+          <Label Text="Já tenho um token de redefinição"
+                 Style="{StaticResource LinkLabelStyle}">
+            <Label.GestureRecognizers>
+              <TapGestureRecognizer Tapped="OnNavigateToReset" />
+            </Label.GestureRecognizers>
+          </Label>
+        </VerticalStackLayout>
+      </Frame>
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

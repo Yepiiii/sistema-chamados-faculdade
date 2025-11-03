@@ -1,8 +1,11 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Net.Http.Headers;
 using SistemaChamados.Mobile.Helpers;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace SistemaChamados.Mobile.Services.Api;
 
@@ -58,8 +61,7 @@ public class ApiService : IApiService
 
             if (!resp.IsSuccessStatusCode)
             {
-                HandleError(resp.StatusCode);
-                return default;
+                HandleError(resp, content);
             }
 
             var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, MetadataPropertyHandling = MetadataPropertyHandling.Ignore };
@@ -90,6 +92,11 @@ public class ApiService : IApiService
                 }
 
                 var result = JsonConvert.DeserializeObject<T>(content, settings);
+                if (result == null)
+                {
+                    throw new ApiException(HttpStatusCode.InternalServerError, "A resposta da API veio vazia.", content);
+                }
+
                 return result;
             }
             catch (JsonException jex)
@@ -97,15 +104,19 @@ public class ApiService : IApiService
                 Debug.WriteLine($"[ApiService] JSON deserialization error: {jex.Message}");
                 Debug.WriteLine($"[ApiService] JSON Exception StackTrace: {jex.StackTrace}");
                 Console.WriteLine($"[ApiService] JSON deserialization error: {jex.Message}");
-                return default;
+                throw new ApiException(HttpStatusCode.InternalServerError, $"Erro ao interpretar resposta da API: {jex.Message}", content, jex);
             }
+        }
+        catch (ApiException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[ApiService] GET Exception: {ex.GetType().Name} - {ex.Message}");
             Debug.WriteLine($"[ApiService] StackTrace: {ex.StackTrace}");
             Console.WriteLine($"[ApiService] GET Exception: {ex.GetType().Name} - {ex.Message}");
-            return default;
+            throw new ApiException(HttpStatusCode.InternalServerError, ex.Message, null, ex);
         }
     }
 
@@ -126,21 +137,7 @@ public class ApiService : IApiService
                 var errorBytes = await resp.Content.ReadAsByteArrayAsync();
                 var errorContent = System.Text.Encoding.UTF8.GetString(errorBytes);
                 Debug.WriteLine($"[ApiService] Erro HTTP {(int)resp.StatusCode}: {errorContent}");
-                
-                // Extrai mensagem de erro do JSON se possível
-                string errorMessage = errorContent;
-                try
-                {
-                    var errorJson = JObject.Parse(errorContent);
-                    if (errorJson["message"] != null)
-                        errorMessage = errorJson["message"]?.ToString() ?? errorContent;
-                    else if (errorJson["title"] != null)
-                        errorMessage = errorJson["title"]?.ToString() ?? errorContent;
-                }
-                catch { /* Se não for JSON, usa o conteúdo bruto */ }
-                
-                // Lança exceção com a mensagem de erro da API
-                throw new HttpRequestException($"{resp.StatusCode}: {errorMessage}");
+                HandleError(resp, errorContent);
             }
             
             var jsonBytes = await resp.Content.ReadAsByteArrayAsync();
@@ -158,57 +155,167 @@ public class ApiService : IApiService
             
             return result;
         }
-        catch (HttpRequestException)
+        catch (ApiException)
         {
-            // Re-lança HttpRequestException para preservar a mensagem de erro da API
             throw;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[ApiService] EXCEÇÃO: {ex.GetType().Name} - {ex.Message}");
             Debug.WriteLine($"[ApiService] StackTrace: {ex.StackTrace}");
-            throw;
+            throw new ApiException(HttpStatusCode.InternalServerError, ex.Message, null, ex);
         }
     }
 
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string uri, TRequest data)
     {
-        var payload = JsonConvert.SerializeObject(data);
-        var resp = await _client.PutAsync(uri, new StringContent(payload, System.Text.Encoding.UTF8, "application/json"));
-        if (!resp.IsSuccessStatusCode)
+        try
         {
-            HandleError(resp.StatusCode);
-            return default;
+            var payload = JsonConvert.SerializeObject(data);
+            var resp = await _client.PutAsync(uri, new StringContent(payload, System.Text.Encoding.UTF8, "application/json"));
+
+            var responseContent = await resp.Content.ReadAsStringAsync();
+            Debug.WriteLine($"[ApiService] PUT {uri} - Status {(int)resp.StatusCode} {resp.StatusCode}");
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[ApiService] PUT error payload: {responseContent}");
+                HandleError(resp, responseContent);
+            }
+
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                MetadataPropertyHandling = MetadataPropertyHandling.Ignore
+            };
+
+            return JsonConvert.DeserializeObject<TResponse>(responseContent, settings);
         }
-        var jsonBytes = await resp.Content.ReadAsByteArrayAsync();
-        var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
-        var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, MetadataPropertyHandling = MetadataPropertyHandling.Ignore };
-        return JsonConvert.DeserializeObject<TResponse>(json, settings);
+        catch (ApiException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiService] PUT Exception: {ex.GetType().Name} - {ex.Message}");
+            Debug.WriteLine($"[ApiService] StackTrace: {ex.StackTrace}");
+            throw new ApiException(HttpStatusCode.InternalServerError, ex.Message, null, ex);
+        }
     }
 
     public async Task<bool> DeleteAsync(string uri)
     {
-        var resp = await _client.DeleteAsync(uri);
-        if (!resp.IsSuccessStatusCode)
+        try
         {
-            HandleError(resp.StatusCode);
-            return false;
+            var resp = await _client.DeleteAsync(uri);
+            var responseContent = await resp.Content.ReadAsStringAsync();
+            Debug.WriteLine($"[ApiService] DELETE {uri} - Status {(int)resp.StatusCode} {resp.StatusCode}");
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[ApiService] DELETE error payload: {responseContent}");
+                HandleError(resp, responseContent);
+            }
+
+            return true;
         }
-        return true;
+        catch (ApiException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ApiService] DELETE Exception: {ex.GetType().Name} - {ex.Message}");
+            Debug.WriteLine($"[ApiService] StackTrace: {ex.StackTrace}");
+            throw new ApiException(HttpStatusCode.InternalServerError, ex.Message, null, ex);
+        }
     }
 
-    private void HandleError(System.Net.HttpStatusCode statusCode)
+    private static void HandleError(HttpResponseMessage response, string? responseContent = null)
     {
-        Debug.WriteLine($"[ApiService] HandleError: {statusCode}");
-        Console.WriteLine($"[ApiService] HandleError: {statusCode}");
-        switch (statusCode)
+        var statusCode = response.StatusCode;
+        var message = ResolveErrorMessage(response, responseContent);
+
+        Debug.WriteLine($"[ApiService] HandleError: {(int)statusCode} {statusCode} - {message}");
+        Console.WriteLine($"[ApiService] HandleError: {(int)statusCode} {statusCode} - {message}");
+
+        throw new ApiException(statusCode, message, responseContent);
+    }
+
+    private static string ResolveErrorMessage(HttpResponseMessage response, string? responseContent)
+    {
+        var extractedMessage = ExtractErrorMessage(responseContent);
+
+        if (!string.IsNullOrWhiteSpace(extractedMessage))
         {
-            case System.Net.HttpStatusCode.Unauthorized:
-                break;
-            case System.Net.HttpStatusCode.NotFound:
-                break;
-            case System.Net.HttpStatusCode.InternalServerError:
-                break;
+            return extractedMessage.Trim();
         }
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return "Sessão expirada. Faça login novamente.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(response.ReasonPhrase))
+        {
+            return response.ReasonPhrase!;
+        }
+
+        return $"Erro HTTP {(int)response.StatusCode}";
+    }
+
+    private static string? ExtractErrorMessage(string? responseContent)
+    {
+        if (string.IsNullOrWhiteSpace(responseContent))
+        {
+            return null;
+        }
+
+        try
+        {
+            var token = JToken.Parse(responseContent);
+
+            if (token.Type == JTokenType.Object)
+            {
+                var obj = (JObject)token;
+
+                string? message = obj["message"]?.ToString()
+                    ?? obj["title"]?.ToString()
+                    ?? obj["error"]?.ToString()
+                    ?? obj["detail"]?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    return message;
+                }
+
+                if (obj["errors"] is JObject errorsObj)
+                {
+                    var firstMessage = errorsObj.Properties()
+                        .SelectMany(p => p.Value)
+                        .Select(v => v?.ToString())
+                        .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+
+                    if (!string.IsNullOrWhiteSpace(firstMessage))
+                    {
+                        return firstMessage;
+                    }
+                }
+            }
+            else if (token.Type == JTokenType.Array)
+            {
+                var first = token.First?.ToString();
+                if (!string.IsNullOrWhiteSpace(first))
+                {
+                    return first;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Conteúdo não é JSON – usa texto bruto
+        }
+
+        return responseContent;
     }
 }

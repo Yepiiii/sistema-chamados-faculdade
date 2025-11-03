@@ -52,6 +52,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.CategoriaId).IsRequired();
             entity.Property(e => e.PrioridadeId).IsRequired();
             entity.Property(e => e.StatusId).IsRequired();
+
         });
         
         // Configuração da entidade Categoria
@@ -133,7 +134,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.DataCriacao).IsRequired().HasDefaultValueSql("GETDATE()");
 
             entity.HasOne(c => c.Chamado)
-                  .WithMany() // Um chamado pode ter muitos comentários
+            .WithMany(ch => ch.Comentarios) // Um chamado pode ter muitos comentários
                   .HasForeignKey(c => c.ChamadoId)
                   .OnDelete(DeleteBehavior.Cascade); // Deletar comentários se o chamado for deletado
 

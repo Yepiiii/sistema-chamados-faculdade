@@ -23,4 +23,5 @@ public class Chamado
     public virtual Categoria Categoria { get; set; } = null!;
     public virtual Prioridade Prioridade { get; set; } = null!;
     public virtual Status Status { get; set; } = null!;
+    public virtual ICollection<Comentario> Comentarios { get; set; } = new List<Comentario>();
 }

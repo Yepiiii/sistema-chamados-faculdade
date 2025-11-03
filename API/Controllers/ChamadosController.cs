@@ -5,6 +5,8 @@ using SistemaChamados.Application.DTOs;
 using SistemaChamados.Core.Entities;
 using SistemaChamados.Data;
 using SistemaChamados.Services;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 
 namespace SistemaChamados.API.Controllers;
@@ -71,11 +73,13 @@ public class ChamadosController : ControllerBase
         }
         // --- FIM LÓGICA SLA (POST) ---
 
+        var agora = DateTime.UtcNow;
         var novoChamado = new Chamado
         {
             Titulo = request.Titulo,
             Descricao = request.Descricao,
-            DataAbertura = DateTime.UtcNow,
+            DataAbertura = agora,
+            DataUltimaAtualizacao = agora,
             SolicitanteId = solicitanteId,
             StatusId = 1, // Assumindo que o ID 1 seja "Aberto"
             PrioridadeId = request.PrioridadeId,
@@ -87,7 +91,14 @@ public class ChamadosController : ControllerBase
         _context.Chamados.Add(novoChamado);
         await _context.SaveChangesAsync();
 
-        return Ok(novoChamado);
+    var chamadoCriado = await LoadChamadoDtoAsync(novoChamado.Id);
+        if (chamadoCriado == null)
+        {
+            _logger.LogError("Falha ao projetar o chamado criado (ID: {ChamadoId}).", novoChamado.Id);
+            return StatusCode(500, "Erro ao projetar o chamado criado.");
+        }
+
+        return Ok(chamadoCriado);
     }
 [HttpGet]
 public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQuery] int? tecnicoId, [FromQuery] int? solicitanteId, [FromQuery] int? prioridadeId, [FromQuery] string? termoBusca)
@@ -120,7 +131,7 @@ public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQue
         // --- FIM LÓGICA VERIFICAÇÃO SLA ---
 
         // 1. Começa com a consulta base
-        var query = _context.Chamados.AsQueryable();
+    var query = _context.Chamados.AsQueryable();
         // 2. Aplica filtro de StatusId se fornecido
         if (statusId.HasValue)
         {
@@ -171,21 +182,57 @@ public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQue
             );
         }
 
-        // 7. Executa a consulta com todos os filtros e projeta para o DTO
-        var chamadosDto = await query
+        // 7. Restrição por usuário autenticado (exceto quando admin solicitar todos)
+        var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(usuarioIdClaim, out var usuarioAutenticadoId))
+        {
+            _logger.LogWarning("Token sem NameIdentifier ou inválido ao acessar GetChamados.");
+            return Unauthorized("Token inválido.");
+        }
+
+        var tipoUsuarioClaim = User.FindFirst("TipoUsuario")?.Value;
+        var incluirTodos = false;
+        if (tipoUsuarioClaim == "3" && Request.Query.TryGetValue("incluirTodos", out var incluirTodosRaw))
+        {
+            if (bool.TryParse(incluirTodosRaw.ToString(), out var parsed))
+            {
+                incluirTodos = parsed;
+            }
+        }
+
+        if (!incluirTodos)
+        {
+            query = query.Where(c => c.SolicitanteId == usuarioAutenticadoId || c.TecnicoId == usuarioAutenticadoId);
+            _logger.LogInformation("Filtro de usuário aplicado em GetChamados para o usuário {UsuarioId}", usuarioAutenticadoId);
+        }
+
+        // 8. Executa a consulta com todos os filtros e projeta para o DTO utilizando o mesmo mapeador central
+        var chamados = await query
             .Include(c => c.Categoria)
             .Include(c => c.Status)
-            .Include(c => c.Prioridade) // <-- Adicione este Include
+            .Include(c => c.Prioridade)
+            .Include(c => c.Solicitante)
+            .Include(c => c.Tecnico)
+            .Include(c => c.Comentarios)
+                .ThenInclude(com => com.Usuario)
+            .AsNoTracking()
             .OrderByDescending(c => c.DataAbertura)
-            .Select(c => new ChamadoListDto 
-            {
-                Id = c.Id,
-                Titulo = c.Titulo,
-                CategoriaNome = c.Categoria.Nome, 
-                StatusNome = c.Status.Nome,
-                PrioridadeNome = c.Prioridade.Nome // <-- Adicione esta linha
-            })
             .ToListAsync();
+
+        var categoriasLookup = await BuildCategoriasLookupAsync(
+            chamados.Select(c => c.Tecnico?.EspecialidadeCategoriaId));
+
+        var chamadosDto = chamados
+            .Select(chamado =>
+            {
+                var historico = MapHistorico(chamado);
+                var tecnicoEspecialidadeNome = ResolveTecnicoEspecialidadeNome(
+                    chamado.Tecnico?.EspecialidadeCategoriaId,
+                    categoriasLookup);
+                return MapChamadoToDto(chamado, tecnicoEspecialidadeNome, historico);
+            })
+            .ToList();
+
         _logger.LogInformation("GetChamados - Consulta finalizada. Resultados encontrados: {Count}", chamadosDto.Count);
         return Ok(chamadosDto); 
     }
@@ -205,6 +252,8 @@ public async Task<IActionResult> GetChamadoPorId(int id)
         .Include(c => c.Status)
         .Include(c => c.Prioridade)
         .Include(c => c.Categoria)
+        .Include(c => c.Comentarios)
+            .ThenInclude(com => com.Usuario)
         .FirstOrDefaultAsync(c => c.Id == id);
 
     if (chamado == null)
@@ -212,7 +261,22 @@ public async Task<IActionResult> GetChamadoPorId(int id)
         return NotFound("Chamado não encontrado.");
     }
 
-    return Ok(chamado);
+    if (!TryObterUsuarioContexto(out var usuarioAutenticadoId, out var incluirTodos, out var contextoFalha))
+    {
+        return contextoFalha!;
+    }
+
+    if (!UsuarioTemAcessoAoChamado(chamado, usuarioAutenticadoId, incluirTodos))
+    {
+        _logger.LogWarning("GetChamadoPorId: Acesso negado ao usuário {UsuarioId} para o chamado {ChamadoId}", usuarioAutenticadoId, id);
+        return Forbid();
+    }
+
+    var categoriasLookup = await BuildCategoriasLookupAsync(new[] { chamado.Tecnico?.EspecialidadeCategoriaId });
+    var historico = MapHistorico(chamado);
+    var tecnicoEspecialidadeNome = ResolveTecnicoEspecialidadeNome(chamado.Tecnico?.EspecialidadeCategoriaId, categoriasLookup);
+    var dto = MapChamadoToDto(chamado, tecnicoEspecialidadeNome, historico);
+    return Ok(dto);
 }
 
 [HttpPut("{id}")]
@@ -222,6 +286,17 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
     if (chamado == null)
     {
         return NotFound("Chamado não encontrado.");
+    }
+
+    if (!TryObterUsuarioContexto(out var usuarioAutenticadoId, out var incluirTodos, out var contextoFalha))
+    {
+        return contextoFalha!;
+    }
+
+    if (!UsuarioTemAcessoAoChamado(chamado, usuarioAutenticadoId, incluirTodos))
+    {
+        _logger.LogWarning("AtualizarChamado: Acesso negado ao usuário {UsuarioId} para o chamado {ChamadoId}", usuarioAutenticadoId, id);
+        return Forbid();
     }
 
     // Valida se o novo StatusId existe
@@ -263,7 +338,61 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
     _context.Chamados.Update(chamado);
     await _context.SaveChangesAsync();
 
-    return Ok(chamado);
+    var chamadoAtualizado = await LoadChamadoDtoAsync(chamado.Id);
+    if (chamadoAtualizado == null)
+    {
+        _logger.LogError("Falha ao projetar o chamado fechado (ID: {ChamadoId}).", chamado.Id);
+        return StatusCode(500, "Erro ao projetar o chamado fechado.");
+    }
+
+    return Ok(chamadoAtualizado);
+}
+
+[HttpPost("{id}/fechar")]
+public async Task<IActionResult> FecharChamado(int id)
+{
+    var chamado = await _context.Chamados.FindAsync(id);
+    if (chamado == null)
+    {
+        return NotFound("Chamado não encontrado.");
+    }
+
+    if (!TryObterUsuarioContexto(out var usuarioAutenticadoId, out var incluirTodos, out var contextoFalha))
+    {
+        return contextoFalha!;
+    }
+
+    if (!UsuarioTemAcessoAoChamado(chamado, usuarioAutenticadoId, incluirTodos))
+    {
+        _logger.LogWarning("FecharChamado: Acesso negado ao usuário {UsuarioId} para o chamado {ChamadoId}", usuarioAutenticadoId, id);
+        return Forbid();
+    }
+
+    if (chamado.StatusId == 4 && chamado.DataFechamento.HasValue)
+    {
+        return BadRequest("Chamado já está fechado.");
+    }
+
+    var statusFechado = await _context.Status.FirstOrDefaultAsync(s => s.Id == 4);
+    if (statusFechado == null)
+    {
+        return StatusCode(500, "Status 'Fechado' não está configurado.");
+    }
+
+    chamado.StatusId = statusFechado.Id;
+    chamado.DataUltimaAtualizacao = DateTime.UtcNow;
+    chamado.DataFechamento = DateTime.UtcNow;
+
+    _context.Chamados.Update(chamado);
+    await _context.SaveChangesAsync();
+
+    var dto = await LoadChamadoDtoAsync(chamado.Id);
+    if (dto == null)
+    {
+        return StatusCode(500, "Erro ao projetar o chamado fechado.");
+    }
+
+    return Ok(dto);
 }
 
 [HttpPost("analisar")]
@@ -320,8 +449,15 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
         _context.Chamados.Add(novoChamado);
         await _context.SaveChangesAsync();
 
-        // 5. Retorna o chamado que foi CRIADO no banco (com seu novo ID)
-        return CreatedAtAction(nameof(GetChamadoPorId), new { id = novoChamado.Id }, novoChamado);
+        // 5. Reprojeta o chamado criado para o DTO completo esperado pelos clientes
+    var chamadoCriado = await LoadChamadoDtoAsync(novoChamado.Id, analise);
+        if (chamadoCriado == null)
+        {
+            _logger.LogError("Falha ao projetar o chamado analisado (ID: {ChamadoId}).", novoChamado.Id);
+            return StatusCode(500, "Erro ao projetar o chamado criado pela análise.");
+        }
+
+        return CreatedAtAction(nameof(GetChamadoPorId), new { id = novoChamado.Id }, chamadoCriado);
     }
     catch (Exception ex)
     {
@@ -338,11 +474,23 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
 [HttpGet("{chamadoId}/comentarios")]
 public async Task<IActionResult> GetComentarios(int chamadoId)
 {
-    // Verifica se o chamado existe
-    var chamadoExiste = await _context.Chamados.AnyAsync(c => c.Id == chamadoId);
-    if (!chamadoExiste)
+    var chamado = await _context.Chamados
+        .AsNoTracking()
+        .FirstOrDefaultAsync(c => c.Id == chamadoId);
+    if (chamado == null)
     {
         return NotFound("Chamado não encontrado.");
+    }
+
+    if (!TryObterUsuarioContexto(out var usuarioAutenticadoId, out var incluirTodos, out var contextoFalha))
+    {
+        return contextoFalha!;
+    }
+
+    if (!UsuarioTemAcessoAoChamado(chamado, usuarioAutenticadoId, incluirTodos))
+    {
+        _logger.LogWarning("GetComentarios: Acesso negado ao usuário {UsuarioId} para o chamado {ChamadoId}", usuarioAutenticadoId, chamadoId);
+        return Forbid();
     }
 
     var comentarios = await _context.Comentarios
@@ -352,11 +500,20 @@ public async Task<IActionResult> GetComentarios(int chamadoId)
         .Select(c => new ComentarioResponseDto
         {
             Id = c.Id,
+            ChamadoId = c.ChamadoId,
             Texto = c.Texto,
             DataCriacao = c.DataCriacao,
+            DataHora = c.DataCriacao,
             UsuarioId = c.UsuarioId,
-            UsuarioNome = c.Usuario.NomeCompleto, // Pega o nome do usuário
-            ChamadoId = c.ChamadoId
+            UsuarioNome = c.Usuario == null ? string.Empty : c.Usuario.NomeCompleto,
+            Usuario = c.Usuario == null ? null : new UsuarioResumoDto
+            {
+                Id = c.Usuario.Id,
+                NomeCompleto = c.Usuario.NomeCompleto,
+                Email = c.Usuario.Email,
+                TipoUsuario = c.Usuario.TipoUsuario
+            },
+            IsInterno = c.IsInterno
         })
         .ToListAsync();
         
@@ -377,27 +534,30 @@ public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] C
         return BadRequest(ModelState);
     }
 
-    // Pega o ID do usuário logado a partir do token
-    var usuarioIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (usuarioIdStr == null)
-    {
-        return Unauthorized();
-    }
-    var usuarioId = int.Parse(usuarioIdStr);
-
-    // Verifica se o chamado existe
     var chamado = await _context.Chamados.FindAsync(chamadoId);
     if (chamado == null)
     {
         return NotFound("Chamado não encontrado.");
     }
 
+    if (!TryObterUsuarioContexto(out var usuarioAutenticadoId, out var incluirTodos, out var contextoFalha))
+    {
+        return contextoFalha!;
+    }
+
+    if (!UsuarioTemAcessoAoChamado(chamado, usuarioAutenticadoId, incluirTodos))
+    {
+        _logger.LogWarning("AdicionarComentario: Acesso negado ao usuário {UsuarioId} para o chamado {ChamadoId}", usuarioAutenticadoId, chamadoId);
+        return Forbid();
+    }
+
     var novoComentario = new Comentario
     {
         Texto = request.Texto,
         ChamadoId = chamadoId,
-        UsuarioId = usuarioId,
-        DataCriacao = DateTime.UtcNow
+        UsuarioId = usuarioAutenticadoId,
+        DataCriacao = DateTime.UtcNow,
+        IsInterno = request.IsInterno
     };
 
     // Atualiza a data de última atualização do chamado
@@ -407,20 +567,28 @@ public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] C
     _context.Comentarios.Add(novoComentario);
     await _context.SaveChangesAsync();
 
-    // Busca o nome do usuário para retornar no DTO
-    var nomeUsuario = await _context.Usuarios
-        .Where(u => u.Id == usuarioId)
-        .Select(u => u.NomeCompleto)
+    var usuarioDto = await _context.Usuarios
+        .Where(u => u.Id == usuarioAutenticadoId)
+        .Select(u => new UsuarioResumoDto
+        {
+            Id = u.Id,
+            NomeCompleto = u.NomeCompleto,
+            Email = u.Email,
+            TipoUsuario = u.TipoUsuario
+        })
         .FirstOrDefaultAsync();
 
     var responseDto = new ComentarioResponseDto
     {
         Id = novoComentario.Id,
+        ChamadoId = novoComentario.ChamadoId,
         Texto = novoComentario.Texto,
         DataCriacao = novoComentario.DataCriacao,
-        UsuarioId = novoComentario.UsuarioId,
-        UsuarioNome = nomeUsuario ?? "Usuário",
-        ChamadoId = novoComentario.ChamadoId
+        DataHora = novoComentario.DataCriacao,
+        UsuarioId = usuarioAutenticadoId,
+        UsuarioNome = usuarioDto?.NomeCompleto ?? "Usuário",
+        Usuario = usuarioDto,
+        IsInterno = novoComentario.IsInterno
     };
 
     return CreatedAtAction(nameof(GetComentarios), new { chamadoId = chamadoId }, responseDto);
@@ -429,6 +597,215 @@ public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] C
 // ===============================================
 // FIM - NOVOS ENDPOINTS DE COMENTÁRIOS
 // ===============================================
+
+private async Task<ChamadoDto?> LoadChamadoDtoAsync(int chamadoId, AnaliseChamadoResponseDto? analise = null)
+{
+    var chamado = await _context.Chamados
+        .Include(c => c.Categoria)
+        .Include(c => c.Status)
+        .Include(c => c.Prioridade)
+        .Include(c => c.Solicitante)
+        .Include(c => c.Tecnico)
+        .Include(c => c.Comentarios)
+            .ThenInclude(com => com.Usuario)
+        .AsNoTracking()
+        .FirstOrDefaultAsync(c => c.Id == chamadoId);
+
+    if (chamado == null)
+    {
+        return null;
+    }
+
+    var categoriasLookup = await BuildCategoriasLookupAsync(new[] { chamado.Tecnico?.EspecialidadeCategoriaId });
+    var historico = MapHistorico(chamado);
+    var tecnicoEspecialidadeNome = ResolveTecnicoEspecialidadeNome(chamado.Tecnico?.EspecialidadeCategoriaId, categoriasLookup);
+
+    return MapChamadoToDto(chamado, tecnicoEspecialidadeNome, historico, analise);
+}
+
+private static ChamadoDto MapChamadoToDto(Chamado chamado, string? tecnicoEspecialidadeNome, List<HistoricoItemDto>? historico = null, AnaliseChamadoResponseDto? analise = null)
+{
+    return new ChamadoDto
+    {
+        Id = chamado.Id,
+        Titulo = chamado.Titulo,
+        Descricao = chamado.Descricao,
+        DataAbertura = chamado.DataAbertura,
+        DataUltimaAtualizacao = chamado.DataUltimaAtualizacao,
+        DataFechamento = chamado.DataFechamento,
+        Categoria = chamado.Categoria == null ? null : new CategoriaDto
+        {
+            Id = chamado.Categoria.Id,
+            Nome = chamado.Categoria.Nome,
+            Descricao = chamado.Categoria.Descricao
+        },
+        Prioridade = chamado.Prioridade == null ? null : new PrioridadeDto
+        {
+            Id = chamado.Prioridade.Id,
+            Nome = chamado.Prioridade.Nome,
+            Nivel = chamado.Prioridade.Nivel,
+            Descricao = chamado.Prioridade.Descricao
+        },
+        Status = chamado.Status == null ? null : new StatusDto
+        {
+            Id = chamado.Status.Id,
+            Nome = chamado.Status.Nome,
+            Descricao = chamado.Status.Descricao
+        },
+        Solicitante = chamado.Solicitante == null ? null : new UsuarioResumoDto
+        {
+            Id = chamado.Solicitante.Id,
+            NomeCompleto = chamado.Solicitante.NomeCompleto,
+            Email = chamado.Solicitante.Email,
+            TipoUsuario = chamado.Solicitante.TipoUsuario
+        },
+        Tecnico = chamado.Tecnico == null ? null : new UsuarioResumoDto
+        {
+            Id = chamado.Tecnico.Id,
+            NomeCompleto = chamado.Tecnico.NomeCompleto,
+            Email = chamado.Tecnico.Email,
+            TipoUsuario = chamado.Tecnico.TipoUsuario
+        },
+        TecnicoAtribuidoId = chamado.TecnicoId,
+        TecnicoAtribuidoNome = chamado.Tecnico?.NomeCompleto,
+        TecnicoAtribuidoNivel = chamado.Tecnico?.EspecialidadeCategoriaId,
+        TecnicoAtribuidoNivelDescricao = tecnicoEspecialidadeNome,
+        Historico = historico ?? new List<HistoricoItemDto>(),
+        Analise = analise
+    };
+}
+
+private static List<HistoricoItemDto> MapHistorico(Chamado chamado)
+{
+    var historico = new List<HistoricoItemDto>();
+
+    // Evento inicial de criação do chamado
+    historico.Add(new HistoricoItemDto
+    {
+        Id = -1, // identificador sintético para eventos do sistema
+        DataHora = chamado.DataAbertura,
+        TipoEvento = "Criacao",
+        Descricao = "Chamado criado",
+        Usuario = chamado.Solicitante?.NomeCompleto
+    });
+
+    // Comentários anexados ao chamado
+    if (chamado.Comentarios != null)
+    {
+        historico.AddRange(
+            chamado.Comentarios
+                .OrderBy(com => com.DataCriacao)
+                .Select(com => new HistoricoItemDto
+                {
+                    Id = com.Id,
+                    DataHora = com.DataCriacao,
+                    TipoEvento = "Comentario",
+                    Descricao = com.Texto,
+                    Usuario = com.Usuario?.NomeCompleto
+                }));
+    }
+
+    // Evento de fechamento, quando aplicável
+    if (chamado.DataFechamento.HasValue)
+    {
+        historico.Add(new HistoricoItemDto
+        {
+            Id = -2,
+            DataHora = chamado.DataFechamento.Value,
+            TipoEvento = "Fechamento",
+            Descricao = "Chamado encerrado",
+            Usuario = chamado.Tecnico?.NomeCompleto ?? chamado.Solicitante?.NomeCompleto
+        });
+    }
+
+    // Evento de mudança de status (utiliza DataUltimaAtualizacao quando disponível)
+    if (chamado.Status != null)
+    {
+        var dataStatus = chamado.DataUltimaAtualizacao ?? chamado.DataAbertura;
+        historico.Add(new HistoricoItemDto
+        {
+            Id = -3,
+            DataHora = dataStatus,
+            TipoEvento = "MudancaStatus",
+            Descricao = $"Status atualizado para '{chamado.Status.Nome}'",
+            Usuario = chamado.Tecnico?.NomeCompleto
+        });
+    }
+
+    return historico
+        .OrderBy(item => item.DataHora)
+        .ToList();
+}
+
+private async Task<IReadOnlyDictionary<int, string>> BuildCategoriasLookupAsync(IEnumerable<int?> categoriaIds)
+{
+    var ids = categoriaIds
+        .Where(id => id.HasValue && id.Value > 0)
+        .Select(id => id!.Value)
+        .Distinct()
+        .ToList();
+
+    if (!ids.Any())
+    {
+        return new Dictionary<int, string>();
+    }
+
+    return await _context.Categorias
+        .AsNoTracking()
+        .Where(cat => ids.Contains(cat.Id))
+        .ToDictionaryAsync(cat => cat.Id, cat => cat.Nome);
+}
+
+private static string? ResolveTecnicoEspecialidadeNome(int? especialidadeCategoriaId, IReadOnlyDictionary<int, string> categoriasLookup)
+{
+    if (!especialidadeCategoriaId.HasValue || especialidadeCategoriaId.Value <= 0)
+    {
+        return null;
+    }
+
+    return categoriasLookup.TryGetValue(especialidadeCategoriaId.Value, out var nome)
+        ? nome
+        : null;
+}
+
+private bool TryObterUsuarioContexto(out int usuarioAutenticadoId, out bool incluirTodos, out IActionResult? failureResult)
+{
+    usuarioAutenticadoId = 0;
+    incluirTodos = false;
+    failureResult = null;
+
+    var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (!int.TryParse(usuarioIdClaim, out usuarioAutenticadoId))
+    {
+        _logger.LogWarning("Token sem NameIdentifier ou inválido para a requisição atual.");
+        failureResult = Unauthorized("Token inválido.");
+        return false;
+    }
+
+    var tipoUsuarioClaim = User.FindFirst("TipoUsuario")?.Value;
+    if (tipoUsuarioClaim == "3" && Request.Query.TryGetValue("incluirTodos", out var incluirTodosRaw))
+    {
+        if (bool.TryParse(incluirTodosRaw.ToString(), out var parsed))
+        {
+            incluirTodos = parsed;
+        }
+    }
+
+    return true;
+}
+
+private static bool UsuarioTemAcessoAoChamado(Chamado chamado, int usuarioAutenticadoId, bool incluirTodos)
+{
+    if (incluirTodos)
+    {
+        return true;
+    }
+
+    var isSolicitante = chamado.SolicitanteId == usuarioAutenticadoId;
+    var isTecnico = chamado.TecnicoId.HasValue && chamado.TecnicoId.Value == usuarioAutenticadoId;
+
+    return isSolicitante || isTecnico;
+}
 
 // ===============================================
 // INÍCIO - FUNÇÕES HELPER DO SLA

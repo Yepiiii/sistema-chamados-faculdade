@@ -23,6 +23,14 @@
       <Setter Property="TextColor" Value="{DynamicResource PrimaryDarkText}" />
       <Setter Property="FontSize" Value="14" />
     </Style>
+
+    <Style x:Key="LinkLabelStyle" TargetType="Label">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{StaticResource Primary}" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="Margin" Value="0,16,0,0" />
+      <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
   </ContentPage.Resources>
 
   <ScrollView>
@@ -64,6 +72,13 @@
 
           <Button Text="Entrar" Command="{Binding LoginCommand}" HeightRequest="52" />
           <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+          <Label Text="Esqueci minha senha"
+                 Style="{StaticResource LinkLabelStyle}">
+            <Label.GestureRecognizers>
+              <TapGestureRecognizer Tapped="OnForgotPasswordTapped" />
+            </Label.GestureRecognizers>
+          </Label>
         </VerticalStackLayout>
       </Frame>
     </VerticalStackLayout>

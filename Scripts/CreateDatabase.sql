@@ -63,6 +63,30 @@ CREATE TABLE Usuarios (
 );
 GO
 
+-- Perfil opcional para colaboradores (usuários do tipo 1)
+CREATE TABLE ColaboradorPerfis (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioId INT NOT NULL UNIQUE,
+    Departamento NVARCHAR(100) NULL,
+    Cargo NVARCHAR(100) NULL,
+    DataCriacao DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_ColaboradorPerfis_Usuarios FOREIGN KEY (UsuarioId) REFERENCES Usuarios(Id) ON DELETE CASCADE
+);
+GO
+
+-- Perfil opcional para técnicos de TI (usuários do tipo 2)
+CREATE TABLE TecnicoITPerfis (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    UsuarioId INT NOT NULL UNIQUE,
+    EspecialidadeCategoriaId INT NULL,
+    Nivel NVARCHAR(50) NULL,
+    Disponivel BIT NOT NULL DEFAULT 1,
+    DataCriacao DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_TecnicoPerfis_Usuarios FOREIGN KEY (UsuarioId) REFERENCES Usuarios(Id) ON DELETE CASCADE,
+    CONSTRAINT FK_TecnicoPerfis_Categorias FOREIGN KEY (EspecialidadeCategoriaId) REFERENCES Categorias(Id)
+);
+GO
+
 -- =============================================
 -- 3. Tabela Chamados
 -- =============================================
@@ -103,6 +127,20 @@ CREATE TABLE Comentarios (
 );
 GO
 
+-- Histórico de atribuições de chamados
+CREATE TABLE AtribuicoesLog (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ChamadoId INT NOT NULL,
+    TecnicoId INT NOT NULL,
+    ResponsavelId INT NULL,
+    Observacao NVARCHAR(500) NULL,
+    DataAtribuicao DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_AtribuicoesLog_Chamados FOREIGN KEY (ChamadoId) REFERENCES Chamados(Id) ON DELETE CASCADE,
+    CONSTRAINT FK_AtribuicoesLog_Usuarios_Tecnico FOREIGN KEY (TecnicoId) REFERENCES Usuarios(Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_AtribuicoesLog_Usuarios_Responsavel FOREIGN KEY (ResponsavelId) REFERENCES Usuarios(Id) ON DELETE SET NULL
+);
+GO
+
 
 -- =============================================
 -- 5. Dados Iniciais (Seed Data)
@@ -133,7 +171,18 @@ GO
 INSERT INTO dbo.Usuarios 
     (NomeCompleto, Email, SenhaHash, TipoUsuario, EspecialidadeCategoriaId, Ativo)
 VALUES 
-    ('Administrador Neuro Help', 'admin@helpdesk.com', '$2a$11$7Wm1iN97aWdOZpK0IptKiOqE6rW1MikaR9Jv66YE.TJLDJ/Qce/BS', 3, NULL, 1);
+    ('Administrador Neuro Help', 'admin@helpdesk.com', '$2a$11$7Wm1iN97aWdOZpK0IptKiOqE6rW1MikaR9Jv66YE.TJLDJ/Qce/BS', 3, NULL, 1),
+    ('Técnico Suporte', 'tecnico@helpdesk.com', '$2a$11$7Wm1iN97aWdOZpK0IptKiOqE6rW1MikaR9Jv66YE.TJLDJ/Qce/BS', 2, 1, 1),
+    ('Usuário de Teste', 'usuario@helpdesk.com', '$2a$11$7Wm1iN97aWdOZpK0IptKiOqE6rW1MikaR9Jv66YE.TJLDJ/Qce/BS', 1, NULL, 1);
+GO
+
+-- Vincula perfis básicos para facilitar testes
+INSERT INTO dbo.ColaboradorPerfis (UsuarioId, Departamento, Cargo)
+SELECT Id, 'Atendimento', 'Colaborador' FROM dbo.Usuarios WHERE Email = 'usuario@helpdesk.com';
+GO
+
+INSERT INTO dbo.TecnicoITPerfis (UsuarioId, EspecialidadeCategoriaId, Nivel)
+SELECT Id, EspecialidadeCategoriaId, 'Pleno' FROM dbo.Usuarios WHERE Email = 'tecnico@helpdesk.com';
 GO
 
 PRINT 'Banco de dados para o sistema de chamados (Versão Final) criado com sucesso!';

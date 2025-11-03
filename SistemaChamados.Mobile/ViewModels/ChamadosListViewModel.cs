@@ -8,6 +8,7 @@ using Microsoft.Maui.Controls;
 using SistemaChamados.Mobile.Models.DTOs;
 using SistemaChamados.Mobile.Services.Categorias;
 using SistemaChamados.Mobile.Services.Chamados;
+using SistemaChamados.Mobile.Services.Api;
 using SistemaChamados.Mobile.Services.Prioridades;
 using SistemaChamados.Mobile.Services.Status;
 
@@ -25,6 +26,7 @@ public class ChamadosListViewModel : BaseViewModel
     private bool _showAdvancedFilters = false;
     private bool _isRefreshing = false;
     private bool _isLoading = false; // Flag para evitar reentrada
+    private bool _filtersLoaded;
 
     // Collections
     public ObservableCollection<ChamadoDto> Chamados { get; } = new();
@@ -60,6 +62,7 @@ public class ChamadosListViewModel : BaseViewModel
             OnPropertyChanged();
             UpdateActiveFiltersCount();
             ApplyFilters();
+            _ = FetchChamadosFromApiAsync(showErrors: false);
         }
     }
 
@@ -73,6 +76,7 @@ public class ChamadosListViewModel : BaseViewModel
             OnPropertyChanged();
             UpdateActiveFiltersCount();
             ApplyFilters();
+            _ = FetchChamadosFromApiAsync(showErrors: false);
         }
     }
 
@@ -130,7 +134,7 @@ public class ChamadosListViewModel : BaseViewModel
             if (_searchTerm == value) return;
             _searchTerm = value;
             OnPropertyChanged();
-            ApplyFilters();
+            HandleSearchTermChanged();
         }
     }
 
@@ -157,13 +161,6 @@ public class ChamadosListViewModel : BaseViewModel
     public async Task Load()
     {
         System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - START (IsBusy={IsBusy}, _isLoading={_isLoading})");
-        
-        // Controle de reentrada - evita múltiplas execuções simultâneas
-        if (_isLoading) 
-        {
-            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Already loading, skipping");
-            return;
-        }
 
         if (IsBusy)
         {
@@ -171,44 +168,25 @@ public class ChamadosListViewModel : BaseViewModel
             return;
         }
 
-        _isLoading = true;
+        if (_isLoading)
+        {
+            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Already loading, skipping");
+            return;
+        }
+
         IsBusy = true;
         try
         {
-            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Loading chamados from API...");
-            
-            // Load Chamados
-            var chamados = await _chamadoService.GetMeusChamados();
-            _allChamados.Clear();
-            if (chamados != null)
+            await EnsureFilterOptionsAsync();
+            await FetchChamadosFromApiAsync();
+        }
+        catch (ApiException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() API ERROR: {ex.Message} (Status: {(int)ex.StatusCode})");
+            if (Application.Current?.MainPage != null)
             {
-                _allChamados.AddRange(chamados);
-                System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - Loaded {chamados.Count()} chamados");
+                await Application.Current.MainPage.DisplayAlert("Erro", ex.Message, "OK");
             }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - No chamados returned from API");
-            }
-
-            // Load Filter Options (only once)
-            if (!Categorias.Any())
-            {
-                await LoadCategoriasAsync();
-            }
-
-            if (!Statuses.Any())
-            {
-                await LoadStatusesAsync();
-            }
-
-            if (!Prioridades.Any())
-            {
-                await LoadPrioridadesAsync();
-            }
-
-            System.Diagnostics.Debug.WriteLine("ChamadosListViewModel.Load() - Applying filters...");
-            ApplyFilters();
-            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - Filters applied, {Chamados.Count} chamados visible");
         }
         catch (Exception ex)
         {
@@ -221,9 +199,6 @@ public class ChamadosListViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
-            IsRefreshing = false; // Sempre resetar IsRefreshing
-            _isLoading = false;
-            System.Diagnostics.Debug.WriteLine($"ChamadosListViewModel.Load() - COMPLETE (IsBusy={IsBusy}, _isLoading={_isLoading})");
         }
     }
 
@@ -244,26 +219,153 @@ public class ChamadosListViewModel : BaseViewModel
 
         try
         {
-            // Limpa cache local antes de recarregar
             System.Diagnostics.Debug.WriteLine("RefreshAsync - Clearing local cache");
             _allChamados.Clear();
             Chamados.Clear();
-            
-            // Force reload from API
-            System.Diagnostics.Debug.WriteLine("RefreshAsync - Calling Load()");
-            await Load();
-            
+
+            await FetchChamadosFromApiAsync();
+
             System.Diagnostics.Debug.WriteLine($"RefreshAsync - Complete! {Chamados.Count} chamados loaded");
+        }
+        catch (ApiException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RefreshAsync API ERROR: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ex.Message, "OK");
+            }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"RefreshAsync ERROR: {ex.Message}");
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", "Erro ao atualizar chamados. Tente novamente.", "OK");
+            }
         }
         finally
         {
-            // Garante que IsRefreshing seja resetado
             IsRefreshing = false;
             System.Diagnostics.Debug.WriteLine("RefreshAsync - IsRefreshing set to false");
+        }
+    }
+
+    private async Task EnsureFilterOptionsAsync()
+    {
+        if (_filtersLoaded)
+        {
+            return;
+        }
+
+        if (!Categorias.Any())
+        {
+            await LoadCategoriasAsync();
+        }
+
+        if (!Statuses.Any())
+        {
+            await LoadStatusesAsync();
+        }
+
+        if (!Prioridades.Any())
+        {
+            await LoadPrioridadesAsync();
+        }
+
+        _filtersLoaded = true;
+    }
+
+    private ChamadoQueryParameters BuildQueryParameters()
+    {
+        var parameters = new ChamadoQueryParameters();
+
+        if (SelectedStatus != null)
+        {
+            parameters.StatusId = SelectedStatus.Id;
+        }
+
+        if (SelectedPrioridade != null)
+        {
+            parameters.PrioridadeId = SelectedPrioridade.Id;
+        }
+
+        var termo = _searchTerm?.Trim();
+        if (!string.IsNullOrWhiteSpace(termo) && termo.Length >= 3)
+        {
+            parameters.TermoBusca = termo;
+        }
+
+        return parameters;
+    }
+
+    private async Task FetchChamadosFromApiAsync(bool showErrors = true)
+    {
+        if (_isLoading)
+        {
+            System.Diagnostics.Debug.WriteLine("FetchChamadosFromApiAsync - Already loading, skipping");
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var parameters = BuildQueryParameters();
+            var chamados = await _chamadoService.GetMeusChamados(parameters);
+
+            _allChamados.Clear();
+            if (chamados != null)
+            {
+                _allChamados.AddRange(chamados);
+                System.Diagnostics.Debug.WriteLine($"FetchChamadosFromApiAsync - Loaded {_allChamados.Count} chamados");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("FetchChamadosFromApiAsync - API returned null");
+            }
+
+            ApplyFilters();
+        }
+        catch (ApiException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"FetchChamadosFromApiAsync API ERROR: {ex.Message} (Status: {(int)ex.StatusCode})");
+            if (showErrors && Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", ex.Message, "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"FetchChamadosFromApiAsync ERROR: {ex.Message}");
+            if (showErrors && Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert("Erro", "Erro inesperado ao carregar chamados. Tente novamente.", "OK");
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void HandleSearchTermChanged()
+    {
+        var termo = _searchTerm?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrEmpty(termo))
+        {
+            ApplyFilters();
+            _ = FetchChamadosFromApiAsync(showErrors: false);
+            return;
+        }
+
+        if (termo.Length >= 3)
+        {
+            ApplyFilters();
+            _ = FetchChamadosFromApiAsync(showErrors: false);
+        }
+        else
+        {
+            ApplyFilters();
         }
     }
 

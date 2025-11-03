@@ -5,6 +5,7 @@ public class PrioridadeDto
     public int Id { get; set; }
     public string Nome { get; set; } = string.Empty;
     public int Nivel { get; set; }
+    public string? Descricao { get; set; }
     
     // Helper para cor baseado no nível (Design System)
     public string CorHexadecimal => Nivel switch

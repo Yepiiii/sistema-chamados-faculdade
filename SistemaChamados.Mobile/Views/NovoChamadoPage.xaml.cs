@@ -33,7 +33,7 @@ public partial class NovoChamadoPage : ContentPage
         base.OnAppearing();
         App.Log("NovoChamadoPage OnAppearing start");
 
-        if ((!ViewModel.Categorias.Any() || !ViewModel.Prioridades.Any()) && !ViewModel.IsBusy)
+        if (ViewModel.PodeUsarClassificacaoManual && (!ViewModel.Categorias.Any() || !ViewModel.Prioridades.Any()) && !ViewModel.IsBusy)
         {
             App.Log("NovoChamadoPage calling LoadDataAsync");
             await ViewModel.LoadDataAsync();

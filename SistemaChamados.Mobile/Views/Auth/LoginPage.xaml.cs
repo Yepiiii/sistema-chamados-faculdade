@@ -22,4 +22,10 @@ public partial class LoginPage : ContentPage
         base.OnAppearing();
         App.Log("LoginPage OnAppearing");
     }
+
+    private async void OnForgotPasswordTapped(object? sender, TappedEventArgs e)
+    {
+        var page = ServiceHelper.GetService<EsqueciSenhaPage>();
+        await Navigation.PushAsync(page);
+    }
 }

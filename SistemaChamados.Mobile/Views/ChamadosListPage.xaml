@@ -370,14 +370,14 @@
 
                 <!-- Row 1: Badge de Status -->
                 <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="6">
-                  <Border StrokeShape="RoundRectangle 10"
-                          Padding="8,3"
-                          BackgroundColor="{DynamicResource Secondary}"
-                          StrokeThickness="0">
-                    <Label Text="{Binding Status.Nome}" 
-                           TextColor="{DynamicResource PrimaryDarkText}" 
-                           FontSize="11"
-                           FontAttributes="Bold" />
+      <Border StrokeShape="RoundRectangle 10"
+          Padding="8,3"
+          BackgroundColor="{Binding Status.CorHexadecimal, FallbackValue=#8C9AB6, TargetNullValue=#8C9AB6}"
+          StrokeThickness="0">
+        <Label Text="{Binding Status.Nome}" 
+           TextColor="White" 
+           FontSize="11"
+           FontAttributes="Bold" />
                   </Border>
                 </HorizontalStackLayout>
 

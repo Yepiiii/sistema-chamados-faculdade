@@ -62,14 +62,7 @@ namespace SistemaChamados.Services
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var openAIResponse = JsonSerializer.Deserialize<OpenAIResponse>(responseContent);
 
-                var resultText = openAIResponse?.choices?.FirstOrDefault()?.message?.content;
-
-                if (string.IsNullOrWhiteSpace(resultText))
-                {
-                    return null;
-                }
-
-                var analise = JsonSerializer.Deserialize<AnaliseChamadoResponseDto>(resultText);
+                var analise = ExtrairAnalise(openAIResponse);
                 
                 if (analise != null)
                 {
@@ -118,6 +111,26 @@ namespace SistemaChamados.Services
             var categoriasTexto = string.Join("\n", categorias.Select(c => $"- ID: {c.Id}, Nome: {c.Nome}"));
             var prioridadesTexto = string.Join("\n", prioridades.Select(p => $"- ID: {p.Id}, Nome: {p.Nome}"));
 
+            return MontarPrompt(descricaoProblema, categoriasTexto, prioridadesTexto);
+        }
+
+        private static AnaliseChamadoResponseDto? ExtrairAnalise(OpenAIResponse? openAIResponse)
+        {
+            var resultText = openAIResponse?.choices?.FirstOrDefault()?.message?.content;
+
+            if (string.IsNullOrWhiteSpace(resultText))
+            {
+                return null;
+            }
+
+            return JsonSerializer.Deserialize<AnaliseChamadoResponseDto>(resultText, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
+        private static string MontarPrompt(string descricaoProblema, string categoriasTexto, string prioridadesTexto)
+        {
             return $@"Analise o problema de TI a seguir e classifique-o.
 
 Descrição do Problema: ""{descricaoProblema}""
@@ -135,7 +148,9 @@ Responda APENAS com um JSON no seguinte formato, sem texto adicional:
   ""PrioridadeId"": <ID da prioridade>,
   ""PrioridadeNome"": ""<Nome da prioridade>"",
   ""TituloSugerido"": ""<Um título curto e claro para o chamado>"",
-  ""Justificativa"": ""<Uma breve justificativa para a sua escolha>""
+  ""Justificativa"": ""<Uma breve justificativa para a sua escolha>"",
+  ""ConfiancaCategoria"": <número entre 0 e 1 indicando a confiança na categoria sugerida>,
+  ""ConfiancaPrioridade"": <número entre 0 e 1 indicando a confiança na prioridade sugerida>
 }}";
         }
     }

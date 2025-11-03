@@ -26,6 +26,12 @@
       <Setter Property="Margin" Value="0,12,0,4" />
     </Style>
 
+    <Style TargetType="Label" x:Key="InfoLabelStyle">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+      <Setter Property="Margin" Value="0,6,0,0" />
+    </Style>
+
     <Style TargetType="Border" x:Key="FormFieldContainerStyle">
       <Setter Property="StrokeShape" Value="RoundRectangle 16" />
       <Setter Property="StrokeThickness" Value="1" />
@@ -80,10 +86,14 @@
                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}" />
             </Border>
           </VerticalStackLayout>
+
+          <Label Text="{Binding MensagemModoAutomatico}"
+                 Style="{StaticResource InfoLabelStyle}"
+                 IsVisible="{Binding DeveExibirMensagemAnaliseAutomatica}" />
         </VerticalStackLayout>
 
         <!-- Título (Opcional) -->
-        <VerticalStackLayout>
+        <VerticalStackLayout IsVisible="{Binding MostrarTituloOpcional}">
           <Label Text="Título (opcional)" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
           <Border Style="{StaticResource FormFieldContainerStyle}">
             <Entry Placeholder="Ex: Falha no acesso ao sistema"
@@ -118,18 +128,18 @@
             <Label Text="Categoria" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
             <Border Style="{StaticResource FormFieldContainerStyle}">
               <Grid>
-                <Picker x:Name="CategoriaPicker"
-                        IsVisible="{Binding HasCategorias}"
-                        HorizontalOptions="Fill"
-                        VerticalOptions="Center"
-                        Title="Selecione uma categoria"
-                        TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
-                        ItemsSource="{Binding Categorias}"
-                        ItemDisplayBinding="{Binding Nome}"
-                        SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
-                        SelectedIndexChanged="OnCategoriaChanged"
-                        AutomationProperties.Name="Seletor de categoria do chamado"
-                        AutomationProperties.HelpText="Selecione a categoria que melhor descreve o problema" />
+    <Picker x:Name="CategoriaPicker"
+      IsVisible="{Binding HasCategorias}"
+      HorizontalOptions="Fill"
+      VerticalOptions="Center"
+      Title="Selecione uma categoria"
+      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+      ItemsSource="{Binding Categorias}"
+      ItemDisplayBinding="{Binding Nome}"
+      SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
+      SelectedIndexChanged="OnCategoriaChanged"
+      SemanticProperties.Description="Seletor de categoria do chamado"
+      SemanticProperties.Hint="Selecione a categoria que melhor descreve o problema" />
 
                 <!-- Empty State para Categorias -->
                 <VerticalStackLayout IsVisible="{Binding IsCategoriasEmpty}"
@@ -139,9 +149,9 @@
                          Style="{StaticResource EmptyStateIconStyle}"
                          AutomationProperties.IsInAccessibleTree="False" />
                   
-                  <Label Text="{Binding EmptyCategoriasText}"
-                         Style="{StaticResource EmptyStateLabelStyle}"
-                         AutomationProperties.Name="Nenhuma categoria disponível" />
+        <Label Text="{Binding EmptyCategoriasText}"
+          Style="{StaticResource EmptyStateLabelStyle}"
+          SemanticProperties.Description="Nenhuma categoria disponível" />
 
                   <HorizontalStackLayout HorizontalOptions="Center"
                                          Spacing="6">
@@ -154,11 +164,11 @@
                            TextColor="{StaticResource Primary}"
                            VerticalOptions="Center" />
                     
-                    <Label Text="{Binding RetryText}"
-                           Style="{StaticResource RetryLabelStyle}"
-                           Margin="0"
-                           AutomationProperties.Name="Tentar carregar categorias novamente"
-                           AutomationProperties.IsInAccessibleTree="True" />
+          <Label Text="{Binding RetryText}"
+            Style="{StaticResource RetryLabelStyle}"
+            Margin="0"
+            SemanticProperties.Description="Tentar carregar categorias novamente"
+            AutomationProperties.IsInAccessibleTree="True" />
                   </HorizontalStackLayout>
                 </VerticalStackLayout>
               </Grid>
@@ -170,18 +180,18 @@
             <Label Text="Prioridade" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
             <Border Style="{StaticResource FormFieldContainerStyle}">
               <Grid>
-                <Picker x:Name="PrioridadePicker"
-                        IsVisible="{Binding HasPrioridades}"
-                        HorizontalOptions="Fill"
-                        VerticalOptions="Center"
-                        Title="Selecione a prioridade"
-                        TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
-                        ItemsSource="{Binding Prioridades}"
-                        ItemDisplayBinding="{Binding Nome}"
-                        SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
-                        SelectedIndexChanged="OnPrioridadeChanged"
-                        AutomationProperties.Name="Seletor de prioridade do chamado"
-                        AutomationProperties.HelpText="Selecione a urgência do problema" />
+    <Picker x:Name="PrioridadePicker"
+      IsVisible="{Binding HasPrioridades}"
+      HorizontalOptions="Fill"
+      VerticalOptions="Center"
+      Title="Selecione a prioridade"
+      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+      ItemsSource="{Binding Prioridades}"
+      ItemDisplayBinding="{Binding Nome}"
+      SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
+      SelectedIndexChanged="OnPrioridadeChanged"
+      SemanticProperties.Description="Seletor de prioridade do chamado"
+      SemanticProperties.Hint="Selecione a urgência do problema" />
 
                 <!-- Empty State para Prioridades -->
                 <VerticalStackLayout IsVisible="{Binding IsPrioridadesEmpty}"
@@ -191,9 +201,9 @@
                          Style="{StaticResource EmptyStateIconStyle}"
                          AutomationProperties.IsInAccessibleTree="False" />
                   
-                  <Label Text="{Binding EmptyPrioridadesText}"
-                         Style="{StaticResource EmptyStateLabelStyle}"
-                         AutomationProperties.Name="Nenhuma prioridade disponível" />
+        <Label Text="{Binding EmptyPrioridadesText}"
+          Style="{StaticResource EmptyStateLabelStyle}"
+          SemanticProperties.Description="Nenhuma prioridade disponível" />
 
                   <HorizontalStackLayout HorizontalOptions="Center"
                                          Spacing="6">
@@ -206,11 +216,11 @@
                            TextColor="{StaticResource Primary}"
                            VerticalOptions="Center" />
                     
-                    <Label Text="{Binding RetryText}"
-                           Style="{StaticResource RetryLabelStyle}"
-                           Margin="0"
-                           AutomationProperties.Name="Tentar carregar prioridades novamente"
-                           AutomationProperties.IsInAccessibleTree="True" />
+          <Label Text="{Binding RetryText}"
+            Style="{StaticResource RetryLabelStyle}"
+            Margin="0"
+            SemanticProperties.Description="Tentar carregar prioridades novamente"
+            AutomationProperties.IsInAccessibleTree="True" />
                   </HorizontalStackLayout>
                 </VerticalStackLayout>
               </Grid>
