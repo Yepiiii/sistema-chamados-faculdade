@@ -1,6 +1,33 @@
-# Sistema de Chamados - API
+# Sistema de Chamados - NeuroHelp
 
-API desenvolvida em ASP.NET Core 8 para gerenciamento de chamados de suporte técnico em ambiente acadêmico.
+Sistema completo de gerenciamento de chamados de suporte técnico, desenvolvido com ASP.NET Core 8 (Backend) e .NET MAUI (Mobile).
+
+## 📱 INTEGRAÇÃO MOBILE CONCLUÍDA
+
+**🎉 Status:** Totalmente funcional e pronto para uso!
+
+A integração completa entre o aplicativo mobile e o backend foi concluída com sucesso. Todas as inconsistências foram corrigidas e o controle de acesso foi implementado.
+
+### 📚 Documentação Completa
+👉 **[DOCUMENTACAO_INTEGRACAO_MOBILE.md](DOCUMENTACAO_INTEGRACAO_MOBILE.md)** - Documento consolidado com:
+- ✅ Análise de todas as inconsistências encontradas
+- ✅ Soluções implementadas (5 correções críticas)
+- ✅ Restrição de acesso por tipo de usuário
+- ✅ Guia de testes e validação
+- ✅ Configuração completa do ambiente
+
+### 🔒 Controle de Acesso
+- ✅ **Usuários (tipo 1):** Acesso completo ao mobile
+- ❌ **Técnicos (tipo 2):** Bloqueados - devem usar web/desktop
+- ❌ **Admins (tipo 3):** Bloqueados - devem usar web/desktop
+
+### 📄 Outras Documentações
+- **[CREDENCIAIS_TESTE.md](CREDENCIAIS_TESTE.md)** - Credenciais para testes
+- **[GEMINI_SERVICE_README.md](GEMINI_SERVICE_README.md)** - Configuração IA Gemini
+- **[INTEGRACAO_README.md](INTEGRACAO_README.md)** - Guia de integração
+- **[MOBILE_INTEGRACAO.md](MOBILE_INTEGRACAO.md)** - Detalhes técnicos mobile
+
+---
 
 ## 🏗️ Arquitetura
 

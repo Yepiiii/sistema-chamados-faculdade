@@ -65,8 +65,26 @@ public class ChamadoService : IChamadoService
         return _api.GetAsync<ChamadoDto>($"chamados/{id}");
     }
 
+    public Task<ChamadoDto?> Update(int id, AtualizarChamadoDto dto)
+    {
+        return _api.PutAsync<AtualizarChamadoDto, ChamadoDto>($"chamados/{id}", dto);
+    }
+
     public Task<ChamadoDto?> Close(int id)
     {
-        return _api.PostAsync<object, ChamadoDto>($"chamados/{id}/fechar", new { });
+        // ⚠️ FIX: Backend não tem endpoint /fechar
+        // Usa PUT /chamados/{id} com StatusId = 5 (Fechado)
+        var atualizacao = new AtualizarChamadoDto
+        {
+            StatusId = 5 // ID do status "Fechado" no banco
+        };
+        return _api.PutAsync<AtualizarChamadoDto, ChamadoDto>($"chamados/{id}", atualizacao);
+    }
+
+    public Task<ChamadoDto?> AnalisarChamadoAsync(AnalisarChamadoRequestDto request)
+    {
+        // ⚠️ ATENÇÃO: Backend JÁ CRIA o chamado no endpoint /analisar
+        // Retorna o chamado criado (ChamadoDto), não apenas a análise
+        return _api.PostAsync<AnalisarChamadoRequestDto, ChamadoDto>("chamados/analisar", request);
     }
 }
