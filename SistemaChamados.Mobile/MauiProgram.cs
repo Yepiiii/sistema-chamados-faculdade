@@ -52,6 +52,7 @@ public static class MauiProgram
 
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<CadastroViewModel>();
         builder.Services.AddTransient<ChamadosListViewModel>();
         builder.Services.AddTransient<ChamadoDetailViewModel>();
         builder.Services.AddTransient<NovoChamadoViewModel>();
@@ -61,6 +62,7 @@ public static class MauiProgram
         // Pages
         builder.Services.AddTransient<AppShell>();
         builder.Services.AddTransient<Views.Auth.LoginPage>();
+        builder.Services.AddTransient<Views.Auth.CadastroPage>();
         builder.Services.AddTransient<Views.ChamadosListPage>();
         builder.Services.AddTransient<Views.ChamadoDetailPage>();
         builder.Services.AddTransient<Views.NovoChamadoPage>();

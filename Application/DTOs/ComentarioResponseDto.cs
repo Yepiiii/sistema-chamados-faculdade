@@ -12,5 +12,4 @@ public class ComentarioResponseDto
     public int UsuarioId { get; set; }
     public string UsuarioNome { get; set; } = string.Empty;
     public UsuarioResumoDto? Usuario { get; set; }
-    public bool IsInterno { get; set; }
 }

@@ -66,10 +66,45 @@
     </Border>
 
     <VerticalStackLayout Grid.Row="1" Spacing="12">
-      <!-- SearchBar -->
-      <SearchBar Placeholder="Buscar por título ou descrição"
-                 Text="{Binding SearchTerm}"
-                 Margin="0,0,0,8" />
+      <!-- SearchBar com estilo visual quando ativa -->
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <Border Grid.Column="0"
+                StrokeShape="RoundRectangle 12"
+                StrokeThickness="2"
+                Padding="0"
+                BackgroundColor="Transparent">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Setter Property="Stroke" Value="{DynamicResource Gray300}" />
+              <Style.Triggers>
+                <!-- Destaca a borda quando a busca está ativa -->
+                <DataTrigger TargetType="Border" 
+                             Binding="{Binding IsSearchActive}" 
+                             Value="True">
+                  <Setter Property="Stroke" Value="{DynamicResource Warning}" />
+                  <Setter Property="BackgroundColor" Value="#FFF9E5" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
+          
+          <SearchBar Placeholder="Buscar por título ou descrição"
+                     Text="{Binding SearchTerm}"
+                     BackgroundColor="Transparent" />
+        </Border>
+        
+        <!-- Indicador visual de busca ativa -->
+        <Border Grid.Column="1"
+                IsVisible="{Binding IsSearchActive}"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="{DynamicResource Warning}"
+                Padding="10,8"
+                VerticalOptions="Center">
+          <Label Text="🔍" 
+                 FontSize="18"
+                 VerticalOptions="Center" />
+        </Border>
+      </Grid>
 
       <!-- Filter Controls Row: Toggle Button + Active Counter + Clear Button -->
       <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Margin="0,0,0,8">

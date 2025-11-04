@@ -11,6 +11,7 @@ public class ChamadoDto
     public DateTime DataAbertura { get; set; }
     public DateTime? DataUltimaAtualizacao { get; set; }
     public DateTime? DataFechamento { get; set; }
+    public UsuarioResumoDto? FechadoPor { get; set; } // Usuário que fechou o chamado
     public CategoriaDto? Categoria { get; set; }
     public PrioridadeDto? Prioridade { get; set; }
     public StatusDto? Status { get; set; }

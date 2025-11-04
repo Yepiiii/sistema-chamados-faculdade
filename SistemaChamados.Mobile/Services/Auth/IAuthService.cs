@@ -5,6 +5,7 @@ namespace SistemaChamados.Mobile.Services.Auth;
 public interface IAuthService
 {
     Task<bool> Login(string email, string senha);
+    Task<(bool Sucesso, string Mensagem)> Cadastrar(string nomeCompleto, string email, string senha);
     Task Logout();
     bool IsAuthenticated { get; }
     void AddAuthHeaderToClient();

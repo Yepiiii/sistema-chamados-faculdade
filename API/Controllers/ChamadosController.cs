@@ -213,6 +213,7 @@ public async Task<IActionResult> GetChamados([FromQuery] int? statusId, [FromQue
             .Include(c => c.Prioridade)
             .Include(c => c.Solicitante)
             .Include(c => c.Tecnico)
+            .Include(c => c.FechadoPor)
             .Include(c => c.Comentarios)
                 .ThenInclude(com => com.Usuario)
             .AsNoTracking()
@@ -249,6 +250,7 @@ public async Task<IActionResult> GetChamadoPorId(int id)
     var chamado = await _context.Chamados
         .Include(c => c.Solicitante)
         .Include(c => c.Tecnico) // Inclui o técnico também, se houver
+        .Include(c => c.FechadoPor)
         .Include(c => c.Status)
         .Include(c => c.Prioridade)
         .Include(c => c.Categoria)
@@ -310,15 +312,24 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
     // 1. Atualiza sempre a data da última modificação
     chamado.DataUltimaAtualizacao = DateTime.UtcNow;
 
-    // 2. Verifica se o novo status é 'Fechado' (vamos assumir que o ID 4 é "Fechado")
-    if (request.StatusId == 4) 
+    // 2. Verifica se o novo status é 'Fechado' (StatusId = 5)
+    if (request.StatusId == 5 && chamado.StatusId != 5) 
     {
+        // Registra data e usuário que fechou o chamado
         chamado.DataFechamento = DateTime.UtcNow;
+        
+        // Captura o usuário autenticado que está fechando o chamado
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int userId))
+        {
+            chamado.FechadoPorId = userId;
+        }
     }
-    else
+    else if (request.StatusId != 5)
     {
-        // Garante que a data de fechamento seja nula se o chamado for reaberto
+        // Garante que a data de fechamento e usuário sejam nulos se o chamado for reaberto
         chamado.DataFechamento = null;
+        chamado.FechadoPorId = null;
     }
     // --- FIM DA NOVA LÓGICA ---
 
@@ -368,12 +379,12 @@ public async Task<IActionResult> FecharChamado(int id)
         return Forbid();
     }
 
-    if (chamado.StatusId == 4 && chamado.DataFechamento.HasValue)
+    if (chamado.StatusId == 5 && chamado.DataFechamento.HasValue)
     {
         return BadRequest("Chamado já está fechado.");
     }
 
-    var statusFechado = await _context.Status.FirstOrDefaultAsync(s => s.Id == 4);
+    var statusFechado = await _context.Status.FirstOrDefaultAsync(s => s.Id == 5);
     if (statusFechado == null)
     {
         return StatusCode(500, "Status 'Fechado' não está configurado.");
@@ -382,6 +393,7 @@ public async Task<IActionResult> FecharChamado(int id)
     chamado.StatusId = statusFechado.Id;
     chamado.DataUltimaAtualizacao = DateTime.UtcNow;
     chamado.DataFechamento = DateTime.UtcNow;
+    chamado.FechadoPorId = usuarioAutenticadoId;
 
     _context.Chamados.Update(chamado);
     await _context.SaveChangesAsync();
@@ -410,7 +422,13 @@ public async Task<IActionResult> AnalisarChamado([FromBody] AnalisarChamadoReque
         
         if (analise == null)
         {
-            return StatusCode(500, "Erro ao obter análise da IA. Tente novamente.");
+            _logger.LogWarning("Falha ao obter análise da IA para o chamado. Descrição: {Descricao}", request.DescricaoProblema);
+            return StatusCode(503, new 
+            { 
+                erro = "Serviço de IA indisponível",
+                mensagem = "Não foi possível obter análise da IA no momento. Verifique se as chaves de API estão configuradas no appsettings.json (Gemini:ApiKey ou OpenAI:ApiKey).",
+                sugestao = "Tente usar a classificação manual ou entre em contato com o administrador do sistema."
+            });
         }
 
         // 2. Pega o ID do usuário que fez a requisição
@@ -512,8 +530,7 @@ public async Task<IActionResult> GetComentarios(int chamadoId)
                 NomeCompleto = c.Usuario.NomeCompleto,
                 Email = c.Usuario.Email,
                 TipoUsuario = c.Usuario.TipoUsuario
-            },
-            IsInterno = c.IsInterno
+            }
         })
         .ToListAsync();
         
@@ -556,8 +573,7 @@ public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] C
         Texto = request.Texto,
         ChamadoId = chamadoId,
         UsuarioId = usuarioAutenticadoId,
-        DataCriacao = DateTime.UtcNow,
-        IsInterno = request.IsInterno
+        DataCriacao = DateTime.UtcNow
     };
 
     // Atualiza a data de última atualização do chamado
@@ -587,8 +603,7 @@ public async Task<IActionResult> AdicionarComentario(int chamadoId, [FromBody] C
         DataHora = novoComentario.DataCriacao,
         UsuarioId = usuarioAutenticadoId,
         UsuarioNome = usuarioDto?.NomeCompleto ?? "Usuário",
-        Usuario = usuarioDto,
-        IsInterno = novoComentario.IsInterno
+        Usuario = usuarioDto
     };
 
     return CreatedAtAction(nameof(GetComentarios), new { chamadoId = chamadoId }, responseDto);
@@ -606,6 +621,7 @@ private async Task<ChamadoDto?> LoadChamadoDtoAsync(int chamadoId, AnaliseChamad
         .Include(c => c.Prioridade)
         .Include(c => c.Solicitante)
         .Include(c => c.Tecnico)
+        .Include(c => c.FechadoPor)
         .Include(c => c.Comentarios)
             .ThenInclude(com => com.Usuario)
         .AsNoTracking()
@@ -665,6 +681,13 @@ private static ChamadoDto MapChamadoToDto(Chamado chamado, string? tecnicoEspeci
             NomeCompleto = chamado.Tecnico.NomeCompleto,
             Email = chamado.Tecnico.Email,
             TipoUsuario = chamado.Tecnico.TipoUsuario
+        },
+        FechadoPor = chamado.FechadoPor == null ? null : new UsuarioResumoDto
+        {
+            Id = chamado.FechadoPor.Id,
+            NomeCompleto = chamado.FechadoPor.NomeCompleto,
+            Email = chamado.FechadoPor.Email,
+            TipoUsuario = chamado.FechadoPor.TipoUsuario
         },
         TecnicoAtribuidoId = chamado.TecnicoId,
         TecnicoAtribuidoNome = chamado.Tecnico?.NomeCompleto,

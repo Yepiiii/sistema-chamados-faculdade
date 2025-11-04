@@ -28,4 +28,10 @@ public partial class LoginPage : ContentPage
         var page = ServiceHelper.GetService<EsqueciSenhaPage>();
         await Navigation.PushAsync(page);
     }
+
+    private async void OnCadastroTapped(object? sender, TappedEventArgs e)
+    {
+        var page = ServiceHelper.GetService<CadastroPage>();
+        await Navigation.PushAsync(page);
+    }
 }

@@ -12,6 +12,7 @@ public class Chamado
     // Chaves estrangeiras
     public int SolicitanteId { get; set; }
     public int? TecnicoId { get; set; }
+    public int? FechadoPorId { get; set; } // ID do usuário que fechou o chamado
     public int CategoriaId { get; set; }
     public int PrioridadeId { get; set; }
     public int StatusId { get; set; }
@@ -20,6 +21,7 @@ public class Chamado
     // Propriedades de navegação
     public virtual Usuario Solicitante { get; set; } = null!;
     public virtual Usuario? Tecnico { get; set; }
+    public virtual Usuario? FechadoPor { get; set; } // Usuário que fechou o chamado
     public virtual Categoria Categoria { get; set; } = null!;
     public virtual Prioridade Prioridade { get; set; } = null!;
     public virtual Status Status { get; set; } = null!;

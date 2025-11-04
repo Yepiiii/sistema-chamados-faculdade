@@ -117,6 +117,19 @@ public class ChamadosListViewModel : BaseViewModel
         }
     }
 
+    // Indica se a busca está ativa (SearchBar tem texto)
+    private bool _isSearchActive;
+    public bool IsSearchActive
+    {
+        get => _isSearchActive;
+        set
+        {
+            if (_isSearchActive == value) return;
+            _isSearchActive = value;
+            OnPropertyChanged();
+        }
+    }
+
     // Commands
     public ICommand RefreshCommand { get; }
     public ICommand ItemTappedCommand { get; }
@@ -134,6 +147,11 @@ public class ChamadosListViewModel : BaseViewModel
             if (_searchTerm == value) return;
             _searchTerm = value;
             OnPropertyChanged();
+            
+            // Atualiza o indicador visual de busca ativa
+            IsSearchActive = !string.IsNullOrWhiteSpace(value);
+            UpdateActiveFiltersCount(); // Atualiza a contagem de filtros
+            
             HandleSearchTermChanged();
         }
     }
@@ -479,6 +497,7 @@ public class ChamadosListViewModel : BaseViewModel
         SelectedStatus = null;
         SelectedPrioridade = null;
         SearchTerm = string.Empty;
+        IsSearchActive = false; // Garante que o indicador visual seja limpo
     }
 
     private void UpdateActiveFiltersCount()
@@ -487,6 +506,7 @@ public class ChamadosListViewModel : BaseViewModel
         if (SelectedCategoria != null) count++;
         if (SelectedStatus != null) count++;
         if (SelectedPrioridade != null) count++;
+        if (IsSearchActive) count++; // Inclui a busca na contagem
         ActiveFiltersCount = count;
     }
 

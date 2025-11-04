@@ -81,6 +81,9 @@ namespace SistemaChamados.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int?>("FechadoPorId")
+                        .HasColumnType("int");
+
                     b.Property<int>("PrioridadeId")
                         .HasColumnType("int");
 
@@ -104,6 +107,8 @@ namespace SistemaChamados.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoriaId");
+
+                    b.HasIndex("FechadoPorId");
 
                     b.HasIndex("PrioridadeId");
 
@@ -131,9 +136,6 @@ namespace SistemaChamados.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<bool>("IsInterno")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Texto")
                         .IsRequired()
@@ -281,6 +283,11 @@ namespace SistemaChamados.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SistemaChamados.Core.Entities.Usuario", "FechadoPor")
+                        .WithMany()
+                        .HasForeignKey("FechadoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SistemaChamados.Core.Entities.Prioridade", "Prioridade")
                         .WithMany("Chamados")
                         .HasForeignKey("PrioridadeId")
@@ -305,6 +312,8 @@ namespace SistemaChamados.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Categoria");
+
+                    b.Navigation("FechadoPor");
 
                     b.Navigation("Prioridade");
 

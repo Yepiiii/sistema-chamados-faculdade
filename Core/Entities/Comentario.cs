@@ -15,8 +15,6 @@ namespace SistemaChamados.Core.Entities
 
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
-    public bool IsInterno { get; set; }
-
         // Chaves Estrangeiras
         public int ChamadoId { get; set; }
         public int UsuarioId { get; set; }

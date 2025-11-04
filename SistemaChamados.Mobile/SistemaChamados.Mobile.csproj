@@ -66,8 +66,11 @@
   </ItemGroup>
 
   <ItemGroup>
-  <MauiImage Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1a1a2e" />
-  <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#1a1a2e" BaseSize="128,128" />
+  <!-- NeuroHelp Logo como ícone do app e splash screen -->
+  <MauiIcon Include="Resources\AppIcon\neurohelp_icon.svg" BaseSize="128,128" Color="#003D5C" />
+  <MauiSplashScreen Include="Resources\Splash\neurohelp_splash.svg" Color="#003D5C" BaseSize="256,256" />
+  <MauiImage Include="Resources\Images\neurohelp_color.png" />
+  <MauiImage Include="Resources\Images\neurohelp_light.png" />
   </ItemGroup>
 
   <ItemGroup>

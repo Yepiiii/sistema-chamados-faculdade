@@ -50,6 +50,13 @@ public class AuthService : IAuthService
             Debug.WriteLine($"[AuthService] Token recebido: {resp.Token[..Math.Min(20, resp.Token.Length)]}...");
             Debug.WriteLine($"[AuthService] TipoUsuario recebido: {resp.TipoUsuario}");
 
+            // Verifica se o usuário é do tipo 1 (Colaborador/Usuário comum)
+            if (resp.TipoUsuario != 1)
+            {
+                Debug.WriteLine($"[AuthService] Login negado: TipoUsuario {resp.TipoUsuario} não tem acesso ao app mobile");
+                throw new UnauthorizedAccessException("Apenas usuários comuns podem acessar o aplicativo mobile.");
+            }
+
             Settings.Token = resp.Token;
             Settings.TipoUsuario = resp.TipoUsuario;
             Settings.Email = email.Trim();
@@ -72,6 +79,35 @@ public class AuthService : IAuthService
         {
             Debug.WriteLine($"[AuthService] ERRO no login: {ex.GetType().Name} - {ex.Message}");
             throw;
+        }
+    }
+
+    public async Task<(bool Sucesso, string Mensagem)> Cadastrar(string nomeCompleto, string email, string senha)
+    {
+        var dto = new { NomeCompleto = nomeCompleto, Email = email, Senha = senha };
+        try
+        {
+            Debug.WriteLine($"[AuthService] Tentando cadastro para {email}");
+            var response = await _api.PostAsync<object, ApiMessageResponse>("usuarios/registrar", dto);
+            
+            if (response != null)
+            {
+                Debug.WriteLine("[AuthService] Cadastro realizado com sucesso");
+                return (true, "Cadastro realizado com sucesso! Faça login para continuar.");
+            }
+            
+            Debug.WriteLine("[AuthService] Resposta inválida da API de cadastro");
+            return (false, "Erro ao realizar cadastro. Tente novamente.");
+        }
+        catch (HttpRequestException ex)
+        {
+            Debug.WriteLine($"[AuthService] HTTP erro no cadastro: {ex.Message}");
+            return (false, ExtractHttpMessage(ex));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AuthService] ERRO no cadastro: {ex.GetType().Name} - {ex.Message}");
+            return (false, $"Erro inesperado: {ex.Message}");
         }
     }
 

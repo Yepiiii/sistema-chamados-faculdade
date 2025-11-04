@@ -9,6 +9,7 @@ public class ApplicationDbContext : DbContext
     {
     }
     
+    public DbSet<Comentario> Comentarios { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
     // DbSet<AlunoPerfil> removido
     // DbSet<ProfessorPerfil> removido
@@ -16,7 +17,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Categoria> Categorias { get; set; }
     public DbSet<Prioridade> Prioridades { get; set; }
     public DbSet<Status> Status { get; set; }
-    public DbSet<Comentario> Comentarios { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -103,6 +103,14 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(c => c.TecnicoId)
             .OnDelete(DeleteBehavior.Restrict) // Impede que um técnico seja deletado se estiver associado a chamados
             .IsRequired(false); // Torna o relacionamento opcional
+            
+        // Configura o relacionamento do Chamado com o Usuário que fechou (opcional)
+        modelBuilder.Entity<Chamado>()
+            .HasOne(c => c.FechadoPor)
+            .WithMany()
+            .HasForeignKey(c => c.FechadoPorId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
             
         // Configura o relacionamento do Chamado com Categoria
         modelBuilder.Entity<Chamado>()

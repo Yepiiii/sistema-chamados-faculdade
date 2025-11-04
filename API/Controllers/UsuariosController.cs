@@ -267,10 +267,21 @@ public class UsuariosController : ControllerBase
         var message = $@"
             <h1>Redefinição de Senha</h1>
             <p>Olá, {usuario.NomeCompleto},</p>
-            <p>Você solicitou a redefinição da sua senha. Por favor, clique no link abaixo para criar uma nova senha:</p>
-            <a href='{resetLink}'>Redefinir Minha Senha</a>
-            <p>Se você não solicitou isso, por favor, ignore este e-mail.</p>
-            <p>Este link expirará em 30 minutos.</p>";
+            <p>Você solicitou a redefinição da sua senha.</p>
+            
+            <h2>Para usuários do sistema Desktop:</h2>
+            <p>Clique no link abaixo para criar uma nova senha:</p>
+            <a href='{resetLink}' style='display: inline-block; padding: 10px 20px; background-color: #2A5FDF; color: white; text-decoration: none; border-radius: 5px;'>Redefinir Minha Senha</a>
+            
+            <h2>Para usuários do aplicativo Mobile:</h2>
+            <p>Copie o token abaixo e cole no aplicativo:</p>
+            <div style='background-color: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace; word-break: break-all;'>
+                <strong>{token}</strong>
+            </div>
+            <p style='font-size: 12px; color: #666;'>Abra o app, clique em ""Já tenho um token de redefinição"" e cole o token acima.</p>
+            
+            <p style='margin-top: 20px;'>Se você não solicitou isso, por favor, ignore este e-mail.</p>
+            <p><strong>Este token expirará em 30 minutos.</strong></p>";
 
         try
         {

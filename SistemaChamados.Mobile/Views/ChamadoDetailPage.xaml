@@ -42,7 +42,7 @@
       <Frame Padding="24" CornerRadius="20" BackgroundColor="{DynamicResource White}" BorderColor="{DynamicResource Gray200}">
         <VerticalStackLayout Spacing="20">
           <!-- Badges de Status e Prioridade com indicador de encerramento -->
-          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
             
             <!-- Status Badge -->
     <Border Grid.Row="0" Grid.Column="0" 
@@ -114,6 +114,22 @@
                        TextColor="{DynamicResource Success}" />
                 <Label Text="{Binding Chamado.DataFechamento, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
                        FontSize="14"
+                       TextColor="{DynamicResource Gray700}" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <!-- Fechado Por (Quem encerrou o chamado) -->
+            <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+                                    IsVisible="{Binding Chamado.HasFechadoPor}">
+              <Label Text="👤" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Fechado por" 
+                       FontSize="12" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Primary}" />
+                <Label Text="{Binding Chamado.FechadoPorDisplay}"
+                       FontSize="14"
+                       FontAttributes="Bold"
                        TextColor="{DynamicResource Gray700}" />
               </VerticalStackLayout>
             </HorizontalStackLayout>
@@ -467,6 +483,9 @@
 
             <Editor Text="{Binding NovoComentarioTexto}"
                     Placeholder="Digite sua mensagem..."
+                    PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
                     AutoSize="TextChanges"
                     MinimumHeightRequest="80"
                     Keyboard="Chat" />

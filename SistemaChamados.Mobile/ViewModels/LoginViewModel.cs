@@ -46,6 +46,10 @@ public class LoginViewModel : BaseViewModel
                 app.NavigateToDashboard();
             }
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            await ShowAlertAsync("Acesso Negado", ex.Message);
+        }
         catch (Exception ex)
         {
             await ShowAlertAsync("Erro", ex.Message);

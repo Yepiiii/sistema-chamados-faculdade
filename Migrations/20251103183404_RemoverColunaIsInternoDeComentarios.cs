@@ -1,15 +1,22 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace SistemaChamados.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIsInternoToComentario : Migration
+    public partial class RemoverColunaIsInternoDeComentarios : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "IsInterno",
+                table: "Comentarios");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
                 name: "IsInterno",
@@ -17,14 +24,6 @@ namespace SistemaChamados.Migrations
                 type: "bit",
                 nullable: false,
                 defaultValue: false);
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "IsInterno",
-                table: "Comentarios");
         }
     }
 }

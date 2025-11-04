@@ -46,17 +46,29 @@ public class EsqueciSenhaViewModel : BaseViewModel
         {
             IsBusy = true;
             var (sucesso, mensagem) = await _authService.SolicitarResetSenhaAsync(email);
+            
+            // Adiciona instruções claras para o usuário mobile
+            if (sucesso)
+            {
+                mensagem = "Um token de redefinição foi enviado para seu e-mail.\n\n" +
+                          "Para redefinir sua senha:\n" +
+                          "1. Verifique seu e-mail e copie o token\n" +
+                          "2. Clique em 'Já tenho um token de redefinição'\n" +
+                          "3. Cole o token e defina sua nova senha";
+            }
+            
             await MostrarAlertaAsync("Recuperação de senha", mensagem);
 
             if (sucesso)
             {
-                await MainThread.InvokeOnMainThreadAsync(async () =>
-                {
-                    if (Application.Current?.MainPage is NavigationPage navigationPage)
-                    {
-                        await navigationPage.PopToRootAsync();
-                    }
-                });
+                // Não volta para a tela inicial, mantém na tela para facilitar o acesso ao link
+                // await MainThread.InvokeOnMainThreadAsync(async () =>
+                // {
+                //     if (Application.Current?.MainPage is NavigationPage navigationPage)
+                //     {
+                //         await navigationPage.PopToRootAsync();
+                //     }
+                // });
             }
         }
         catch (System.Exception ex)

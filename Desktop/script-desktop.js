@@ -636,9 +636,18 @@ async function initTicketDetails() {
     return go("login-desktop.html");
   }
   console.log("--- DEBUG: Token encontrado, buscando detalhes da API ---");
+  
+  // Verificar se o usuário é admin para adicionar incluirTodos=true
+  const payload = decodeJWT(token);
+  const tipoUsuario = payload && payload["TipoUsuario"] ? payload["TipoUsuario"] : null;
+  const isAdmin = tipoUsuario === "3";
+  
   try {
     // Buscar os detalhes do chamado da API
-    const url = `${API_BASE}/api/chamados/${ticketId}`;
+    let url = `${API_BASE}/api/chamados/${ticketId}`;
+    if (isAdmin) {
+      url += '?incluirTodos=true'; // ⭐ Admin vê qualquer chamado
+    }
     console.log("--- DEBUG: Fetching URL:", url, "---");
     const response = await fetch(url, {
       method: 'GET',
@@ -753,7 +762,11 @@ async function initTicketDetails() {
           submitButton.textContent = "Enviando...";
 
           try {
-            const postResponse = await fetch(`${API_BASE}/api/chamados/${ticketId}/comentarios`, {
+            let postUrl = `${API_BASE}/api/chamados/${ticketId}/comentarios`;
+            if (isAdmin) {
+              postUrl += '?incluirTodos=true'; // ⭐ Admin pode comentar em qualquer chamado
+            }
+            const postResponse = await fetch(postUrl, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -791,7 +804,11 @@ async function initTicketDetails() {
           const tecnicoId = chamado.tecnicoId; // Pega o tecnicoId do chamado atual
           console.log(`Atualizando chamado ${ticketId} para Status ID: ${novoStatusId}`);
           try {
-            const updateResponse = await fetch(`${API_BASE}/api/chamados/${ticketId}`, {
+            let updateUrl = `${API_BASE}/api/chamados/${ticketId}`;
+            if (isAdmin) {
+              updateUrl += '?incluirTodos=true'; // ⭐ Admin pode atualizar qualquer chamado
+            }
+            const updateResponse = await fetch(updateUrl, {
               method: 'PUT',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -899,7 +916,11 @@ async function initTicketDetails() {
             console.log(`Admin atualizando Chamado ${ticketId} - Novo Técnico ID: ${novoTecnicoId}, Status ID Atual: ${statusIdAtual}`);
 
             try {
-              const updateResponse = await fetch(`${API_BASE}/api/chamados/${ticketId}`, {
+              let updateUrl = `${API_BASE}/api/chamados/${ticketId}`;
+              if (isAdmin) {
+                updateUrl += '?incluirTodos=true'; // ⭐ Admin pode atualizar qualquer chamado
+              }
+              const updateResponse = await fetch(updateUrl, {
                 method: 'PUT',
                 headers: {
                   'Authorization': `Bearer ${token}`,
@@ -1316,8 +1337,17 @@ async function fetchAndRenderComments(ticketId, token) {
 
   list.innerHTML = `<li class="help">Carregando comentários...</li>`;
 
+  // Verificar se o usuário é admin
+  const payload = decodeJWT(token);
+  const tipoUsuario = payload && payload["TipoUsuario"] ? payload["TipoUsuario"] : null;
+  const isAdmin = tipoUsuario === "3";
+
   try {
-    const response = await fetch(`${API_BASE}/api/chamados/${ticketId}/comentarios`, {
+    let url = `${API_BASE}/api/chamados/${ticketId}/comentarios`;
+    if (isAdmin) {
+      url += '?incluirTodos=true'; // ⭐ Admin vê comentários de qualquer chamado
+    }
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -1469,6 +1499,7 @@ async function initAdminTicketsPage() {
 
     // 2. Construir a URL com parâmetros de busca
     const params = new URLSearchParams();
+    params.append("incluirTodos", "true"); // ⭐ ADMIN vê todos os chamados
     if (statusId) params.append("statusId", statusId);
     if (prioridadeId) params.append("prioridadeId", prioridadeId);
     if (termoBusca) params.append("termoBusca", termoBusca);

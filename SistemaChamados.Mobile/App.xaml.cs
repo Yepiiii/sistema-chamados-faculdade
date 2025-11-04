@@ -27,6 +27,10 @@ public partial class App : Application
             Services = services;
             Log("App constructor: services set");
 
+            // Carrega a preferência de tema salva
+            LoadThemePreference();
+            Log("App constructor: theme loaded");
+
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
             Log("App constructor: exception handlers registered");
@@ -44,6 +48,25 @@ public partial class App : Application
         {
             Log($"App constructor FATAL: {ex}");
             throw;
+        }
+    }
+
+    private void LoadThemePreference()
+    {
+        try
+        {
+            var savedTheme = Preferences.Get("app_theme", AppTheme.Light.ToString());
+            Log($"App LoadThemePreference: saved theme = {savedTheme}");
+            
+            if (Enum.TryParse<AppTheme>(savedTheme, out var theme))
+            {
+                UserAppTheme = theme;
+                Log($"App theme set to: {theme}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"App LoadThemePreference ERROR: {ex.Message}");
         }
     }
 

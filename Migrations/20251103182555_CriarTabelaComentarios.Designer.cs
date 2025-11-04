@@ -12,8 +12,8 @@ using SistemaChamados.Data;
 namespace SistemaChamados.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251103041815_AdicionarIsInternoEmComentarios")]
-    partial class AdicionarIsInternoEmComentarios
+    [Migration("20251103182555_CriarTabelaComentarios")]
+    partial class CriarTabelaComentarios
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

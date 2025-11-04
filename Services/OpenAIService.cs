@@ -59,7 +59,17 @@ namespace SistemaChamados.Services
 
                 if (analise == null)
                 {
-                    _logger.LogError("Não foi possível obter análise da IA (Gemini/OpenAI).");
+                    var geminiConfigured = !string.IsNullOrWhiteSpace(geminiKey);
+                    var openAiConfigured = !string.IsNullOrWhiteSpace(_configuration["OpenAI:ApiKey"]);
+                    
+                    if (!geminiConfigured && !openAiConfigured)
+                    {
+                        _logger.LogError("ERRO: Nenhuma API de IA configurada. Configure a chave da Gemini ou OpenAI no appsettings.json");
+                    }
+                    else
+                    {
+                        _logger.LogError("Não foi possível obter análise da IA (Gemini/OpenAI). Verifique as chaves de API e os logs para mais detalhes.");
+                    }
                     return null;
                 }
 

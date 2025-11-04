@@ -11,6 +11,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar Kestrel para escutar em todos os endereços de rede (permite acesso via IP local)
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5246); // Escuta em todas as interfaces de rede na porta 5246
+});
+
 // Add services to the container.
 
 // Configurar Entity Framework
@@ -36,14 +42,15 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.WriteIndented = false;
 });
 
-// Configurar CORS para permitir o frontend (Live Server)
+// Configurar CORS para permitir o frontend (Live Server), dispositivos móveis e arquivos locais
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // Permite o Live Server
+        policy.SetIsOriginAllowed(origin => true) // Permite qualquer origem (incluindo file://)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // Permite cookies e autenticação
     });
 });
 
@@ -163,27 +170,27 @@ static void SeedDatabase(ApplicationDbContext context)
 
     context.SaveChanges();
 
-    var defaultPassword = "admin123";
+    var defaultPassword = "senha123";
     var defaultUsers = new[]
     {
         new Usuario
         {
-            NomeCompleto = "Administrador Neuro Help",
-            Email = "admin@helpdesk.com",
-            TipoUsuario = 3
+            NomeCompleto = "Carlos Mendes",
+            Email = "carlos.usuario@empresa.com",
+            TipoUsuario = 1
         },
         new Usuario
         {
-            NomeCompleto = "Técnico Suporte",
-            Email = "tecnico@helpdesk.com",
+            NomeCompleto = "Pedro Silva - Tecnico Hardware",
+            Email = "pedro.tecnico@neurohelp.com",
             TipoUsuario = 2,
             EspecialidadeCategoriaId = context.Categorias.FirstOrDefault()?.Id
         },
         new Usuario
         {
-            NomeCompleto = "Usuário de Teste",
-            Email = "usuario@helpdesk.com",
-            TipoUsuario = 1
+            NomeCompleto = "Roberto Nascimento - Supervisor",
+            Email = "roberto.admin@neurohelp.com",
+            TipoUsuario = 3
         }
     };
 
