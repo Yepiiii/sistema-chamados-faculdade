@@ -81,7 +81,7 @@ public partial class AppShell : Shell
                     var nomeUsuario = Settings.NomeUsuario;
                     var emailUsuario = Settings.EmailUsuario;
                     
-                    // Atualiza os labels no header do menu
+                    // Atualiza o nome do usuário
                     if (UserNameLabel != null)
                     {
                         UserNameLabel.Text = !string.IsNullOrEmpty(nomeUsuario) 
@@ -89,12 +89,19 @@ public partial class AppShell : Shell
                             : "Usuário";
                     }
                     
+                    // Atualiza o email do usuário
                     if (UserEmailLabel != null)
                     {
                         UserEmailLabel.Text = !string.IsNullOrEmpty(emailUsuario) 
                             ? emailUsuario 
                             : "";
                         UserEmailLabel.IsVisible = !string.IsNullOrEmpty(emailUsuario);
+                    }
+                    
+                    // Gera as iniciais do usuário para o avatar
+                    if (UserInitialsLabel != null)
+                    {
+                        UserInitialsLabel.Text = GetUserInitials(nomeUsuario);
                     }
                     
                     App.Log($"AppShell user info loaded: {nomeUsuario} ({emailUsuario})");
@@ -109,6 +116,24 @@ public partial class AppShell : Shell
         {
             App.Log($"AppShell LoadUserInfo ERROR: {ex.Message}");
         }
+    }
+
+    private static string GetUserInitials(string? nomeCompleto)
+    {
+        if (string.IsNullOrWhiteSpace(nomeCompleto))
+            return "U";
+
+        var palavras = nomeCompleto.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        if (palavras.Length == 0)
+            return "U";
+        
+        if (palavras.Length == 1)
+            return palavras[0].Substring(0, Math.Min(2, palavras[0].Length)).ToUpper();
+        
+        // Pega a primeira letra do primeiro e último nome
+        var iniciais = $"{palavras[0][0]}{palavras[^1][0]}".ToUpper();
+        return iniciais;
     }
 
     private void OnThemeToggled(object sender, ToggledEventArgs e)
