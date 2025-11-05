@@ -30,6 +30,11 @@ public partial class ChamadosListPage : ContentPage
         _ = _vm.Load();
     }
 
+    private void OnMenuButtonClicked(object sender, EventArgs e)
+    {
+        Shell.Current.FlyoutIsPresented = true;
+    }
+
     private async void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         try

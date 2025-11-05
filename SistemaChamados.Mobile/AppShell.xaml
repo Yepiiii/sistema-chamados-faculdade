@@ -5,6 +5,8 @@
     xmlns:views="clr-namespace:SistemaChamados.Mobile.Views"
     x:Class="SistemaChamados.Mobile.AppShell"
     FlyoutBehavior="Flyout"
+    FlyoutWidth="300"
+    Shell.FlyoutBehavior="Flyout"
     FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}"
     Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
     Shell.TabBarForegroundColor="{StaticResource Primary}"
