@@ -737,7 +737,7 @@ private static List<HistoricoItemDto> MapHistorico(Chamado chamado)
             DataHora = chamado.DataFechamento.Value,
             TipoEvento = "Fechamento",
             Descricao = "Chamado encerrado",
-            Usuario = chamado.Tecnico?.NomeCompleto ?? chamado.Solicitante?.NomeCompleto
+            Usuario = chamado.FechadoPor?.NomeCompleto ?? "Sistema"
         });
     }
 
