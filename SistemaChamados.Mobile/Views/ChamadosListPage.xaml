@@ -3,33 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converters="clr-namespace:SistemaChamados.Mobile.Converters"
              x:Class="SistemaChamados.Mobile.Views.ChamadosListPage"
-             Title="Meus Chamados"
-             Shell.BackButtonBehavior="{Binding BackButtonBehavior}">
-  
-  <Shell.TitleView>
-    <Grid ColumnDefinitions="Auto,*" Padding="0" ColumnSpacing="10">
-      <Button
-        Grid.Column="0"
-        Text="☰"
-        FontSize="28"
-        TextColor="White"
-        BackgroundColor="Transparent"
-        BorderWidth="0"
-        WidthRequest="40"
-        HeightRequest="40"
-        Padding="0"
-        Clicked="OnMenuButtonClicked"
-        VerticalOptions="Center" />
-      <Label
-        Grid.Column="1"
-        Text="Meus Chamados"
-        FontSize="20"
-        FontAttributes="Bold"
-        TextColor="White"
-        VerticalOptions="Center" />
-    </Grid>
-  </Shell.TitleView>
-  
+             Title="Meus Chamados">
   <ContentPage.Resources>
     <!-- Converters -->
     <converters:BoolToTextConverter x:Key="BoolToTextConverter" />
