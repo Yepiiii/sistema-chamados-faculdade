@@ -13,7 +13,7 @@
 
     <!-- Define o Header do Flyout (Menu Lateral) -->
     <Shell.FlyoutHeader>
-        <Grid HeightRequest="200" Padding="20">
+        <Grid RowDefinitions="Auto,Auto" Padding="20" RowSpacing="16">
             <Grid.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Color="#1B3A5F" Offset="0" />
@@ -22,12 +22,40 @@
             </Grid.Background>
             
             <!-- Logo NeuroHelp - Usa a versão light no background escuro -->
-            <Image Source="neurohelp_light.png"
-                   WidthRequest="160"
-                   HeightRequest="160"
+            <Image Grid.Row="0"
+                   Source="neurohelp_light.png"
+                   WidthRequest="140"
+                   HeightRequest="140"
                    Aspect="AspectFit"
                    HorizontalOptions="Center"
-                   VerticalOptions="Center" />
+                   VerticalOptions="Center"
+                   Margin="0,10,0,0" />
+            
+            <!-- Informações do Usuário Logado -->
+            <Border Grid.Row="1"
+                    StrokeShape="RoundRectangle 12"
+                    BackgroundColor="#FFFFFF15"
+                    Padding="16,12"
+                    StrokeThickness="0"
+                    Margin="0,0,0,10">
+                <VerticalStackLayout Spacing="4">
+                    <Label x:Name="UserNameLabel"
+                           Text="Carregando..."
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"
+                           LineBreakMode="TailTruncation"
+                           MaxLines="1" />
+                    <Label x:Name="UserEmailLabel"
+                           Text=""
+                           FontSize="13"
+                           TextColor="#FFFFFFAA"
+                           HorizontalOptions="Center"
+                           LineBreakMode="TailTruncation"
+                           MaxLines="1" />
+                </VerticalStackLayout>
+            </Border>
         </Grid>
     </Shell.FlyoutHeader>
 

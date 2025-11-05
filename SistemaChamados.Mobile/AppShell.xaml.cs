@@ -19,6 +19,10 @@ public partial class AppShell : Shell
             InitializeThemeSwitch();
             App.Log("AppShell InitializeThemeSwitch called");
             
+            // Carrega as informações do usuário logado
+            LoadUserInfo();
+            App.Log("AppShell LoadUserInfo called");
+            
             RegisterRoutes();
             App.Log("AppShell routes registered");
             App.Log("AppShell constructor complete");
@@ -62,6 +66,48 @@ public partial class AppShell : Shell
         catch (Exception ex)
         {
             App.Log($"AppShell InitializeThemeSwitch ERROR: {ex.Message}");
+        }
+    }
+
+    private void LoadUserInfo()
+    {
+        try
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                try
+                {
+                    // Obtém as informações do usuário armazenadas
+                    var nomeUsuario = Settings.NomeUsuario;
+                    var emailUsuario = Settings.EmailUsuario;
+                    
+                    // Atualiza os labels no header do menu
+                    if (UserNameLabel != null)
+                    {
+                        UserNameLabel.Text = !string.IsNullOrEmpty(nomeUsuario) 
+                            ? nomeUsuario 
+                            : "Usuário";
+                    }
+                    
+                    if (UserEmailLabel != null)
+                    {
+                        UserEmailLabel.Text = !string.IsNullOrEmpty(emailUsuario) 
+                            ? emailUsuario 
+                            : "";
+                        UserEmailLabel.IsVisible = !string.IsNullOrEmpty(emailUsuario);
+                    }
+                    
+                    App.Log($"AppShell user info loaded: {nomeUsuario} ({emailUsuario})");
+                }
+                catch (Exception ex)
+                {
+                    App.Log($"AppShell LoadUserInfo inner ERROR: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            App.Log($"AppShell LoadUserInfo ERROR: {ex.Message}");
         }
     }
 
