@@ -13,82 +13,67 @@
 
     <!-- Define o Header do Flyout (Menu Lateral) -->
     <Shell.FlyoutHeader>
-        <VerticalStackLayout Padding="0" Spacing="0">
-            <!-- Background com Gradiente -->
-            <Grid HeightRequest="180">
-                <Grid.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1B3A5F" Offset="0" />
-                        <GradientStop Color="#2A5FDF" Offset="1" />
-                    </LinearGradientBrush>
-                </Grid.Background>
-                
-                <!-- Logo NeuroHelp - Usa a versão light no background escuro -->
-                <Image Source="neurohelp_light.png"
-                       WidthRequest="120"
-                       HeightRequest="120"
-                       Aspect="AspectFit"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center" />
-            </Grid>
+        <Grid RowDefinitions="120,Auto" Padding="0" RowSpacing="0">
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#1B3A5F" Offset="0" />
+                    <GradientStop Color="#2A5FDF" Offset="1" />
+                </LinearGradientBrush>
+            </Grid.Background>
             
-            <!-- Card de Informações do Usuário com sombra -->
-            <Frame Padding="0" 
-                   Margin="16,-30,16,16"
-                   CornerRadius="16"
-                   HasShadow="True"
-                   BackgroundColor="{DynamicResource White}"
-                   BorderColor="Transparent">
-                <Grid Padding="20,16" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
-                    <!-- Avatar com iniciais -->
-                    <Border Grid.Row="0"
-                            WidthRequest="56"
-                            HeightRequest="56"
-                            StrokeShape="RoundRectangle 28"
-                            BackgroundColor="{StaticResource Primary}"
-                            HorizontalOptions="Center"
-                            StrokeThickness="3"
-                            Stroke="{StaticResource Secondary}">
-                        <Label x:Name="UserInitialsLabel"
-                               Text="U"
-                               FontSize="24"
-                               FontAttributes="Bold"
-                               TextColor="White"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Center" />
-                    </Border>
-                    
-                    <!-- Nome do Usuário -->
-                    <Label Grid.Row="1"
-                           x:Name="UserNameLabel"
-                           Text="Carregando..."
-                           FontSize="18"
+            <!-- Logo NeuroHelp -->
+            <Image Grid.Row="0"
+                   Source="neurohelp_light.png"
+                   WidthRequest="100"
+                   HeightRequest="100"
+                   Aspect="AspectFit"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   Margin="0,10,0,0" />
+            
+            <!-- Informações do Usuário - Integrado no gradiente -->
+            <VerticalStackLayout Grid.Row="1" 
+                                 Padding="20,16,20,20" 
+                                 Spacing="8">
+                <!-- Avatar com iniciais -->
+                <Border WidthRequest="64"
+                        HeightRequest="64"
+                        StrokeShape="RoundRectangle 32"
+                        BackgroundColor="White"
+                        HorizontalOptions="Center"
+                        StrokeThickness="3"
+                        Stroke="#FFFFFF40">
+                    <Label x:Name="UserInitialsLabel"
+                           Text="U"
+                           FontSize="26"
                            FontAttributes="Bold"
-                           TextColor="{DynamicResource Gray900}"
+                           TextColor="{StaticResource Primary}"
                            HorizontalOptions="Center"
-                           HorizontalTextAlignment="Center"
-                           LineBreakMode="TailTruncation"
-                           MaxLines="1"
-                           Margin="0,8,0,0" />
-                    
-                    <!-- Email do Usuário -->
-                    <HorizontalStackLayout Grid.Row="2"
-                                          HorizontalOptions="Center"
-                                          Spacing="6">
-                        <Label Text="📧"
-                               FontSize="14"
-                               VerticalOptions="Center" />
-                        <Label x:Name="UserEmailLabel"
-                               Text=""
-                               FontSize="14"
-                               TextColor="{DynamicResource Gray600}"
-                               HorizontalOptions="Center"
-                               LineBreakMode="TailTruncation"
-                               MaxLines="1" />
-                    </HorizontalStackLayout>
-                </Grid>
-            </Frame>
-        </VerticalStackLayout>
+                           VerticalOptions="Center" />
+                </Border>
+                
+                <!-- Nome do Usuário -->
+                <Label x:Name="UserNameLabel"
+                       Text="Carregando..."
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       LineBreakMode="TailTruncation"
+                       MaxLines="1" />
+                
+                <!-- Email do Usuário -->
+                <Label x:Name="UserEmailLabel"
+                       Text=""
+                       FontSize="14"
+                       TextColor="#FFFFFFCC"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       LineBreakMode="TailTruncation"
+                       MaxLines="1" />
+            </VerticalStackLayout>
+        </Grid>
     </Shell.FlyoutHeader>
 
     <!-- Define o Footer do Flyout (Menu Lateral) -->
