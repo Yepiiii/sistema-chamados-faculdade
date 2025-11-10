@@ -129,6 +129,10 @@ app.UseCors("AllowAll");
 
 //app.UseHttpsRedirection();
 
+// Servir arquivos estáticos (wwwroot)
+app.UseStaticFiles();
+app.UseDefaultFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
