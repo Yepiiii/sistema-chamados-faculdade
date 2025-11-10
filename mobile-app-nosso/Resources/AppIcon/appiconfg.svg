@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <!-- Logo NeuroHelp - Cabeça com cérebro e headset -->
+    <g transform="translate(228, 228)">
+        <!-- Círculo principal da cabeça -->
+        <circle cx="0" cy="0" r="140" fill="none" stroke="#003D5C" stroke-width="16"/>
+        
+        <!-- Hemisfério esquerdo do cérebro -->
+        <path d="M -80,-60 Q -100,-60 -100,-30 Q -100,-5 -85,15 Q -75,28 -60,35 L -60,-10 L -75,-30 Q -85,-45 -85,-55 Q -85,-60 -80,-60 Z" 
+              fill="#003D5C"/>
+        
+        <!-- Hemisfério direito do cérebro -->
+        <path d="M 80,-60 Q 100,-60 100,-30 Q 100,-5 85,15 Q 75,28 60,35 L 60,-10 L 75,-30 Q 85,-45 85,-55 Q 85,-60 80,-60 Z" 
+              fill="#003D5C"/>
+        
+        <!-- Conexões neurais -->
+        <circle cx="-50" cy="-40" r="6" fill="#003D5C"/>
+        <circle cx="-25" cy="-30" r="6" fill="#003D5C"/>
+        <circle cx="0" cy="-35" r="6" fill="#003D5C"/>
+        <circle cx="25" cy="-30" r="6" fill="#003D5C"/>
+        <circle cx="50" cy="-40" r="6" fill="#003D5C"/>
+        
+        <line x1="-50" y1="-40" x2="-25" y2="-30" stroke="#003D5C" stroke-width="3"/>
+        <line x1="-25" y1="-30" x2="0" y2="-35" stroke="#003D5C" stroke-width="3"/>
+        <line x1="0" y1="-35" x2="25" y2="-30" stroke="#003D5C" stroke-width="3"/>
+        <line x1="25" y1="-30" x2="50" y2="-40" stroke="#003D5C" stroke-width="3"/>
+        
+        <!-- Headset superior -->
+        <path d="M -80,50 Q 0,20 80,50" fill="none" stroke="#003D5C" stroke-width="12" stroke-linecap="round"/>
+        
+        <!-- Fone esquerdo -->
+        <rect x="-90" y="45" width="28" height="45" rx="14" fill="#003D5C"/>
+        <rect x="-86" y="50" width="20" height="35" rx="10" fill="#FFFFFF"/>
+        
+        <!-- Fone direito -->
+        <rect x="62" y="45" width="28" height="45" rx="14" fill="#003D5C"/>
+        <rect x="66" y="50" width="20" height="35" rx="10" fill="#FFFFFF"/>
+        
+        <!-- Microfone -->
+        <line x1="-76" y1="90" x2="-76" y2="120" stroke="#003D5C" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="-76" cy="125" r="8" fill="#003D5C"/>
+    </g>
+</svg>

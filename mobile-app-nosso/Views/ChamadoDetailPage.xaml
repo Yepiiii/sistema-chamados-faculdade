@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SistemaChamados.Mobile.ViewModels"
+             xmlns:converters="clr-namespace:SistemaChamados.Mobile.Converters"
+             xmlns:helpers="clr-namespace:SistemaChamados.Mobile.Helpers"
+             x:Class="SistemaChamados.Mobile.Views.ChamadoDetailPage"
+             Title="Detalhes">
+  <ContentPage.Resources>
+    <ResourceDictionary>
+      <!-- Conversores -->
+      <converters:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+      <converters:IsNotNullConverter x:Key="IsNotNullConverter" />
+  <helpers:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+      
+      <!-- Gradientes -->
+      <LinearGradientBrush x:Key="DetailHeaderGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#2A5FDF" Offset="0" />
+        <GradientStop Color="#3FA5F5" Offset="1" />
+      </LinearGradientBrush>
+    </ResourceDictionary>
+  </ContentPage.Resources>
+
+  <RefreshView IsRefreshing="{Binding IsRefreshing}"
+               Command="{Binding RefreshCommand}"
+               RefreshColor="{DynamicResource Primary}">
+    <ScrollView>
+      <VerticalStackLayout Padding="24" Spacing="24">
+      <Border Background="{StaticResource DetailHeaderGradient}" StrokeShape="RoundRectangle 28" StrokeThickness="0" Padding="24">
+        <VerticalStackLayout Spacing="6">
+          <Label Text="Detalhes do chamado"
+                 FontSize="22"
+                 FontAttributes="Bold"
+                 TextColor="{DynamicResource White}" />
+          <Label Text="{Binding Chamado.Titulo}"
+                 FontSize="28"
+                 FontAttributes="Bold"
+                 TextColor="{DynamicResource White}" />
+        </VerticalStackLayout>
+      </Border>
+
+      <Frame Padding="24" CornerRadius="20" BackgroundColor="{DynamicResource White}" BorderColor="{DynamicResource Gray200}">
+        <VerticalStackLayout Spacing="20">
+          <!-- Badges de Status e Prioridade com indicador de encerramento -->
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+            
+            <!-- Status Badge -->
+    <Border Grid.Row="0" Grid.Column="0" 
+        BackgroundColor="{Binding Chamado.Status.CorHexadecimal, FallbackValue=#8C9AB6, TargetNullValue=#8C9AB6}" 
+        StrokeThickness="0" 
+        StrokeShape="RoundRectangle 12" 
+        Padding="12,6">
+      <Label Text="{Binding Chamado.Status.Nome}" 
+         TextColor="White" 
+         FontAttributes="Bold" 
+         HorizontalTextAlignment="Center" />
+            </Border>
+            
+            <!-- Prioridade Badge -->
+            <Border Grid.Row="0" Grid.Column="1" 
+                    Stroke="{DynamicResource Primary}" 
+                    StrokeThickness="1" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="12,6">
+              <Label Text="{Binding Chamado.Prioridade.Nome}" 
+                     TextColor="{DynamicResource Primary}" 
+                     FontAttributes="Bold" 
+                     HorizontalTextAlignment="Center" />
+            </Border>
+
+            <!-- Banner de Chamado Encerrado -->
+            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                    IsVisible="{Binding IsChamadoEncerrado}"
+                    BackgroundColor="{DynamicResource Success}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16,10">
+              <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                <Label Text="✓" 
+                       FontSize="20" 
+                       TextColor="White" 
+                       FontAttributes="Bold" 
+                       VerticalOptions="Center" />
+                <Label Text="Chamado Encerrado" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       TextColor="White" 
+                       VerticalOptions="Center" />
+              </HorizontalStackLayout>
+            </Border>
+
+            <!-- Data de Abertura -->
+            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8">
+              <Label Text="📅" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Abertura" 
+                       FontSize="12" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Gray600}" />
+                <Label Text="{Binding Chamado.DataAbertura, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
+                       FontSize="14"
+                       TextColor="{DynamicResource Gray700}" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <!-- Data de Encerramento -->
+            <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+                                    IsVisible="{Binding HasFechamento}">
+              <Label Text="✅" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Encerramento" 
+                       FontSize="12" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Success}" />
+                <Label Text="{Binding Chamado.DataFechamento, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
+                       FontSize="14"
+                       TextColor="{DynamicResource Gray700}" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <!-- Fechado Por (Quem encerrou o chamado) -->
+            <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+                                    IsVisible="{Binding Chamado.HasFechadoPor}">
+              <Label Text="👤" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Fechado por" 
+                       FontSize="12" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Primary}" />
+                <Label Text="{Binding Chamado.FechadoPorDisplay}"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Gray700}" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+          </Grid>
+
+          <VerticalStackLayout Spacing="4"
+                                IsVisible="{Binding Chamado.HasSolicitante}">
+            <Label Text="Solicitante"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Text="{Binding Chamado.SolicitanteDisplay}"
+                   TextColor="{DynamicResource Gray600}" />
+          </VerticalStackLayout>
+
+          <!-- Técnico Atribuído -->
+          <VerticalStackLayout Spacing="4"
+                                IsVisible="{Binding Chamado.HasTecnicoAtribuido}">
+            <Label Text="Técnico Atribuído"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   TextColor="{DynamicResource PrimaryDarkText}" />
+            <HorizontalStackLayout Spacing="8">
+              <Label Text="👨‍💻" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="{Binding Chamado.TecnicoAtribuidoNome}"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Gray700}" />
+                <Label Text="{Binding Chamado.TecnicoAtribuidoNivelDescricao}"
+                       FontSize="12"
+                       TextColor="{DynamicResource Primary}" 
+                       FontAttributes="Italic" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+          </VerticalStackLayout>
+
+          <VerticalStackLayout Spacing="8">
+            <Label Text="Descrição"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Text="{Binding Chamado.Descricao}"
+                   TextColor="{DynamicResource Gray600}" />
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </Frame>
+
+      <!-- Análise Automática (IA) -->
+      <Frame BackgroundColor="{DynamicResource White}"
+        Padding="20"
+        CornerRadius="16"
+        HasShadow="True"
+        IsVisible="{Binding HasAnaliseIA}">
+   <VerticalStackLayout Spacing="12">
+     <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+       <Label Text="🤖"
+         FontSize="24"
+         VerticalOptions="Center" />
+       <VerticalStackLayout Spacing="2">
+    <Label Text="Análise automática"
+      FontSize="16"
+      FontAttributes="Bold"
+      TextColor="{DynamicResource PrimaryDarkText}" />
+    <Label Text="Sugestões geradas pela IA para este chamado"
+      FontSize="12"
+      TextColor="{DynamicResource Gray500}" />
+       </VerticalStackLayout>
+     </HorizontalStackLayout>
+
+     <VerticalStackLayout Spacing="4"
+            IsVisible="{Binding AnaliseIA.TituloSugerido, Converter={StaticResource IsNotNullConverter}}">
+       <Label Text="Título sugerido"
+         FontSize="12"
+         FontAttributes="Bold"
+         TextColor="{DynamicResource Gray600}" />
+       <Label Text="{Binding AnaliseIA.TituloSugerido}"
+         FontSize="16"
+         FontAttributes="Bold"
+         TextColor="{DynamicResource Gray800}" />
+     </VerticalStackLayout>
+
+     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="12">
+       <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+    <Label Text="Categoria sugerida"
+      FontSize="12"
+      FontAttributes="Bold"
+      TextColor="{DynamicResource Gray600}" />
+    <Label Text="{Binding AnaliseCategoriaTexto}"
+      FontSize="14"
+      TextColor="{DynamicResource Gray800}" />
+    <Label Text="{Binding AnaliseConfiancaCategoriaTexto, StringFormat='Confiança: {0}'}"
+      IsVisible="{Binding AnaliseConfiancaCategoriaTexto, Converter={StaticResource IsNotNullConverter}}"
+      FontSize="12"
+      TextColor="{DynamicResource Gray500}" />
+       </VerticalStackLayout>
+
+       <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="2">
+    <Label Text="Prioridade sugerida"
+      FontSize="12"
+      FontAttributes="Bold"
+      TextColor="{DynamicResource Gray600}" />
+    <Label Text="{Binding AnalisePrioridadeTexto}"
+      FontSize="14"
+      TextColor="{DynamicResource Gray800}" />
+    <Label Text="{Binding AnaliseConfiancaPrioridadeTexto, StringFormat='Confiança: {0}'}"
+      IsVisible="{Binding AnaliseConfiancaPrioridadeTexto, Converter={StaticResource IsNotNullConverter}}"
+      FontSize="12"
+      TextColor="{DynamicResource Gray500}" />
+       </VerticalStackLayout>
+
+       <VerticalStackLayout Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Spacing="4"
+              IsVisible="{Binding AnaliseJustificativa, Converter={StaticResource IsNotNullConverter}}">
+    <Label Text="Justificativa da IA"
+      FontSize="12"
+      FontAttributes="Bold"
+      TextColor="{DynamicResource Gray600}" />
+    <Label Text="{Binding AnaliseJustificativa}"
+      FontSize="14"
+      TextColor="{DynamicResource Gray700}"
+      LineBreakMode="WordWrap" />
+       </VerticalStackLayout>
+
+       <VerticalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2">
+    <Label Text="Técnico sugerido"
+      FontSize="12"
+      FontAttributes="Bold"
+      TextColor="{DynamicResource Gray600}" />
+    <Label Text="{Binding AnaliseTecnicoTexto}"
+      FontSize="14"
+      TextColor="{DynamicResource Gray800}" />
+       </VerticalStackLayout>
+     </Grid>
+   </VerticalStackLayout>
+      </Frame>
+
+      <!-- Timeline de Histórico -->
+      <Frame BackgroundColor="{DynamicResource White}"
+             Padding="16"
+             CornerRadius="12"
+             HasShadow="True"
+             Margin="0,16,0,0"
+             IsVisible="{Binding Chamado.HasHistorico}">
+        <VerticalStackLayout Spacing="8">
+          <!-- Cabeçalho da seção -->
+          <Label Text="📜 Histórico de Atualizações"
+                 FontSize="16"
+                 FontAttributes="Bold"
+                 TextColor="{DynamicResource PrimaryDarkText}"
+                 Margin="0,0,0,8" />
+
+          <!-- CollectionView com Timeline -->
+          <CollectionView ItemsSource="{Binding Chamado.Historico}"
+                          SelectionMode="None">
+            <CollectionView.ItemTemplate>
+              <DataTemplate>
+                <Grid Padding="0,0,0,16"
+                      ColumnDefinitions="40,*"
+                      RowDefinitions="Auto,Auto,Auto,Auto">
+
+                  <!-- Linha vertical conectora -->
+                  <BoxView Grid.Column="0"
+                           Grid.Row="0"
+                           Grid.RowSpan="4"
+                           WidthRequest="2"
+                           BackgroundColor="#E5E7EB"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Fill"
+                           Margin="0,24,0,0" />
+
+                  <!-- Ícone do evento (círculo colorido com emoji) -->
+                  <Frame Grid.Column="0"
+                         Grid.Row="0"
+                         WidthRequest="32"
+                         HeightRequest="32"
+                         CornerRadius="16"
+                         Padding="0"
+                         HasShadow="False"
+                         BorderColor="{Binding CorEvento}"
+                         BackgroundColor="{DynamicResource White}"
+                         HorizontalOptions="Center"
+                         VerticalOptions="Start">
+                    <Label Text="{Binding IconeEvento}"
+                           FontSize="16"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                  </Frame>
+
+                  <!-- Card com conteúdo do evento -->
+                  <Frame Grid.Column="1"
+                         Grid.Row="0"
+                         Padding="12"
+                         CornerRadius="8"
+                         BackgroundColor="#F9FAFB"
+                         HasShadow="False"
+                         BorderColor="#E5E7EB"
+                         Margin="8,0,0,0">
+                    <VerticalStackLayout Spacing="4">
+                      <!-- Data e hora -->
+                      <Label Text="{Binding DataHoraFormatada}"
+                             FontSize="12"
+                             TextColor="{DynamicResource Gray600}"
+                             FontAttributes="Bold" />
+
+                      <!-- Descrição completa (com mudanças de valor) -->
+                      <Label Text="{Binding DescricaoCompleta}"
+                             FontSize="14"
+                             TextColor="{DynamicResource Gray700}"
+                             LineBreakMode="WordWrap" />
+
+                      <!-- Usuário responsável -->
+                      <Label Text="{Binding Usuario, StringFormat='por {0}'}"
+                             FontSize="12"
+                             TextColor="{DynamicResource Gray600}"
+                             IsVisible="{Binding Usuario, Converter={StaticResource IsNotNullConverter}}"
+                             Margin="0,2,0,0" />
+                    </VerticalStackLayout>
+                  </Frame>
+                </Grid>
+              </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <!-- EmptyView quando não há histórico -->
+            <CollectionView.EmptyView>
+              <VerticalStackLayout Padding="20"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                <Label Text="📭"
+                       FontSize="48"
+                       HorizontalOptions="Center" />
+                <Label Text="Nenhum histórico registrado"
+                       FontSize="14"
+                       TextColor="{DynamicResource Gray600}"
+                       HorizontalOptions="Center"
+                       Margin="0,8,0,0" />
+              </VerticalStackLayout>
+            </CollectionView.EmptyView>
+          </CollectionView>
+        </VerticalStackLayout>
+      </Frame>
+
+      <!-- Comentários -->
+      <Frame BackgroundColor="{DynamicResource White}"
+             Padding="16"
+             CornerRadius="12"
+             HasShadow="True"
+             Margin="0,0,0,16">
+        <VerticalStackLayout Spacing="12">
+     <Label Text="Comentários"
+                 FontSize="16"
+                 FontAttributes="Bold"
+                 TextColor="{DynamicResource PrimaryDarkText}" />
+
+          <ActivityIndicator IsRunning="{Binding IsComentariosLoading}"
+                              IsVisible="{Binding IsComentariosLoading}"
+                              Color="{DynamicResource Primary}" />
+
+          <CollectionView ItemsSource="{Binding Comentarios}"
+                          SelectionMode="None">
+            <CollectionView.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="Auto,*"
+                      RowDefinitions="Auto"
+                      Padding="0,0,0,16">
+                  <Border BackgroundColor="{Binding CorAvatar}"
+                          WidthRequest="40"
+                          HeightRequest="40"
+                          StrokeShape="RoundRectangle 20"
+                          StrokeThickness="0"
+                          HorizontalOptions="Start"
+                          VerticalOptions="Start">
+                    <Label Text="{Binding InicialUsuario}"
+                           TextColor="White"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+                  </Border>
+
+                  <Frame Grid.Column="1"
+                         Padding="12"
+                         Margin="12,0,0,0"
+                         CornerRadius="12"
+                         HasShadow="False"
+                         BorderColor="#E5E7EB"
+                         BackgroundColor="#F9FAFB">
+                    <Frame.Triggers>
+                      <DataTrigger TargetType="Frame"
+                                   Binding="{Binding IsInterno}"
+                                   Value="True">
+                        <Setter Property="BackgroundColor" Value="#FEF3C7" />
+                        <Setter Property="BorderColor" Value="#F59E0B" />
+                      </DataTrigger>
+                    </Frame.Triggers>
+
+                    <VerticalStackLayout Spacing="6">
+                      <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                        <Label Text="{Binding NomeUsuario}"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource Gray800}" />
+                        <Label Text="{Binding BadgeTipoUsuario}"
+                               FontSize="12"
+                               TextColor="{DynamicResource Gray600}" />
+                        <Border BackgroundColor="#F59E0B"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="8,2"
+                                IsVisible="{Binding IsInterno}"
+                                HorizontalOptions="Start">
+                          <Label Text="Interno"
+                                 FontSize="12"
+                                 TextColor="White"
+                                 FontAttributes="Bold" />
+                        </Border>
+                      </HorizontalStackLayout>
+
+                      <Label Text="{Binding Texto}"
+                             FontSize="14"
+                             TextColor="{DynamicResource Gray700}"
+                             LineBreakMode="WordWrap" />
+
+                      <Label Text="{Binding DataHoraFormatada}"
+                             FontSize="12"
+                             TextColor="{DynamicResource Gray500}" />
+                    </VerticalStackLayout>
+                  </Frame>
+                </Grid>
+              </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.EmptyView>
+              <VerticalStackLayout Padding="20,10"
+                                   Spacing="4"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                <Label Text="Nenhum comentário registrado"
+                       FontSize="14"
+                       TextColor="{DynamicResource Gray500}" />
+                <Label Text="Seja o primeiro a comentar."
+                       FontSize="12"
+                       TextColor="{DynamicResource Gray400}" />
+              </VerticalStackLayout>
+            </CollectionView.EmptyView>
+          </CollectionView>
+
+          <VerticalStackLayout Spacing="8">
+            <Label Text="Adicionar comentário"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource PrimaryDarkText}" />
+
+            <Editor Text="{Binding NovoComentarioTexto}"
+                    Placeholder="Digite sua mensagem..."
+                    PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray500}}"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}"
+                    AutoSize="TextChanges"
+                    MinimumHeightRequest="80"
+                    Keyboard="Chat" />
+
+            <HorizontalStackLayout Spacing="8"
+                                    IsVisible="{Binding PodeDefinirComentarioInterno}">
+              <Switch IsToggled="{Binding NovoComentarioIsInterno}" />
+              <VerticalStackLayout Spacing="0">
+                <Label Text="Marcar como comentário interno"
+                       FontSize="13"
+                       TextColor="{DynamicResource Gray700}" />
+                <Label Text="Visível apenas para técnicos e administradores"
+                       FontSize="11"
+                       TextColor="{DynamicResource Gray500}" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <Grid ColumnDefinitions="Auto,*">
+              <ActivityIndicator Grid.Column="0"
+                                 IsRunning="{Binding IsSendingComentario}"
+                                 IsVisible="{Binding IsSendingComentario}"
+                                 Color="{DynamicResource Primary}"
+                                 Margin="0,0,12,0" />
+        <Button Grid.Column="1"
+          Text="Enviar comentário"
+          Command="{Binding AddComentarioCommand}"
+                      BackgroundColor="{DynamicResource Primary}"
+                      TextColor="{DynamicResource White}"
+                      CornerRadius="12"
+                      Padding="16,10"
+                      FontAttributes="Bold" />
+            </Grid>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </Frame>
+
+      <Button Text="Encerrar chamado"
+              Command="{Binding CloseChamadoCommand}"
+              IsVisible="{Binding ShowCloseButton}"
+              IsEnabled="{Binding IsNotBusy}"
+              TextColor="{DynamicResource White}"
+              BackgroundColor="{DynamicResource Primary}"
+              CornerRadius="16"
+              Padding="20,14"
+              FontAttributes="Bold" />
+    </VerticalStackLayout>
+  </ScrollView>
+  </RefreshView>
+</ContentPage>

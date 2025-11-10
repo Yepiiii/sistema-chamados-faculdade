@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SistemaChamados.Mobile.ViewModels"
+             x:Class="SistemaChamados.Mobile.Views.NovoChamadoPage"
+             Title="Novo Chamado">
+  <ContentPage.Resources>
+    <Style TargetType="Label" x:Key="PageHeadlineStyle" BasedOn="{StaticResource SubHeadline}">
+      <Setter Property="HorizontalOptions" Value="Start" />
+      <Setter Property="HorizontalTextAlignment" Value="Start" />
+      <Setter Property="FontSize" Value="28" />
+      <Setter Property="FontAttributes" Value="Bold" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PrimaryDarkText}, Dark={StaticResource White}}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="SectionTitleStyle">
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontAttributes" Value="Bold" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PrimaryDarkText}, Dark={StaticResource White}}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="FormLabelStyle">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontAttributes" Value="Bold" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PrimaryDarkText}, Dark={StaticResource White}}" />
+      <Setter Property="Margin" Value="0,12,0,4" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="InfoLabelStyle">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+      <Setter Property="Margin" Value="0,6,0,0" />
+    </Style>
+
+    <Style TargetType="Border" x:Key="FormFieldContainerStyle">
+      <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+      <Setter Property="StrokeThickness" Value="1" />
+      <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Gray100Brush}, Dark={StaticResource Gray400Brush}}" />
+      <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray800}}" />
+      <Setter Property="Padding" Value="14,12" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="EmptyStateLabelStyle">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="EmptyStateIconStyle">
+      <Setter Property="FontSize" Value="32" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="VerticalOptions" Value="Center" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="RetryLabelStyle">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="TextColor" Value="{StaticResource Primary}" />
+      <Setter Property="FontAttributes" Value="Bold" />
+      <Setter Property="HorizontalOptions" Value="Center" />
+      <Setter Property="Margin" Value="0,8,0,0" />
+    </Style>
+  </ContentPage.Resources>
+
+  <ScrollView>
+    <VerticalStackLayout Padding="24" Spacing="28">
+      <VerticalStackLayout Spacing="4">
+        <Label Text="Novo chamado" Style="{StaticResource PageHeadlineStyle}" />
+        <Label Text="{Binding DescricaoHeader}" 
+               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="24">
+        <!-- Descrição do Problema (Sempre Visível) -->
+        <VerticalStackLayout Spacing="16">
+          <Label Text="Descrição do problema" Style="{StaticResource SectionTitleStyle}" />
+
+          <VerticalStackLayout>
+            <Label Text="Descrição" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+            <Border Style="{StaticResource FormFieldContainerStyle}">
+              <Editor Placeholder="Conte o que está acontecendo para receber ajuda"
+                      AutoSize="TextChanges"
+                      MinimumHeightRequest="160"
+                      Text="{Binding Descricao}"
+                      PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}" />
+            </Border>
+          </VerticalStackLayout>
+
+          <Label Text="{Binding MensagemModoAutomatico}"
+                 Style="{StaticResource InfoLabelStyle}"
+                 IsVisible="{Binding DeveExibirMensagemAnaliseAutomatica}" />
+        </VerticalStackLayout>
+
+        <!-- Título (Opcional) -->
+        <VerticalStackLayout IsVisible="{Binding MostrarTituloOpcional}">
+          <Label Text="Título (opcional)" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+          <Border Style="{StaticResource FormFieldContainerStyle}">
+            <Entry Placeholder="Ex: Falha no acesso ao sistema"
+                   Text="{Binding Titulo}"
+                   PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}" />
+          </Border>
+        </VerticalStackLayout>
+
+        <!-- Switch de IA (Para Técnicos/Admins) -->
+        <VerticalStackLayout IsVisible="{Binding PodeUsarClassificacaoManual}" Spacing="8">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <Label Grid.Column="0"
+                   Text="Classificar automaticamente com IA"
+                   Style="{StaticResource FormLabelStyle}"
+                   Margin="0"
+                   VerticalOptions="Center" />
+            <Switch Grid.Column="1"
+                    IsToggled="{Binding UsarAnaliseAutomatica}"
+                    VerticalOptions="Center" />
+          </Grid>
+          <Label Text="Desative para escolher categoria e prioridade manualmente."
+                 FontSize="12"
+                 FontAttributes="None"
+                 Margin="0,0,0,8"
+                 TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}" />
+        </VerticalStackLayout>
+
+        <!-- Classificação Manual (Apenas se IA desativada E Técnico/Admin) -->
+        <VerticalStackLayout Spacing="16" IsVisible="{Binding ExibirClassificacaoManual}">
+          <!-- Categoria -->
+          <VerticalStackLayout>
+            <Label Text="Categoria" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+            <Border Style="{StaticResource FormFieldContainerStyle}">
+              <Grid>
+    <Picker x:Name="CategoriaPicker"
+      IsVisible="{Binding HasCategorias}"
+      HorizontalOptions="Fill"
+      VerticalOptions="Center"
+      Title="Selecione uma categoria"
+      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+      ItemsSource="{Binding Categorias}"
+      ItemDisplayBinding="{Binding Nome}"
+      SelectedItem="{Binding CategoriaSelecionada, Mode=TwoWay}"
+      SelectedIndexChanged="OnCategoriaChanged"
+      SemanticProperties.Description="Seletor de categoria do chamado"
+      SemanticProperties.Hint="Selecione a categoria que melhor descreve o problema" />
+
+                <!-- Empty State para Categorias -->
+                <VerticalStackLayout IsVisible="{Binding IsCategoriasEmpty}"
+                                     Padding="16"
+                                     Spacing="4">
+                  <Label Text="{Binding EmptyCategoriasIcon}"
+                         Style="{StaticResource EmptyStateIconStyle}"
+                         AutomationProperties.IsInAccessibleTree="False" />
+                  
+        <Label Text="{Binding EmptyCategoriasText}"
+          Style="{StaticResource EmptyStateLabelStyle}"
+          SemanticProperties.Description="Nenhuma categoria disponível" />
+
+                  <HorizontalStackLayout HorizontalOptions="Center"
+                                         Spacing="6">
+                    <HorizontalStackLayout.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding RetryLoadCommand}" />
+                    </HorizontalStackLayout.GestureRecognizers>
+
+                    <Label Text="{Binding RetryIcon}"
+                           FontSize="16"
+                           TextColor="{StaticResource Primary}"
+                           VerticalOptions="Center" />
+                    
+          <Label Text="{Binding RetryText}"
+            Style="{StaticResource RetryLabelStyle}"
+            Margin="0"
+            SemanticProperties.Description="Tentar carregar categorias novamente"
+            AutomationProperties.IsInAccessibleTree="True" />
+                  </HorizontalStackLayout>
+                </VerticalStackLayout>
+              </Grid>
+            </Border>
+          </VerticalStackLayout>
+
+          <!-- Prioridade -->
+          <VerticalStackLayout>
+            <Label Text="Prioridade" Style="{StaticResource FormLabelStyle}" Margin="0,0,0,4" />
+            <Border Style="{StaticResource FormFieldContainerStyle}">
+              <Grid>
+    <Picker x:Name="PrioridadePicker"
+      IsVisible="{Binding HasPrioridades}"
+      HorizontalOptions="Fill"
+      VerticalOptions="Center"
+      Title="Selecione a prioridade"
+      TitleColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+      ItemsSource="{Binding Prioridades}"
+      ItemDisplayBinding="{Binding Nome}"
+      SelectedItem="{Binding PrioridadeSelecionada, Mode=TwoWay}"
+      SelectedIndexChanged="OnPrioridadeChanged"
+      SemanticProperties.Description="Seletor de prioridade do chamado"
+      SemanticProperties.Hint="Selecione a urgência do problema" />
+
+                <!-- Empty State para Prioridades -->
+                <VerticalStackLayout IsVisible="{Binding IsPrioridadesEmpty}"
+                                     Padding="16"
+                                     Spacing="4">
+                  <Label Text="{Binding EmptyPrioridadesIcon}"
+                         Style="{StaticResource EmptyStateIconStyle}"
+                         AutomationProperties.IsInAccessibleTree="False" />
+                  
+        <Label Text="{Binding EmptyPrioridadesText}"
+          Style="{StaticResource EmptyStateLabelStyle}"
+          SemanticProperties.Description="Nenhuma prioridade disponível" />
+
+                  <HorizontalStackLayout HorizontalOptions="Center"
+                                         Spacing="6">
+                    <HorizontalStackLayout.GestureRecognizers>
+                      <TapGestureRecognizer Command="{Binding RetryLoadCommand}" />
+                    </HorizontalStackLayout.GestureRecognizers>
+
+                    <Label Text="{Binding RetryIcon}"
+                           FontSize="16"
+                           TextColor="{StaticResource Primary}"
+                           VerticalOptions="Center" />
+                    
+          <Label Text="{Binding RetryText}"
+            Style="{StaticResource RetryLabelStyle}"
+            Margin="0"
+            SemanticProperties.Description="Tentar carregar prioridades novamente"
+            AutomationProperties.IsInAccessibleTree="True" />
+                  </HorizontalStackLayout>
+                </VerticalStackLayout>
+              </Grid>
+            </Border>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </VerticalStackLayout>
+
+      <Button Text="Criar Chamado"
+              Command="{Binding CriarCommand}"
+              CornerRadius="12"
+              HeightRequest="52" />
+
+      <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>
