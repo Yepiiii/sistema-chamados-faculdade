@@ -8,7 +8,6 @@ namespace SistemaChamados.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class StatusController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -19,6 +18,7 @@ public class StatusController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous] // Permite acesso sem autenticação
     public async Task<IActionResult> GetStatus()
     {
         var status = await _context.Status
@@ -29,6 +29,7 @@ public class StatusController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetStatusPorId(int id)
     {
         var status = await _context.Status

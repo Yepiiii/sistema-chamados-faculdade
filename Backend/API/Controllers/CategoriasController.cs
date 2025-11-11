@@ -8,7 +8,6 @@ namespace SistemaChamados.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class CategoriasController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -19,6 +18,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous] // Permite acesso sem autenticação
     public async Task<IActionResult> GetCategorias()
     {
         var categorias = await _context.Categorias
@@ -29,6 +29,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetCategoria(int id)
     {
         var categoria = await _context.Categorias

@@ -8,7 +8,6 @@ namespace SistemaChamados.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class PrioridadesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -19,6 +18,7 @@ public class PrioridadesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous] // Permite acesso sem autenticação
     public async Task<IActionResult> GetPrioridades()
     {
         var prioridades = await _context.Prioridades
