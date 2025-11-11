@@ -205,14 +205,15 @@
             <HorizontalStackLayout Spacing="8">
               <Label Text="👨‍💻" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
-                <Label Text="{Binding Chamado.TecnicoAtribuidoNome}"
+                <Label Text="{Binding Chamado.TecnicoAtribuidoNomeDisplay, FallbackValue='Não atribuído', TargetNullValue='Não atribuído'}"
                        FontSize="14"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource Gray700}" />
-                <Label Text="{Binding Chamado.TecnicoAtribuidoNivelDescricao}"
+                <Label Text="{Binding Chamado.TecnicoAtribuidoNivelDescricaoDisplay}"
                        FontSize="12"
                        TextColor="{DynamicResource Primary}" 
-                       FontAttributes="Italic" />
+                       FontAttributes="Italic"
+                       IsVisible="{Binding Chamado.TecnicoAtribuidoNivelDescricaoDisplay, Converter={StaticResource IsNotNullConverter}}" />
               </VerticalStackLayout>
             </HorizontalStackLayout>
           </VerticalStackLayout>

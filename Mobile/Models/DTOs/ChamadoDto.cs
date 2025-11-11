@@ -61,7 +61,32 @@ public class ChamadoDto
         ? string.Empty
         : $"{Solicitante.NomeCompleto} ({Solicitante.Email})";
     
-    public bool HasTecnicoAtribuido => !string.IsNullOrEmpty(TecnicoAtribuidoNome);
+    // Técnico Atribuído - suporta ambas as formas (propriedades diretas ou objeto Tecnico)
+    [JsonIgnore]
+    public bool HasTecnicoAtribuido => 
+        !string.IsNullOrEmpty(TecnicoAtribuidoNome) || Tecnico != null;
+    
+    [JsonIgnore]
+    public string? TecnicoAtribuidoNomeDisplay => 
+        TecnicoAtribuidoNome ?? Tecnico?.NomeCompleto;
+    
+    [JsonIgnore]
+    public int? TecnicoAtribuidoIdDisplay => 
+        TecnicoAtribuidoId ?? Tecnico?.Id;
+    
+    [JsonIgnore]
+    public string? TecnicoAtribuidoNivelDescricaoDisplay => 
+        TecnicoAtribuidoNivelDescricao ?? ObterNivelDescricao(Tecnico?.TipoUsuario);
+    
+    private static string? ObterNivelDescricao(int? tipoUsuario)
+    {
+        return tipoUsuario switch
+        {
+            2 => "Técnico",
+            3 => "Administrador",
+            _ => null
+        };
+    }
     
     public bool HasFechadoPor => FechadoPor != null;
     public string FechadoPorDisplay => FechadoPor is null
