@@ -362,6 +362,8 @@ appsettings.*.json
 !appsettings.json
 !appsettings.example.json
 
-# APK files
+# APK files - Allow APK builds in APK/builds folder for distribution
 *.apk
 *.aab
+!APK/builds/*.apk
+!APK/builds/*.aab
