@@ -387,11 +387,16 @@ function atualizarKPIs(chamados) {
   }
   
   const total = chamados.length;
-  const abertos = chamados.filter(c => c.statusNome.toLowerCase() === 'aberto').length;
-  const emAndamento = chamados.filter(c => c.statusNome.toLowerCase() === 'em andamento').length;
-  const resolvidos = chamados.filter(c => c.statusNome.toLowerCase() === 'fechado' || c.statusNome.toLowerCase() === 'resolvido').length;
-  const pendentes = chamados.filter(c => c.statusNome.toLowerCase() === 'aguardando resposta').length;
-  const violados = chamados.filter(c => c.statusNome.toLowerCase() === 'violado').length; // <-- 1. ADICIONE ESTA LINHA
+  // Função auxiliar para obter o nome do status de forma segura
+  const getStatusNome = (c) => {
+    return (c.statusNome || c.status?.nome || '').toLowerCase();
+  };
+  
+  const abertos = chamados.filter(c => getStatusNome(c) === 'aberto').length;
+  const emAndamento = chamados.filter(c => getStatusNome(c) === 'em andamento').length;
+  const resolvidos = chamados.filter(c => getStatusNome(c) === 'fechado' || getStatusNome(c) === 'resolvido').length;
+  const pendentes = chamados.filter(c => getStatusNome(c) === 'aguardando cliente' || getStatusNome(c) === 'aguardando resposta').length;
+  const violados = chamados.filter(c => getStatusNome(c) === 'violado' || getStatusNome(c) === 'sla violado').length;
 
   // Atualiza os elementos do DOM (ignora se não encontrar o elemento)
   (document.getElementById('kpi-total') || {}).textContent = total;
