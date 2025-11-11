@@ -138,9 +138,13 @@ function initLogin() {
         console.log("TipoUsuario recebido:", data.tipoUsuario);
         console.log("Tipo de TipoUsuario:", typeof data.tipoUsuario);
         
-        // Guardar o token no sessionStorage
+        // Guardar o token no sessionStorage E localStorage ANTES de qualquer outra ação
         if (data.token) {
+          console.log("Salvando token no sessionStorage E localStorage...");
           sessionStorage.setItem('authToken', data.token);
+          localStorage.setItem('authToken', data.token); // ADICIONAR BACKUP NO localStorage
+          console.log("Token salvo! Verificando sessionStorage:", sessionStorage.getItem('authToken') ? "OK" : "FALHOU");
+          console.log("Token salvo! Verificando localStorage:", localStorage.getItem('authToken') ? "OK" : "FALHOU");
         }
         
         toast("Login realizado com sucesso!");
@@ -160,10 +164,12 @@ function initLogin() {
         }
         console.log("===================");
         console.log("URL de redirecionamento:", redirectUrl);
+        console.log("Token antes do redirect:", sessionStorage.getItem('authToken') ? "PRESENTE" : "AUSENTE");
         
-        // Redirecionar após pequeno delay para garantir que o toast apareça
+        // Redirecionar após pequeno delay para garantir que o sessionStorage seja persistido
         setTimeout(() => {
           console.log("Executando redirecionamento agora...");
+          console.log("Token IMEDIATAMENTE antes do redirect:", sessionStorage.getItem('authToken') ? "PRESENTE" : "AUSENTE");
           console.log("Tentando window.location.href =", redirectUrl);
           window.location.href = redirectUrl;
           
@@ -438,13 +444,24 @@ function atualizarKPIs(chamados) {
    =========================================================== */
 async function initDashboard() {
   // Verificar se o token de autenticação existe
-  const token = sessionStorage.getItem('authToken');
+  let token = sessionStorage.getItem('authToken');
+  
+  // Se não encontrar no sessionStorage, tentar o localStorage
+  if (!token) {
+    token = localStorage.getItem('authToken');
+    if (token) {
+      console.log("Token recuperado do localStorage! Restaurando no sessionStorage...");
+      sessionStorage.setItem('authToken', token);
+    }
+  }
+  
   console.log("=== initDashboard ===");
-  console.log("Token no sessionStorage:", token ? "PRESENTE" : "AUSENTE");
-  console.log("Token completo:", token);
+  console.log("Token no sessionStorage:", sessionStorage.getItem('authToken') ? "PRESENTE" : "AUSENTE");
+  console.log("Token no localStorage:", localStorage.getItem('authToken') ? "PRESENTE" : "AUSENTE");
+  console.log("Token final usado:", token ? "PRESENTE" : "AUSENTE");
   
   if (!token) {
-    console.log("initDashboard: Token não encontrado, redirecionando para login.");
+    console.log("initDashboard: Token não encontrado em nenhum storage, redirecionando para login.");
     return go("/");
   }
   console.log("initDashboard: Token encontrado, buscando chamados da API...");
