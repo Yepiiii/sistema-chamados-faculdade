@@ -1157,9 +1157,9 @@ function renderTabelaFila(chamados, tbody) {
       // Leitura segura das propriedades
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
-      const categoriaNome = chamado?.categoriaNome ?? 'N/A';
-      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A';
-      const dataAbertura = 'Hoje'; // TODO: Adicionar ao DTO quando disponível
+      const categoriaNome = chamado?.categoria?.nome ?? chamado?.categoriaNome ?? 'N/A';
+      const prioridadeNome = chamado?.prioridade?.nome ?? chamado?.prioridadeNome ?? 'N/A';
+      const dataAbertura = chamado?.dataAbertura ? new Date(chamado.dataAbertura).toLocaleDateString('pt-BR') : 'N/A';
 
       tr.innerHTML = `
         <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
@@ -1208,9 +1208,9 @@ function renderTabelaMeusChamados(chamados, tbody) {
       // Leitura segura das propriedades
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
-      const categoriaNome = chamado?.categoriaNome ?? 'N/A';
-      const statusNome = chamado?.statusNome ?? 'N/A';
-      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A';
+      const categoriaNome = chamado?.categoria?.nome ?? chamado?.categoriaNome ?? 'N/A';
+      const statusNome = chamado?.status?.nome ?? chamado?.statusNome ?? 'N/A';
+      const prioridadeNome = chamado?.prioridade?.nome ?? chamado?.prioridadeNome ?? 'N/A';
 
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
