@@ -63,11 +63,18 @@ public class ChamadosController : ControllerBase
         }
         
         // --- INÍCIO LÓGICA SLA (POST) ---
-        // Busca o 'Nivel' da prioridade para o cálculo
+        // Busca a prioridade para obter TempoRespostaHoras
         var prioridadeSla = await _context.Prioridades.FindAsync(request.PrioridadeId);
         if (prioridadeSla == null)
         {
             return BadRequest("PrioridadeId inválido.");
+        }
+        
+        // Calcula SLA baseado em TempoRespostaHoras da prioridade
+        DateTime? slaExpiracao = null;
+        if (prioridadeSla.TempoRespostaHoras > 0)
+        {
+            slaExpiracao = DateTime.UtcNow.AddHours(prioridadeSla.TempoRespostaHoras);
         }
         // --- FIM LÓGICA SLA (POST) ---
 
@@ -87,7 +94,7 @@ public class ChamadosController : ControllerBase
             StatusId = statusAberto.Id, // Busca dinâmica do Status "Aberto"
             PrioridadeId = request.PrioridadeId,
             CategoriaId = request.CategoriaId,
-            SlaDataExpiracao = CalcularSla(prioridadeSla.Nivel, DateTime.UtcNow)
+            SlaDataExpiracao = slaExpiracao // Usa o SLA calculado baseado em horas
         };
 
         _context.Chamados.Add(novoChamado);
