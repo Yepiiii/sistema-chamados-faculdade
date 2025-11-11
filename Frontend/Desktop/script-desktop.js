@@ -145,18 +145,27 @@ function initLogin() {
         
         toast("Login realizado com sucesso!");
         
-        // Determinar redirecionamento baseado na resposta da API
+        // Determinar URL de redirecionamento baseado na resposta da API
+        let redirectUrl = "/user-dashboard-desktop.html"; // Padrão para usuário comum
+        
         if (data.tipoUsuario === 3) { // Admin
           console.log("Redirecionando para admin-dashboard...");
-          window.location.href = "/admin-dashboard-desktop.html";
+          redirectUrl = "/admin-dashboard-desktop.html";
         } else if (data.tipoUsuario === 2) { // Técnico
           console.log("Redirecionando para tecnico-dashboard...");
-          window.location.href = "/tecnico-dashboard.html"; // <-- Redirecionamento CORRETO para técnico
+          redirectUrl = "/tecnico-dashboard.html";
         } else { // Usuário Comum (TipoUsuario 1 ou outro)
           console.log("Redirecionando para user-dashboard...");
-          window.location.href = "/user-dashboard-desktop.html";
+          redirectUrl = "/user-dashboard-desktop.html";
         }
         console.log("===================");
+        console.log("URL de redirecionamento:", redirectUrl);
+        
+        // Redirecionar após pequeno delay para garantir que o toast apareça
+        setTimeout(() => {
+          console.log("Executando redirecionamento agora...");
+          window.location.href = redirectUrl;
+        }, 500);
       } else {
         // Tratar erro de autenticação
         let errorMessage = "E-mail ou senha incorretos.";
