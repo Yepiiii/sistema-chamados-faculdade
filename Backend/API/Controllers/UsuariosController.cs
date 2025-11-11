@@ -259,9 +259,8 @@ public class UsuariosController : ControllerBase
         _context.Usuarios.Update(usuario);
         await _context.SaveChangesAsync();
 
-        // 3. Montar o link de redefinição (a URL do seu frontend)
-        // ATUALIZADO PARA A ROTA DO NOVO SITE WEB (porta 5027)
-        var resetLink = $"http://localhost:5027/Home/ResetarSenha?token={token}";
+        // 3. Montar o link de redefinição (a URL do seu frontend Desktop)
+        var resetLink = $"http://localhost:8080/resetar-senha-desktop.html?token={token}";
 
         // 4. Enviar o e-mail usando o IEmailService
         var subject = "Redefinição de Senha - Sistema de Chamados";
