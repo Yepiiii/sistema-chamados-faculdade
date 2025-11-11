@@ -54,7 +54,7 @@ applyInitialTheme();
 // ===========================================================
 
 /* URL base da API */
-const API_BASE = ""; // URLs relativas - mesmo servidor
+const API_BASE = "http://localhost:5246"; // Backend na porta 5246
 
 /* ===========================================================
    🚀 SEED DE DEMONSTRAÇÃO (DADOS INICIAIS)
