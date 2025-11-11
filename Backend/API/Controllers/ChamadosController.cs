@@ -267,15 +267,18 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
     // Atualiza os campos do chamado
     chamado.StatusId = request.StatusId;
 
+    // Atualiza TecnicoId (permite null para desatribuir)
     if (request.TecnicoId.HasValue)
     {
+        // Se TecnicoId foi fornecido, valida se existe
         var tecnicoExiste = await _context.Usuarios.AnyAsync(u => u.Id == request.TecnicoId.Value && u.Ativo);
         if (!tecnicoExiste)
         {
             return BadRequest("O TecnicoId fornecido é inválido ou o usuário está inativo.");
         }
-        chamado.TecnicoId = request.TecnicoId;
     }
+    // Atualiza TecnicoId (pode ser um ID válido ou null para desatribuir)
+    chamado.TecnicoId = request.TecnicoId;
 
     _context.Chamados.Update(chamado);
     await _context.SaveChangesAsync();
