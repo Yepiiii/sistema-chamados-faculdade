@@ -11,11 +11,11 @@ Write-Host ""
 # Navegar até a pasta do Frontend (um nível acima de Scripts)
 $scriptDir = $PSScriptRoot
 $projectRoot = Split-Path $scriptDir -Parent
-$frontendPath = Join-Path $projectRoot "Frontend\wwwroot"
+$frontendPath = Join-Path $projectRoot "Frontend\Desktop"
 
 # Verificar se a pasta existe
 if (-not (Test-Path $frontendPath)) {
-    Write-Host "ERRO: Pasta Frontend/wwwroot não encontrada!" -ForegroundColor Red
+    Write-Host "ERRO: Pasta Frontend/Desktop não encontrada!" -ForegroundColor Red
     Write-Host "Procurado em: $frontendPath" -ForegroundColor Yellow
     Write-Host "Script executado de: $scriptDir" -ForegroundColor Yellow
     Write-Host ""

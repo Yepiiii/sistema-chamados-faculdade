@@ -1,47 +1,53 @@
 # 📂 Estrutura de Pastas do Frontend
 
-## ⚠️ IMPORTANTE - Duplicação de Arquivos
+## 📁 Pastas Principais
 
-O projeto possui **DUAS pastas** com os mesmos arquivos HTML/JS/CSS:
-
-### 1. `Frontend/Desktop/` ✏️
-- **Pasta de DESENVOLVIMENTO**
-- ✅ **EDITE AQUI** quando fizer mudanças no código
+### 1. `Frontend/Desktop/` 🖥️
+- **Aplicação Desktop (SPA)**
+- ✅ **PASTA PRINCIPAL DE TRABALHO**
+- Servida na porta 8080 pelo `start-frontend.ps1`
 - Todos os arquivos `.html`, `.js`, `.css` do Desktop
 - Esta é a pasta rastreada pelo Git
 
 ### 2. `Frontend/wwwroot/` 🌐
-- **Pasta de PRODUÇÃO/SERVIDOR**
-- ❌ **NÃO EDITE DIRETAMENTE**
-- O servidor web (`start-frontend.ps1`) roda a partir DESTA pasta
-- Arquivos devem ser copiados de `Desktop/` para cá
+- **Aplicação Web (ASP.NET Core)**
+- Usada se você quiser hospedar com IIS/Kestrel
+- Pode ser ignorada se usar apenas Desktop
+- Sincronize apenas se for fazer deploy web
 
-## 🔄 Workflow Correto
+### 3. `Frontend/Mobile/` 📱
+- **Aplicação .NET MAUI (Android/iOS)**
+- APKs gerados em `APK/builds/`
+- Usa IP físico da máquina para conexão com API
+
+## � Como Executar
+
+### Desktop (Porta 8080)
+```powershell
+.\Scripts\start-frontend.ps1
+```
+- Serve arquivos de `Frontend/Desktop/`
+- Abre http://localhost:8080
+- Edite diretamente em `Frontend/Desktop/`
+
+### Backend (Porta 5246)
+```powershell
+.\Scripts\start-backend.ps1
+```
+- API rodando em http://localhost:5246
+- Necessário para Desktop e Mobile funcionarem
+
+## ✏️ Workflow de Desenvolvimento
 
 ```
 1. Editar arquivo em Frontend/Desktop/
    ↓
-2. Executar: .\Scripts\sync-frontend.ps1
+2. Salvar (Ctrl+S)
    ↓
 3. Atualizar navegador (Ctrl+F5)
 ```
 
-## 📝 Scripts Disponíveis
-
-### `sync-frontend.ps1`
-```powershell
-.\Scripts\sync-frontend.ps1
-```
-- Copia todos os arquivos de `Desktop/` para `wwwroot/`
-- **Execute SEMPRE** após editar arquivos
-
-### `start-frontend.ps1`
-```powershell
-.\Scripts\start-frontend.ps1
-```
-- Inicia servidor web na porta 8080
-- Serve arquivos de `Frontend/wwwroot/`
-- Abre navegador automaticamente
+**Não precisa sincronizar nada!** O servidor já roda direto do `Desktop/`.
 
 ## 🎯 Estrutura de Roteamento
 
