@@ -11,6 +11,7 @@ public class Chamado
     public DateTime? DataUltimaAtualizacao { get; set; }
     
     public DateTime? SlaDataExpiracao { get; set; }
+    public int? FechadoPorId { get; set; }
     
     public int SolicitanteId { get; set; }
     public int? TecnicoId { get; set; }
@@ -26,4 +27,5 @@ public class Chamado
     
     public virtual ICollection<Comentario> Comentarios { get; set; } = new List<Comentario>();
     public virtual ICollection<Anexo> Anexos { get; set; } = new List<Anexo>();
+    public virtual Usuario? FechadoPor { get; set; }
 }

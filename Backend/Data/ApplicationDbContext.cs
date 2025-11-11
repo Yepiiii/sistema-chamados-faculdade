@@ -71,12 +71,18 @@ public class ApplicationDbContext : DbContext
                 .WithMany(s => s.Chamados)
                 .HasForeignKey(e => e.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Mapeamento para o usuário que fechou o chamado (FechadoPorId)
+            entity.HasOne(e => e.FechadoPor)
+                .WithMany()
+                .HasForeignKey(e => e.FechadoPorId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
         
         modelBuilder.Entity<Comentario>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Texto).IsRequired();
+            entity.Property(e => e.Texto).IsRequired().HasMaxLength(1000);
             entity.Property(e => e.DataCriacao).HasDefaultValueSql("GETDATE()");
             entity.Property(e => e.IsInterno).HasDefaultValue(false);
             

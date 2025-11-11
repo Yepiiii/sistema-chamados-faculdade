@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace SistemaChamados.Core.Entities;
 
@@ -16,6 +17,7 @@ public class Usuario
     
     [Required]
     [MaxLength(255)]
+    [JsonIgnore]
     public string SenhaHash { get; set; } = string.Empty;
     
     [Required]
@@ -30,8 +32,10 @@ public class Usuario
     
     public bool Ativo { get; set; } = true;
     
+    [JsonIgnore]
     public string? PasswordResetToken { get; set; }
     
+    [JsonIgnore]
     public DateTime? ResetTokenExpires { get; set; }
     
     public DateTime DataCadastro { get; set; } = DateTime.UtcNow;
