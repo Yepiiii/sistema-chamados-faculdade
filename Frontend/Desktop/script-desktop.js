@@ -1094,7 +1094,10 @@ function decodeJWT(token) {
     // Adicionar padding se necessário
     const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
     const decoded = atob(padded);
-    return JSON.parse(decoded);
+    
+    // Decodificar UTF-8 corretamente
+    const utf8Decoded = decodeURIComponent(escape(decoded));
+    return JSON.parse(utf8Decoded);
   } catch (error) {
     console.error("Erro ao decodificar JWT:", error);
     return null;
