@@ -719,18 +719,21 @@ async function initTicketDetails() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (statusResponse.ok) {
-          const statusList = await statusResponse.json();
+          const statusData = await statusResponse.json();
+          const statusList = statusData.$values || statusData; // Suporta ambos os formatos
           const statusSelect = $("#t-status-select");
-          statusSelect.innerHTML = ""; // Limpa o "Carregando..."
-          statusList.$values.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.id;
-            option.textContent = status.nome;
-            if (status.id === chamado.status.id) {
-              option.selected = true; // Marca o status atual
-            }
-            statusSelect.appendChild(option);
-          });
+          if (statusSelect) {
+            statusSelect.innerHTML = ""; // Limpa o "Carregando..."
+            statusList.forEach(status => {
+              const option = document.createElement("option");
+              option.value = status.id;
+              option.textContent = status.nome;
+              if (status.id === chamado.status.id) {
+                option.selected = true; // Marca o status atual
+              }
+              statusSelect.appendChild(option);
+            });
+          }
         }
       } catch (err) {
         console.error("Erro ao buscar lista de status:", err);
