@@ -275,12 +275,14 @@ public class UsuariosController : ControllerBase
         try
         {
             await _emailService.SendEmailAsync(usuario.Email, subject, message);
+            _logger.LogInformation("Email de redefinição de senha enviado com sucesso para {Email}", usuario.Email);
         }
         catch (Exception ex)
         {
             // Log do erro usando o logger apropriado
-            // Por segurança, não revelamos detalhes do erro para o usuário
             _logger.LogError(ex, "Erro ao enviar email de redefinição de senha para o usuário ID {UserId}", usuario.Id);
+            // TEMPORÁRIO: Retornar erro para debug
+            return StatusCode(500, new { message = "Erro ao enviar email", error = ex.Message });
         }
 
         return Ok(new { message = "Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado." });
