@@ -1089,7 +1089,11 @@ function initConfig() {
 function decodeJWT(token) {
   try {
     const payload = token.split('.')[1];
-    const decoded = atob(payload);
+    // Normalizar o Base64 URL para Base64 padrão
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    // Adicionar padding se necessário
+    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+    const decoded = atob(padded);
     return JSON.parse(decoded);
   } catch (error) {
     console.error("Erro ao decodificar JWT:", error);
