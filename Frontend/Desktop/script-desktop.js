@@ -148,13 +148,13 @@ function initLogin() {
         // Determinar redirecionamento baseado na resposta da API
         if (data.tipoUsuario === 3) { // Admin
           console.log("Redirecionando para admin-dashboard...");
-          window.location.href = "admin-dashboard-desktop.html";
+          window.location.href = "/admin-dashboard-desktop.html";
         } else if (data.tipoUsuario === 2) { // Técnico
           console.log("Redirecionando para tecnico-dashboard...");
-          window.location.href = "tecnico-dashboard.html"; // <-- Redirecionamento CORRETO para técnico
+          window.location.href = "/tecnico-dashboard.html"; // <-- Redirecionamento CORRETO para técnico
         } else { // Usuário Comum (TipoUsuario 1 ou outro)
           console.log("Redirecionando para user-dashboard...");
-          window.location.href = "user-dashboard-desktop.html";
+          window.location.href = "/user-dashboard-desktop.html";
         }
         console.log("===================");
       } else {
