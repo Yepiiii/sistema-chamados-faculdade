@@ -439,6 +439,10 @@ function atualizarKPIs(chamados) {
 async function initDashboard() {
   // Verificar se o token de autenticação existe
   const token = sessionStorage.getItem('authToken');
+  console.log("=== initDashboard ===");
+  console.log("Token no sessionStorage:", token ? "PRESENTE" : "AUSENTE");
+  console.log("Token completo:", token);
+  
   if (!token) {
     console.log("initDashboard: Token não encontrado, redirecionando para login.");
     return go("/");
