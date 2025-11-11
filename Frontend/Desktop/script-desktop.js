@@ -858,6 +858,12 @@ async function initTicketDetails() {
               
               selectTecnico.innerHTML = ""; // Limpa o "Carregando..."
 
+              // Adiciona opção "Não atribuir" (remove técnico)
+              const noAtribuirOption = document.createElement("option");
+              noAtribuirOption.value = "0";
+              noAtribuirOption.textContent = "🚫 Não atribuir (voltar para fila)";
+              selectTecnico.appendChild(noAtribuirOption);
+
               // Adiciona uma opção padrão "Selecione"
               const defaultOption = document.createElement("option");
               defaultOption.value = "";
@@ -875,6 +881,8 @@ async function initTicketDetails() {
               // Pré-seleciona o técnico atual do chamado (se houver)
               if (chamado.tecnicoId) {
                 selectTecnico.value = chamado.tecnicoId;
+              } else {
+                selectTecnico.value = "0"; // Se não tem técnico, seleciona "Não atribuir"
               }
               
             } else {
@@ -894,14 +902,22 @@ async function initTicketDetails() {
         if (btnAtualizarTecnico) {
           btnAtualizarTecnico.addEventListener("click", async () => {
             
-            const novoTecnicoId = $("#t-tecnico-select").value;
+            const novoTecnicoIdStr = $("#t-tecnico-select").value;
             // Pegar o StatusId ATUAL do chamado (que já carregamos na variável 'chamado')
             const statusIdAtual = chamado.status.id; 
 
-            if (!novoTecnicoId) {
-              toast("Por favor, selecione um técnico para atribuir.");
+            if (novoTecnicoIdStr === "") {
+              toast("Por favor, selecione uma opção.");
               return;
             }
+
+            // Se escolher "0", desatribui (tecnicoId = null)
+            // Se escolher um ID, atribui ao técnico
+            const novoTecnicoId = novoTecnicoIdStr === "0" ? null : parseInt(novoTecnicoIdStr);
+            
+            const mensagem = novoTecnicoId === null 
+              ? "Chamado desatribuído (voltará para a fila)"
+              : "Técnico atualizado";
 
             console.log(`Admin atualizando Chamado ${ticketId} - Novo Técnico ID: ${novoTecnicoId}, Status ID Atual: ${statusIdAtual}`);
 
@@ -914,18 +930,22 @@ async function initTicketDetails() {
                 },
                 body: JSON.stringify({
                   statusId: statusIdAtual, // <-- Envia o status atual
-                  tecnicoId: parseInt(novoTecnicoId) // <-- Envia o novo técnico
+                  tecnicoId: novoTecnicoId // <-- Envia o novo técnico (pode ser null)
                 })
               });
 
               if (updateResponse.ok) {
-                toast("Técnico atualizado com sucesso!");
+                toast(mensagem + " com sucesso!");
                 
                 // Atualiza o nome do técnico na tela imediatamente
                 const spanTecnicoNome = $("#t-tecnico");
                 if (spanTecnicoNome) {
-                   const select = $("#t-tecnico-select");
-                   spanTecnicoNome.textContent = select.options[select.selectedIndex].text;
+                   if (novoTecnicoId === null) {
+                     spanTecnicoNome.textContent = "Não atribuído";
+                   } else {
+                     const select = $("#t-tecnico-select");
+                     spanTecnicoNome.textContent = select.options[select.selectedIndex].text;
+                   }
                 }
                 // Recarrega os dados da página para garantir consistência
                 initTicketDetails();
