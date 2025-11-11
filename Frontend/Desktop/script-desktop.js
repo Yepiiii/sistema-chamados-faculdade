@@ -1790,6 +1790,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initEsqueciSenha();
   } else if (path.endsWith("resetar-senha-desktop.html")) {
     initResetarSenha();
+    initPasswordToggles();
   } else if (path.endsWith("admin-dashboard-desktop.html")) {
     initDashboard();
     initConfig();
@@ -1800,6 +1801,7 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   } else if (path.endsWith("cadastro-desktop.html")) {
     initRegister();
+    initPasswordToggles();
   } else if (path.endsWith("novo-ticket-desktop.html")) {
     initNewTicket();
   } else if (path.endsWith("ticket-detalhes-desktop.html")) {
@@ -1820,6 +1822,7 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   } else if (path.endsWith("admin-cadastrar-tecnico.html")) {
     initCadastrarTecnico();
+    initPasswordToggles();
     initConfig(); // Mantém o logout
   } else if (path.endsWith("admin-tickets-desktop.html")) { // <-- ADICIONAR ESTE BLOCO
     initAdminTicketsPage();
