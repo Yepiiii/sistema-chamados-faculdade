@@ -28,20 +28,40 @@ Acesse http://localhost:5246/swagger para confirmar que a API está rodando.
 
 ## 2. Testar o Desktop (Frontend Web) no localhost:8080
 
+### ⚡ Opção Rápida: Script Automatizado
+Execute na raiz do projeto:
+
+```powershell
+.\start-desktop-server.ps1
+```
+
+O script irá:
+- Verificar se a porta 8080 está livre
+- Iniciar o servidor HTTP automaticamente
+- Exibir a URL de acesso
+
 ### Opção A: Usar Live Server (VS Code)
 1. Abra `Frontend/Desktop/index.html` no VS Code
 2. Clique com botão direito → **Open with Live Server**
 3. O navegador abrirá automaticamente em http://127.0.0.1:5500 (ou porta configurada)
 
-### Opção B: Usar Python HTTP Server
-Abra um terminal PowerShell na pasta `Frontend/Desktop`:
+### Opção B: Usar Python HTTP Server (Manual)
+⚠️ **IMPORTANTE**: Execute a partir da RAIZ do projeto, não de dentro do Backend!
 
 ```powershell
+# Certifique-se de estar na raiz do projeto
+cd C:\Users\opera\sistema-chamados-faculdade
+
+# Navegue até Frontend/Desktop
 cd Frontend\Desktop
-python -m http.server 8080
+
+# Inicie o servidor HTTP (apenas localhost)
+python -m http.server 8080 --bind 127.0.0.1
 ```
 
 Acesse: http://localhost:8080
+
+**Nota sobre erros HTTP 400:** Se você ver mensagens de erro no terminal como "Bad request syntax", são normais e não afetam o funcionamento. Isso ocorre quando o navegador tenta fazer requisições HTTPS para um servidor HTTP simples. Ignore essas mensagens.
 
 ### Opção C: Usar http-server (Node.js)
 Se tiver Node.js instalado:
