@@ -280,6 +280,12 @@ public async Task<IActionResult> AtualizarChamado(int id, [FromBody] AtualizarCh
     // Atualiza TecnicoId (pode ser um ID válido ou null para desatribuir)
     chamado.TecnicoId = request.TecnicoId;
 
+    // Se desatribuiu (TecnicoId = null) e status não é "Em Andamento", volta para "Aberto"
+    if (!request.TecnicoId.HasValue && chamado.StatusId != 2)
+    {
+        chamado.StatusId = 1; // Aberto
+    }
+
     _context.Chamados.Update(chamado);
     await _context.SaveChangesAsync();
 
