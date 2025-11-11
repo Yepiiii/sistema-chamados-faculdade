@@ -54,7 +54,7 @@ applyInitialTheme();
 // ===========================================================
 
 /* URL base da API */
-const API_BASE = "http://localhost:5246"; // Backend rodando na porta 5246
+const API_BASE = "http://localhost:5246"; // Backend na porta 5246
 
 /* ===========================================================
    🚀 SEED DE DEMONSTRAÇÃO (DADOS INICIAIS)
@@ -132,6 +132,12 @@ function initLogin() {
       if (response.ok) {
         const data = await response.json();
         
+        console.log("=== DEBUG LOGIN ===");
+        console.log("Resposta da API:", data);
+        console.log("Token recebido:", data.token);
+        console.log("TipoUsuario recebido:", data.tipoUsuario);
+        console.log("Tipo de TipoUsuario:", typeof data.tipoUsuario);
+        
         // Guardar o token no sessionStorage
         if (data.token) {
           sessionStorage.setItem('authToken', data.token);
@@ -141,12 +147,16 @@ function initLogin() {
         
         // Determinar redirecionamento baseado na resposta da API
         if (data.tipoUsuario === 3) { // Admin
-          window.location.href = "admin-dashboard-desktop.html";
+          console.log("Redirecionando para admin-dashboard...");
+          window.location.href = "/admin-dashboard-desktop.html";
         } else if (data.tipoUsuario === 2) { // Técnico
-          window.location.href = "tecnico-dashboard.html"; // <-- Redirecionamento CORRETO para técnico
+          console.log("Redirecionando para tecnico-dashboard...");
+          window.location.href = "/tecnico-dashboard.html"; // <-- Redirecionamento CORRETO para técnico
         } else { // Usuário Comum (TipoUsuario 1 ou outro)
-          window.location.href = "user-dashboard-desktop.html";
+          console.log("Redirecionando para user-dashboard...");
+          window.location.href = "/user-dashboard-desktop.html";
         }
+        console.log("===================");
       } else {
         // Tratar erro de autenticação
         let errorMessage = "E-mail ou senha incorretos.";
@@ -387,11 +397,16 @@ function atualizarKPIs(chamados) {
   }
   
   const total = chamados.length;
-  const abertos = chamados.filter(c => c.statusNome.toLowerCase() === 'aberto').length;
-  const emAndamento = chamados.filter(c => c.statusNome.toLowerCase() === 'em andamento').length;
-  const resolvidos = chamados.filter(c => c.statusNome.toLowerCase() === 'fechado' || c.statusNome.toLowerCase() === 'resolvido').length;
-  const pendentes = chamados.filter(c => c.statusNome.toLowerCase() === 'aguardando resposta').length;
-  const violados = chamados.filter(c => c.statusNome.toLowerCase() === 'violado').length; // <-- 1. ADICIONE ESTA LINHA
+  // Função auxiliar para obter o nome do status de forma segura
+  const getStatusNome = (c) => {
+    return (c.statusNome || c.status?.nome || '').toLowerCase();
+  };
+  
+  const abertos = chamados.filter(c => getStatusNome(c) === 'aberto').length;
+  const emAndamento = chamados.filter(c => getStatusNome(c) === 'em andamento').length;
+  const resolvidos = chamados.filter(c => getStatusNome(c) === 'fechado' || getStatusNome(c) === 'resolvido').length;
+  const pendentes = chamados.filter(c => getStatusNome(c) === 'aguardando cliente' || getStatusNome(c) === 'aguardando resposta').length;
+  const violados = chamados.filter(c => getStatusNome(c) === 'violado' || getStatusNome(c) === 'sla violado').length;
 
   // Atualiza os elementos do DOM (ignora se não encontrar o elemento)
   (document.getElementById('kpi-total') || {}).textContent = total;
@@ -504,13 +519,12 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
       // Leitura segura das propriedades
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
-      const categoriaNome = chamado?.categoriaNome ?? 'N/A'; // Usa a propriedade direta do DTO
-      const statusNome = chamado?.statusNome ?? 'N/A';       // Usa a propriedade direta do DTO
-      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A'; // <-- 1. ADICIONAR LEITURA DA PRIORIDADE
+      const categoriaNome = chamado?.categoria?.nome ?? chamado?.categoriaNome ?? 'N/A';
+      const statusNome = chamado?.status?.nome ?? chamado?.statusNome ?? 'N/A';
+      const prioridadeNome = chamado?.prioridade?.nome ?? chamado?.prioridadeNome ?? 'N/A';
 
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
-      // 2. ATUALIZAR O LOG
       console.log(`ID Lido: ${chamadoId}, Título: ${titulo}, Categoria: ${categoriaNome}, Status: ${statusNome}, Prioridade: ${prioridadeNome}`);
 
       // 3. CORRIGIR O HTML PARA 6 COLUNAS
@@ -715,18 +729,21 @@ async function initTicketDetails() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (statusResponse.ok) {
-          const statusList = await statusResponse.json();
+          const statusData = await statusResponse.json();
+          const statusList = statusData.$values || statusData; // Suporta ambos os formatos
           const statusSelect = $("#t-status-select");
-          statusSelect.innerHTML = ""; // Limpa o "Carregando..."
-          statusList.$values.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.id;
-            option.textContent = status.nome;
-            if (status.id === chamado.status.id) {
-              option.selected = true; // Marca o status atual
-            }
-            statusSelect.appendChild(option);
-          });
+          if (statusSelect) {
+            statusSelect.innerHTML = ""; // Limpa o "Carregando..."
+            statusList.forEach(status => {
+              const option = document.createElement("option");
+              option.value = status.id;
+              option.textContent = status.nome;
+              if (status.id === chamado.status.id) {
+                option.selected = true; // Marca o status atual
+              }
+              statusSelect.appendChild(option);
+            });
+          }
         }
       } catch (err) {
         console.error("Erro ao buscar lista de status:", err);
@@ -851,6 +868,12 @@ async function initTicketDetails() {
               
               selectTecnico.innerHTML = ""; // Limpa o "Carregando..."
 
+              // Adiciona opção "Não atribuir" (remove técnico)
+              const noAtribuirOption = document.createElement("option");
+              noAtribuirOption.value = "0";
+              noAtribuirOption.textContent = "🚫 Não atribuir (voltar para fila)";
+              selectTecnico.appendChild(noAtribuirOption);
+
               // Adiciona uma opção padrão "Selecione"
               const defaultOption = document.createElement("option");
               defaultOption.value = "";
@@ -868,6 +891,8 @@ async function initTicketDetails() {
               // Pré-seleciona o técnico atual do chamado (se houver)
               if (chamado.tecnicoId) {
                 selectTecnico.value = chamado.tecnicoId;
+              } else {
+                selectTecnico.value = "0"; // Se não tem técnico, seleciona "Não atribuir"
               }
               
             } else {
@@ -887,14 +912,22 @@ async function initTicketDetails() {
         if (btnAtualizarTecnico) {
           btnAtualizarTecnico.addEventListener("click", async () => {
             
-            const novoTecnicoId = $("#t-tecnico-select").value;
+            const novoTecnicoIdStr = $("#t-tecnico-select").value;
             // Pegar o StatusId ATUAL do chamado (que já carregamos na variável 'chamado')
             const statusIdAtual = chamado.status.id; 
 
-            if (!novoTecnicoId) {
-              toast("Por favor, selecione um técnico para atribuir.");
+            if (novoTecnicoIdStr === "") {
+              toast("Por favor, selecione uma opção.");
               return;
             }
+
+            // Se escolher "0", desatribui (tecnicoId = null)
+            // Se escolher um ID, atribui ao técnico
+            const novoTecnicoId = novoTecnicoIdStr === "0" ? null : parseInt(novoTecnicoIdStr);
+            
+            const mensagem = novoTecnicoId === null 
+              ? "Chamado desatribuído (voltará para a fila)"
+              : "Técnico atualizado";
 
             console.log(`Admin atualizando Chamado ${ticketId} - Novo Técnico ID: ${novoTecnicoId}, Status ID Atual: ${statusIdAtual}`);
 
@@ -907,18 +940,22 @@ async function initTicketDetails() {
                 },
                 body: JSON.stringify({
                   statusId: statusIdAtual, // <-- Envia o status atual
-                  tecnicoId: parseInt(novoTecnicoId) // <-- Envia o novo técnico
+                  tecnicoId: novoTecnicoId // <-- Envia o novo técnico (pode ser null)
                 })
               });
 
               if (updateResponse.ok) {
-                toast("Técnico atualizado com sucesso!");
+                toast(mensagem + " com sucesso!");
                 
                 // Atualiza o nome do técnico na tela imediatamente
                 const spanTecnicoNome = $("#t-tecnico");
                 if (spanTecnicoNome) {
-                   const select = $("#t-tecnico-select");
-                   spanTecnicoNome.textContent = select.options[select.selectedIndex].text;
+                   if (novoTecnicoId === null) {
+                     spanTecnicoNome.textContent = "Não atribuído";
+                   } else {
+                     const select = $("#t-tecnico-select");
+                     spanTecnicoNome.textContent = select.options[select.selectedIndex].text;
+                   }
                 }
                 // Recarrega os dados da página para garantir consistência
                 initTicketDetails();
@@ -1153,9 +1190,9 @@ function renderTabelaFila(chamados, tbody) {
       // Leitura segura das propriedades
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
-      const categoriaNome = chamado?.categoriaNome ?? 'N/A';
-      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A';
-      const dataAbertura = 'Hoje'; // TODO: Adicionar ao DTO quando disponível
+      const categoriaNome = chamado?.categoria?.nome ?? chamado?.categoriaNome ?? 'N/A';
+      const prioridadeNome = chamado?.prioridade?.nome ?? chamado?.prioridadeNome ?? 'N/A';
+      const dataAbertura = chamado?.dataAbertura ? new Date(chamado.dataAbertura).toLocaleDateString('pt-BR') : 'N/A';
 
       tr.innerHTML = `
         <td>${chamadoId === '#ERR' ? '#ERR' : `#${chamadoId}`}</td>
@@ -1204,9 +1241,9 @@ function renderTabelaMeusChamados(chamados, tbody) {
       // Leitura segura das propriedades
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
-      const categoriaNome = chamado?.categoriaNome ?? 'N/A';
-      const statusNome = chamado?.statusNome ?? 'N/A';
-      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A';
+      const categoriaNome = chamado?.categoria?.nome ?? chamado?.categoriaNome ?? 'N/A';
+      const statusNome = chamado?.status?.nome ?? chamado?.statusNome ?? 'N/A';
+      const prioridadeNome = chamado?.prioridade?.nome ?? chamado?.prioridadeNome ?? 'N/A';
 
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
@@ -1763,6 +1800,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initEsqueciSenha();
   } else if (path.endsWith("resetar-senha-desktop.html")) {
     initResetarSenha();
+    initPasswordToggles();
   } else if (path.endsWith("admin-dashboard-desktop.html")) {
     initDashboard();
     initConfig();
@@ -1773,6 +1811,7 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   } else if (path.endsWith("cadastro-desktop.html")) {
     initRegister();
+    initPasswordToggles();
   } else if (path.endsWith("novo-ticket-desktop.html")) {
     initNewTicket();
   } else if (path.endsWith("ticket-detalhes-desktop.html")) {
@@ -1793,6 +1832,7 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
   } else if (path.endsWith("admin-cadastrar-tecnico.html")) {
     initCadastrarTecnico();
+    initPasswordToggles();
     initConfig(); // Mantém o logout
   } else if (path.endsWith("admin-tickets-desktop.html")) { // <-- ADICIONAR ESTE BLOCO
     initAdminTicketsPage();
