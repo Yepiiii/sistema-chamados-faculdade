@@ -357,9 +357,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Sensitive configuration files
-appsettings.json
+# Sensitive configuration files - Backend appsettings.json now safe to commit (no sensitive data)
 appsettings.*.json
+!appsettings.json
 !appsettings.example.json
 
 # APK files
