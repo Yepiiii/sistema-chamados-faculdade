@@ -1,6 +1,41 @@
-# Scripts de banco â€” how to apply
+# Scripts de Banco de Dados
 
-Este arquivo explica como aplicar o script T-SQL gerado por EF Migrations (`align-db-schema-sqlserver.sql`) e tambÃ©m como exportar/importar uma cÃ³pia completa do banco (bacpac / bak) via SSMS / SqlPackage.
+Este diretÃ³rio contÃ©m scripts para gerenciar o banco de dados SistemaChamados.
+
+---
+
+## ðŸ†• Execute-CreateDatabase.ps1 (NOVO!)
+
+**Script PowerShell automatizado para criar o banco de dados em qualquer PC.**
+
+### Como usar:
+
+```powershell
+# Uso bÃ¡sico (localhost)
+.\Execute-CreateDatabase.ps1
+
+# Com SQL Server Express
+.\Execute-CreateDatabase.ps1 -ServerName ".\SQLEXPRESS"
+
+# Com servidor/instÃ¢ncia especÃ­fica
+.\Execute-CreateDatabase.ps1 -ServerName "SERVIDOR\INSTANCIA"
+```
+
+### O que faz:
+- âœ… Cria o banco SistemaChamados automaticamente
+- âœ… Executa o CreateDatabaseSchema.sql
+- âœ… Contorna problemas de caminhos especÃ­ficos
+- âœ… Verifica conexÃ£o e permissÃµes
+- âœ… Lista tabelas criadas
+- âœ… Funciona em qualquer PC com SQL Server
+
+**[Ver documentaÃ§Ã£o completa abaixo](#execute-createdatabaseps1-documentaÃ§Ã£o)**
+
+---
+
+## Scripts de Migrations â€” how to apply
+
+Este arquivo tambÃ©m explica como aplicar o script T-SQL gerado por EF Migrations (`align-db-schema-sqlserver.sql`) e como exportar/importar uma cÃ³pia completa do banco (bacpac / bak) via SSMS / SqlPackage.
 
 IMPORTANTE: sempre faÃ§a backup do banco antes de aplicar scripts em ambientes de produÃ§Ã£o.
 
@@ -97,3 +132,141 @@ Se quiser, posso:
 - Fornecer um PowerShell script pronto que execute `SqlPackage.exe` com parÃ¢metros que vocÃª sÃ³ precise ajustar.
 
 Selecione o que prefere que eu faÃ§a a seguir: gerar o script PowerShell para export .bacpac, gerar instruÃ§Ãµes T-SQL adicionais, ou limpar o `appsettings.json` temporÃ¡rio criado no repositÃ³rio.
+
+---
+
+# Execute-CreateDatabase.ps1 (Documentação)
+
+## Visão Geral
+
+Script PowerShell para criar o banco de dados SistemaChamados a partir do arquivo `CreateDatabaseSchema.sql` em qualquer PC.
+
+## Pré-requisitos
+
+- SQL Server instalado (qualquer versão)
+- SQL Server Command Line Tools (sqlcmd)
+- PowerShell 5.1 ou superior
+- Permissões de administrador no SQL Server
+
+## Uso
+
+### Básico (SQL Server padrão - localhost)
+
+``powershell
+cd Backend\Scripts
+.\Execute-CreateDatabase.ps1
+``
+
+### Com SQL Server Express
+
+``powershell
+.\Execute-CreateDatabase.ps1 -ServerName ".\SQLEXPRESS"
+``
+
+### Com servidor remoto
+
+``powershell
+.\Execute-CreateDatabase.ps1 -ServerName "SERVIDOR\INSTANCIA" -DatabaseName "SistemaChamados"
+``
+
+## Parâmetros
+
+- **ServerName** (opcional): Nome do servidor SQL Server
+  - Padrão: `localhost`
+  - Exemplos: `localhost`, `.\SQLEXPRESS`, `192.168.1.100`, `SERVIDOR\SQLEXPRESS`
+
+- **DatabaseName** (opcional): Nome do banco de dados a ser criado
+  - Padrão: `SistemaChamados`
+
+## Processo de Execução
+
+1. ? Verifica se o arquivo `CreateDatabaseSchema.sql` existe
+2. ? Testa a conexão com o SQL Server
+3. ? Verifica se o banco já existe (pergunta se quer deletar)
+4. ? Cria o banco de dados
+5. ? Extrai apenas a parte de criação de tabelas do SQL
+6. ? Executa o script modificado
+7. ? Lista as tabelas criadas
+8. ? Limpa arquivos temporários
+
+## Resultado Esperado
+
+``
+=========================================
+  Script de Criação do Banco de Dados
+=========================================
+
+?? Arquivo SQL encontrado
+? sqlcmd encontrado
+?? Testando conexão com SQL Server: localhost
+? Conexão bem-sucedida
+???  Criando banco de dados 'SistemaChamados'...
+? Banco 'SistemaChamados' criado com sucesso
+??  Executando criação de tabelas...
+? Tabelas criadas com sucesso
+
+? Tabelas criadas no banco 'SistemaChamados':
+   ?? __EFMigrationsHistory
+   ?? Anexos
+   ?? Categorias
+   ?? Chamados
+   ?? Comentarios
+   ?? Prioridades
+   ?? Status
+   ?? Usuarios
+
+=========================================
+  ? Banco de dados criado com sucesso!
+=========================================
+``
+
+## Solução de Problemas
+
+### Erro: sqlcmd não encontrado
+
+Instale o SQL Server Command Line Tools:
+https://docs.microsoft.com/en-us/sql/tools/sqlcmd-utility
+
+### Erro: Não foi possível conectar ao servidor SQL
+
+- Verifique se o SQL Server está rodando
+- Verifique o nome do servidor/instância
+- Verifique suas permissões
+
+### Erro: Banco já existe
+
+O script perguntará se você quer deletar e recriar, ou delete manualmente:
+
+``sql
+USE master;
+ALTER DATABASE [SistemaChamados] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [SistemaChamados];
+``
+
+## Próximos Passos
+
+### 1. Popular com dados iniciais
+
+``powershell
+cd ..\
+dotnet run
+``
+
+O backend detectará o banco vazio e executará o seeding automático.
+
+### 2. Ou restaurar um backup
+
+``sql
+RESTORE DATABASE [SistemaChamados] 
+FROM DISK = 'C:\Backups\SistemaChamados_20251111_180552.bak'
+WITH REPLACE;
+``
+
+## Vantagens deste Script
+
+- ?? **Automatizado**: Executa todo o processo com um comando
+- ?? **Flexível**: Funciona com qualquer instância SQL Server
+- ??? **Seguro**: Pergunta antes de deletar banco existente
+- ?? **Informativo**: Mostra progresso e resultado detalhado
+- ?? **Limpo**: Remove arquivos temporários automaticamente
+- ? **Confiável**: Verifica cada etapa antes de prosseguir
