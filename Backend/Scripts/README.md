@@ -4,8 +4,27 @@ Este arquivo explica como aplicar o script T-SQL gerado por EF Migrations (`alig
 
 IMPORTANTE: sempre faça backup do banco antes de aplicar scripts em ambientes de produção.
 
-## 1) Aplicar o script T-SQL (recomendado para alinhar schema)
-Arquivo: `Backend/Scripts/align-db-schema-sqlserver.sql`
+---
+
+## 🚀 MÉTODO RÁPIDO (Recomendado)
+
+### Aplicar Schema Alignment com PowerShell
+
+Execute o script automatizado:
+
+```powershell
+.\Backend\Scripts\apply-schema-alignment.ps1
+```
+
+O script irá:
+1. Solicitar credenciais do SQL Server
+2. Aplicar todas as alterações de schema necessárias
+3. Confirmar sucesso ou erro
+
+---
+
+## 1) Aplicar o script T-SQL manualmente (SSMS)
+Arquivo: `Backend/Scripts/align-db-schema.sql`
 
 1. Abra o SQL Server Management Studio (SSMS) e conecte-se ao servidor de destino (por exemplo, `localhost`).
 2. Crie ou selecione o banco de dados alvo. Se preferir criar via script, o script é idempotente e cria tabelas quando necessário.
