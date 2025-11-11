@@ -57,7 +57,7 @@ if ($LASTEXITCODE -eq 0) {
         Write-Host "1. Transfira o APK para seu celular Android" -ForegroundColor Yellow
         Write-Host "2. Instale o APK no dispositivo" -ForegroundColor Yellow
         Write-Host "3. Certifique-se que o Backend esta em:" -ForegroundColor Yellow
-        Write-Host "   http://192.168.1.6:5246/api/" -ForegroundColor White
+        Write-Host "   http://192.168.1.132:5246/api/" -ForegroundColor White
         Write-Host ""
     } else {
         Write-Host "ERRO: APK nao encontrado!" -ForegroundColor Red

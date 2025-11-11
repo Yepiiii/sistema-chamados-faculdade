@@ -17,11 +17,29 @@ namespace SistemaChamados.Mobile.Helpers;
 /// </summary>
 public static class StatusConstants
 {
+    // IDs dos Status
     public const int Aberto = 1;
     public const int EmAndamento = 2;
     public const int Aguardando = 3;
     public const int Resolvido = 4;
     public const int Fechado = 5;
+    
+    // Status especial: SLA Violado (não existe como status separado no banco)
+    // É determinado pela lógica: SlaDataExpiracao < DateTime.Now && !Fechado
+    public const int Violado = -1; // ID fictício para lógica de UI
+    
+    /// <summary>
+    /// Nomes dos Status (para comparações case-insensitive)
+    /// </summary>
+    public static class Nomes
+    {
+        public const string Aberto = "Aberto";
+        public const string EmAndamento = "Em Andamento";
+        public const string Aguardando = "Aguardando Cliente";
+        public const string Resolvido = "Resolvido";
+        public const string Fechado = "Fechado";
+        public const string Violado = "SLA Violado";
+    }
 }
 
 
