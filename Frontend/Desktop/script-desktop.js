@@ -509,13 +509,12 @@ function renderTicketsTable(chamados, tbody) { // Recebe a lista 'chamados' dire
       // Leitura segura das propriedades
       const chamadoId = chamado?.id ?? '#ERR';
       const titulo = chamado?.titulo ?? 'Sem Título';
-      const categoriaNome = chamado?.categoriaNome ?? 'N/A'; // Usa a propriedade direta do DTO
-      const statusNome = chamado?.statusNome ?? 'N/A';       // Usa a propriedade direta do DTO
-      const prioridadeNome = chamado?.prioridadeNome ?? 'N/A'; // <-- 1. ADICIONAR LEITURA DA PRIORIDADE
+      const categoriaNome = chamado?.categoria?.nome ?? chamado?.categoriaNome ?? 'N/A';
+      const statusNome = chamado?.status?.nome ?? chamado?.statusNome ?? 'N/A';
+      const prioridadeNome = chamado?.prioridade?.nome ?? chamado?.prioridadeNome ?? 'N/A';
 
       const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
 
-      // 2. ATUALIZAR O LOG
       console.log(`ID Lido: ${chamadoId}, Título: ${titulo}, Categoria: ${categoriaNome}, Status: ${statusNome}, Prioridade: ${prioridadeNome}`);
 
       // 3. CORRIGIR O HTML PARA 6 COLUNAS

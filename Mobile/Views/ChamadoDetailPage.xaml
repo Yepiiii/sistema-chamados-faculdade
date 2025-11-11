@@ -42,7 +42,7 @@
       <Frame Padding="24" CornerRadius="20" BackgroundColor="{DynamicResource White}" BorderColor="{DynamicResource Gray200}">
         <VerticalStackLayout Spacing="20">
           <!-- Badges de Status e Prioridade com indicador de encerramento -->
-          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
             
             <!-- Status Badge -->
     <Border Grid.Row="0" Grid.Column="0" 
@@ -103,8 +103,42 @@
               </VerticalStackLayout>
             </HorizontalStackLayout>
 
-            <!-- Data de Encerramento -->
+            <!-- Data de Última Atualização -->
             <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+                                    IsVisible="{Binding Chamado.DataUltimaAtualizacao, Converter={StaticResource IsNotNullConverter}}">
+              <Label Text="🔄" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Última Atualização" 
+                       FontSize="12" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Gray600}" />
+                <Label Text="{Binding Chamado.DataUltimaAtualizacao, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
+                       FontSize="14"
+                       TextColor="{DynamicResource Gray700}" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <!-- Prazo SLA -->
+            <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+                                    IsVisible="{Binding Chamado.SlaDataExpiracao, Converter={StaticResource IsNotNullConverter}}">
+              <Label Text="⏱️" FontSize="16" VerticalOptions="Center" />
+              <VerticalStackLayout Spacing="2">
+                <Label Text="Prazo para Resolução (SLA)" 
+                       FontSize="12" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Gray600}" />
+                <Label Text="{Binding Chamado.SlaDataExpiracao, Converter={StaticResource UtcToLocalConverter}, StringFormat='{0:dd/MM/yyyy HH:mm}'}"
+                       FontSize="14"
+                       TextColor="{DynamicResource Gray700}" />
+                <Label Text="{Binding Chamado.SlaTempoRestante}"
+                       FontSize="12"
+                       TextColor="{Binding Chamado.SlaCorAlerta}" 
+                       FontAttributes="Bold" />
+              </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <!-- Data de Encerramento -->
+            <HorizontalStackLayout Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
                                     IsVisible="{Binding HasFechamento}">
               <Label Text="✅" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
@@ -119,7 +153,7 @@
             </HorizontalStackLayout>
 
             <!-- Fechado Por (Quem encerrou o chamado) -->
-            <HorizontalStackLayout Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
+            <HorizontalStackLayout Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Spacing="8"
                                     IsVisible="{Binding Chamado.HasFechadoPor}">
               <Label Text="👤" FontSize="16" VerticalOptions="Center" />
               <VerticalStackLayout Spacing="2">
@@ -143,6 +177,22 @@
                    TextColor="{DynamicResource PrimaryDarkText}" />
             <Label Text="{Binding Chamado.SolicitanteDisplay}"
                    TextColor="{DynamicResource Gray600}" />
+          </VerticalStackLayout>
+
+          <!-- Categoria -->
+          <VerticalStackLayout Spacing="4">
+            <Label Text="Categoria"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   TextColor="{DynamicResource PrimaryDarkText}" />
+            <Label Text="{Binding Chamado.Categoria.Nome, FallbackValue='N/A', TargetNullValue='N/A'}"
+                   FontSize="14"
+                   TextColor="{DynamicResource Gray700}" />
+            <Label Text="{Binding Chamado.Categoria.Descricao}"
+                   FontSize="12"
+                   TextColor="{DynamicResource Gray500}"
+                   LineBreakMode="WordWrap" 
+                   IsVisible="{Binding Chamado.Categoria.Descricao, Converter={StaticResource IsNotNullConverter}}" />
           </VerticalStackLayout>
 
           <!-- Técnico Atribuído -->
