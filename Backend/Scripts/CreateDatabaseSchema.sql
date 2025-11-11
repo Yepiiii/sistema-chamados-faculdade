@@ -391,6 +391,75 @@ ON DELETE SET NULL
 GO
 ALTER TABLE [dbo].[Usuarios] CHECK CONSTRAINT [FK_Usuarios_Categorias_EspecialidadeCategoriaId]
 GO
+
+-- ========================================
+-- DADOS INICIAIS (SEED)
+-- ========================================
+
+-- Inserir Categorias
+SET IDENTITY_INSERT [dbo].[Categorias] ON
+GO
+INSERT INTO [dbo].[Categorias] ([Id], [Nome], [Descricao], [Ativo]) VALUES
+(1, 'Hardware', 'Problemas relacionados a equipamentos e componentes físicos', 1),
+(2, 'Software', 'Problemas relacionados a aplicativos e sistemas operacionais', 1),
+(3, 'Redes', 'Problemas de conectividade e infraestrutura de rede', 1),
+(4, 'Segurança', 'Questões de segurança da informação e proteção de dados', 1)
+GO
+SET IDENTITY_INSERT [dbo].[Categorias] OFF
+GO
+
+-- Inserir Prioridades
+SET IDENTITY_INSERT [dbo].[Prioridades] ON
+GO
+INSERT INTO [dbo].[Prioridades] ([Id], [Nome], [Nivel], [Descricao], [TempoRespostaHoras], [Ativo], [DataCadastro]) VALUES
+(1, 'Baixa', 1, 'Assuntos que podem aguardar', 48, 1, GETDATE()),
+(2, 'Média', 2, 'Assuntos com importância moderada', 24, 1, GETDATE()),
+(3, 'Alta', 3, 'Assuntos urgentes que necessitam atenção imediata', 8, 1, GETDATE()),
+(4, 'Crítica', 4, 'Problemas críticos que impedem operações essenciais', 2, 1, GETDATE())
+GO
+SET IDENTITY_INSERT [dbo].[Prioridades] OFF
+GO
+
+-- Inserir Status
+SET IDENTITY_INSERT [dbo].[Status] ON
+GO
+INSERT INTO [dbo].[Status] ([Id], [Nome], [Descricao], [Ativo], [DataCadastro]) VALUES
+(1, 'Aberto', 'Chamado recém criado, aguardando atribuição', 1, GETDATE()),
+(2, 'Em Andamento', 'Chamado sendo trabalhado por um técnico', 1, GETDATE()),
+(3, 'Aguardando Cliente', 'Aguardando retorno do solicitante', 1, GETDATE()),
+(4, 'Resolvido', 'Chamado resolvido e aguardando confirmação', 1, GETDATE()),
+(5, 'Fechado', 'Chamado finalizado e confirmado pelo solicitante', 1, GETDATE())
+GO
+SET IDENTITY_INSERT [dbo].[Status] OFF
+GO
+
+-- Inserir Usuário Admin Padrão
+-- Email: admin@neurohelp.com.br
+-- Senha: Admin@123 (hash BCrypt)
+SET IDENTITY_INSERT [dbo].[Usuarios] ON
+GO
+INSERT INTO [dbo].[Usuarios] 
+    ([Id], [NomeCompleto], [Email], [SenhaHash], [TipoUsuario], [IsInterno], [Ativo], [DataCadastro])
+VALUES 
+    (1, 'Administrador NeuroHelp', 'admin@neurohelp.com.br', '$2a$11$XvVyL5hKqF9lqDQ3N5h5XuZrPKxKjF3xN7tJFQxVqwGfY8J3X5.C2', 3, 1, 1, GETDATE())
+GO
+SET IDENTITY_INSERT [dbo].[Usuarios] OFF
+GO
+
+PRINT '========================================';
+PRINT 'Banco de dados criado com sucesso!';
+PRINT '';
+PRINT 'Dados iniciais inseridos:';
+PRINT '- 4 Categorias (Hardware, Software, Redes, Seguranca)';
+PRINT '- 4 Prioridades (Baixa, Media, Alta, Critica)';
+PRINT '- 5 Status (Aberto, Em Andamento, Aguardando Resposta, Resolvido, Fechado)';
+PRINT '';
+PRINT 'Usuario Admin criado:';
+PRINT '  Email: admin@neurohelp.com.br';
+PRINT '  Senha: Admin@123';
+PRINT '========================================';
+GO
+
 USE [master]
 GO
 ALTER DATABASE [SistemaChamados] SET  READ_WRITE 

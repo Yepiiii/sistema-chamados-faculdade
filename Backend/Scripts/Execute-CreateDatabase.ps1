@@ -93,7 +93,18 @@ Write-Success "Script modificado salvo"
 
 Write-Info "Executando criacao de tabelas..."
 try {
-    sqlcmd -S $ServerName -E -i $tempScriptPath | Out-Null
+    $output = sqlcmd -S $ServerName -E -i $tempScriptPath 2>&1
+    
+    # Mostrar output do sqlcmd
+    if ($output) {
+        Write-Info "Output do SQL:"
+        $output | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+    }
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Err "Erro ao executar script (Exit Code: $LASTEXITCODE)"
+        exit 1
+    }
     Write-Success "Tabelas criadas com sucesso"
 } catch {
     Write-Err "Erro ao executar script"
