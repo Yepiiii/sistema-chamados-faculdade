@@ -62,6 +62,11 @@ body {
   margin-bottom: 36px;
 }
 
+/* Troca o logo para a versão clara quando em modo escuro */
+body.dark-mode .sidebar .logo[src*="neurohelp-logo.png"] {
+  content: url('img/neurohelp-logo2.png');
+}
+
 .sidebar nav {
   display: flex;
   flex-direction: column;
@@ -344,6 +349,17 @@ textarea:focus {
   font-size: 22px;
   font-weight: 800;
   margin-bottom: 10px;
+}
+
+.auth-logo {
+  width: 180px;
+  height: auto;
+}
+
+/* Usa logo claro por padrão em páginas de autenticação (compatível com dark mode)
+   e troca para logo escuro apenas no tema claro */
+body:not(.dark-mode) .auth-logo[src*="neurohelp-logo2.png"] {
+  content: url('img/neurohelp-logo.png');
 }
 
 /* ==========================================================

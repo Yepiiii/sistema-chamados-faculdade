@@ -259,29 +259,62 @@ public class UsuariosController : ControllerBase
         _context.Usuarios.Update(usuario);
         await _context.SaveChangesAsync();
 
-        // 3. Montar o link de redefinição (a URL do seu frontend Desktop)
-        var resetLink = $"http://localhost:8080/resetar-senha-desktop.html?token={token}";
-
-        // 4. Enviar o e-mail usando o IEmailService
+        // 3. Verificar o tipo de usuário para determinar o formato do email
+        // TipoUsuario 1 = Cliente (usa Mobile - precisa do token no corpo)
+        // TipoUsuario 2 = Técnico (usa Desktop - usa o link)
+        // TipoUsuario 3 = Admin (usa Desktop - usa o link)
         var subject = "Redefinição de Senha - Sistema de Chamados";
-        var message = $@"
-            <h1>Redefinição de Senha</h1>
-            <p>Olá, {usuario.NomeCompleto},</p>
-            <p>Você solicitou a redefinição da sua senha. Por favor, clique no link abaixo para criar uma nova senha:</p>
-            <a href='{resetLink}'>Redefinir Minha Senha</a>
-            <p>Se você não solicitou isso, por favor, ignore este e-mail.</p>
-            <p>Este link expirará em 30 minutos.</p>";
+        string message;
+
+        if (usuario.TipoUsuario == 1)
+        {
+            // Email para Clientes (Mobile) - inclui o token no corpo
+            message = $@"
+                <h1>Redefinição de Senha</h1>
+                <p>Olá, {usuario.NomeCompleto},</p>
+                <p>Você solicitou a redefinição da sua senha no aplicativo mobile.</p>
+                <p>Use o código abaixo no aplicativo para criar uma nova senha:</p>
+                <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; font-family: monospace; font-size: 14px; word-break: break-all;'>
+                    <strong>Código de Redefinição:</strong><br/>
+                    {token}
+                </div>
+                <p><strong>Instruções:</strong></p>
+                <ol>
+                    <li>Abra o aplicativo Sistema de Chamados</li>
+                    <li>Vá para a tela de redefinição de senha</li>
+                    <li>Cole o código acima no campo indicado</li>
+                    <li>Digite sua nova senha</li>
+                </ol>
+                <p>Se você não solicitou isso, por favor, ignore este e-mail.</p>
+                <p><em>Este código expirará em 30 minutos.</em></p>";
+        }
+        else
+        {
+            // Email para Técnicos e Admins (Desktop) - usa o link
+            var resetLink = $"http://localhost:8080/resetar-senha-desktop.html?token={token}";
+            message = $@"
+                <h1>Redefinição de Senha</h1>
+                <p>Olá, {usuario.NomeCompleto},</p>
+                <p>Você solicitou a redefinição da sua senha. Por favor, clique no link abaixo para criar uma nova senha:</p>
+                <p style='margin: 20px 0;'>
+                    <a href='{resetLink}' style='background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;'>Redefinir Minha Senha</a>
+                </p>
+                <p>Ou copie e cole o seguinte link no seu navegador:</p>
+                <p style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; word-break: break-all;'>{resetLink}</p>
+                <p>Se você não solicitou isso, por favor, ignore este e-mail.</p>
+                <p><em>Este link expirará em 30 minutos.</em></p>";
+        }
 
         try
         {
             await _emailService.SendEmailAsync(usuario.Email, subject, message);
-            _logger.LogInformation("Email de redefinição de senha enviado com sucesso para {Email}", usuario.Email);
+            var tipoUsuarioNome = usuario.TipoUsuario == 1 ? "Cliente/Mobile" : usuario.TipoUsuario == 2 ? "Técnico/Desktop" : "Admin/Desktop";
+            _logger.LogInformation("Email de redefinição de senha enviado com sucesso para {Email} (Tipo: {TipoUsuario})", usuario.Email, tipoUsuarioNome);
         }
         catch (Exception ex)
         {
             // Log do erro usando o logger apropriado
             _logger.LogError(ex, "Erro ao enviar email de redefinição de senha para o usuário ID {UserId}", usuario.Id);
-            // TEMPORÁRIO: Retornar erro para debug
             return StatusCode(500, new { message = "Erro ao enviar email", error = ex.Message });
         }
 

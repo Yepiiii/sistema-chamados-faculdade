@@ -40,8 +40,8 @@ builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 // Configurar HttpClient para o OpenAIService
 builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
 
-// Configura a seção EmailSettings do appsettings.json
-builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+// Configura a seção Email do appsettings.json
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 
 // Registra o EmailService para injeção de dependência
 builder.Services.AddTransient<IEmailService, EmailService>();
