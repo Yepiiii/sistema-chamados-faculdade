@@ -125,7 +125,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // context.Database.Migrate(); // TEMPORARIAMENTE COMENTADO - Script SQL será aplicado manualmente
+    context.Database.Migrate(); // Aplica migrations pendentes
     DatabaseSeed.Seed(context); // Popula dados iniciais
 }
 
