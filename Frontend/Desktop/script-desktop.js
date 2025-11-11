@@ -53,8 +53,8 @@ applyInitialTheme();
 // FIM - LÓGICA DE TEMA (DARK MODE)
 // ===========================================================
 
-/* URL base da API */
-const API_BASE = "http://localhost:5246"; // Backend na porta 5246
+/* URL base da API - Definida em config.js */
+// const API_BASE é carregado de config.js automaticamente
 
 /* ===========================================================
    🚀 SEED DE DEMONSTRAÇÃO (DADOS INICIAIS)
