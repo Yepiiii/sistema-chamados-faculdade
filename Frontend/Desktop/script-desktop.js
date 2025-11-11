@@ -164,7 +164,14 @@ function initLogin() {
         // Redirecionar após pequeno delay para garantir que o toast apareça
         setTimeout(() => {
           console.log("Executando redirecionamento agora...");
+          console.log("Tentando window.location.href =", redirectUrl);
           window.location.href = redirectUrl;
+          
+          // Fallback caso window.location.href não funcione
+          setTimeout(() => {
+            console.log("FALLBACK: Usando window.location.replace()");
+            window.location.replace(redirectUrl);
+          }, 100);
         }, 500);
       } else {
         // Tratar erro de autenticação
