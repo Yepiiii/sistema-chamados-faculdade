@@ -31,4 +31,3 @@ const API_BASE = API_CONFIG.apiUrl;
 
 console.log(`🔧 Ambiente: ${environment}`);
 console.log(`🌐 API URL: ${API_BASE}`);
-console.log(`🌐 API URL: ${API_BASE}`);
