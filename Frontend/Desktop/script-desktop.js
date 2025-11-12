@@ -483,11 +483,16 @@ async function initDashboard() {
       console.error("initDashboard: Não foi possível obter o ID do usuário (solicitante) do token.");
       return go("/"); // Falha ao ler o token, força o login
     }
+  } else {
+    console.log("initDashboard: Página de admin detectada. Buscando TODOS os chamados.");
   }
+  
+  console.log("🔍 URL da requisição:", url);
   // --- FIM DA NOVA LÓGICA DE FILTRO ---
 
   try {
     // Fazer chamada para a API (agora com a URL correta)
+    console.log("📡 Fazendo requisição para:", url);
     const response = await fetch(url, { // <-- Usa a URL modificada
       method: 'GET',
       headers: {
@@ -496,13 +501,18 @@ async function initDashboard() {
       }
     });
     
+    console.log("📥 Status da resposta:", response.status, response.statusText);
+    
     // Verificar se a resposta é bem-sucedida
     if (response.ok) {
       const responseData = await response.json();
-      console.log("initDashboard: Dados recebidos da API:", responseData);
+      console.log("✅ initDashboard: Dados recebidos da API:", responseData);
+      console.log("📊 Tipo de dados:", typeof responseData, "É array?", Array.isArray(responseData));
       
       // Extrai a lista de chamados de '$values' se existir, senão usa a resposta direta
       const chamados = responseData.$values || responseData; 
+      console.log("📋 Chamados extraídos:", chamados.length, "itens");
+      
       atualizarKPIs(chamados); // <-- ADICIONE ESTA LINHA
       
       // Identificar o tbody da tabela na página atual
