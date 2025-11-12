@@ -6,13 +6,12 @@ const config = {
     apiUrl: 'http://localhost:5246'
   },
   
-  // Para produção (Vercel + IP público HTTP)
-  // ⚠️ IMPORTANTE: Navegadores bloqueiam HTTP em sites HTTPS (Mixed Content)
-  // SOLUÇÃO: Usuários devem permitir "conteúdo inseguro" no navegador
-  // Ou use ngrok (HTTPS) como fallback
+  // Para produção (Vercel usa HTTPS obrigatoriamente)
+  // Frontend: Usa ngrok HTTPS (compatível com Vercel HTTPS)
+  // Mobile APK: Usa IP público HTTP (sem restrição Mixed Content)
   production: {
-    apiUrl: 'http://172.177.19.255:5000',
-    fallbackUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev'
+    apiUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev',
+    fallbackUrl: 'http://172.177.19.255:5000'
   }
 };
 
