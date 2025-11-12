@@ -668,6 +668,82 @@ async function initNewTicket() {
 /* ===========================================================
    🧩 DETALHES DO CHAMADO (Atualizado para API v2)
    =========================================================== */
+// Função auxiliar para APENAS carregar/atualizar dados do chamado (SEM adicionar event listeners)
+async function loadTicketData() {
+  const ticketId = sessionStorage.getItem('currentTicketId');
+  const token = sessionStorage.getItem('authToken');
+  
+  if (!ticketId || !token) {
+    console.error("loadTicketData: ticketId ou token ausente");
+    return;
+  }
+
+  try {
+    const url = `${API_BASE}/api/chamados/${ticketId}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const chamado = await response.json();
+      
+      // Atualizar APENAS os elementos visuais (sem re-adicionar listeners)
+      $("#t-id").textContent = `#${chamado?.id ?? 'N/A'}`;
+      $("#t-title").textContent = chamado?.titulo ?? 'Sem Título';
+      $("#t-category").textContent = chamado?.categoria?.nome ?? 'N/A';
+      $("#t-priority").textContent = chamado?.prioridade?.nome ?? 'N/A';
+      $("#t-solicitante").textContent = chamado?.solicitante?.nomeCompleto ?? 'Desconhecido';
+      
+      const tecnicoElement = $("#t-tecnico"); 
+      if (tecnicoElement) {
+        tecnicoElement.textContent = chamado?.tecnico?.nomeCompleto ?? 'Não atribuído';
+      }
+
+      const statusNome = chamado?.status?.nome ?? 'N/A';
+      const statusClass = String(statusNome).toLowerCase().replace(/\s+/g, '-');
+      const statusElement = $("#t-status"); 
+      if (statusElement) {
+        statusElement.innerHTML = `<span class="badge status-${statusClass}">${statusNome}</span>`;
+      }
+      
+      try {
+        $("#t-data-abertura").textContent = new Date(chamado.dataAbertura).toLocaleDateString('pt-BR');
+        $("#t-data-atualizacao").textContent = chamado.dataUltimaAtualizacao
+          ? new Date(chamado.dataUltimaAtualizacao).toLocaleDateString('pt-BR')
+          : 'N/A';
+        $("#t-sla-expiracao").textContent = chamado.slaDataExpiracao
+          ? new Date(chamado.slaDataExpiracao).toLocaleDateString('pt-BR')
+          : 'N/A';
+      } catch (e) {
+        console.error("Erro ao formatar datas:", e);
+      }
+      
+      $("#t-desc").textContent = chamado?.descricao ?? 'Sem descrição';
+      
+      // Atualizar select de status
+      const statusSelect = $("#t-status-select");
+      if (statusSelect && chamado.status) {
+        // Apenas atualizar o selected, não recriar todo o select
+        Array.from(statusSelect.options).forEach(option => {
+          option.selected = (parseInt(option.value) === chamado.status.id);
+        });
+      }
+      
+      // Recarregar comentários
+      fetchAndRenderComments(ticketId, token);
+    } else if (response.status === 401) {
+      toast("Sessão expirada. Faça login novamente.");
+      go("/");
+    }
+  } catch (error) {
+    console.error('loadTicketData: Erro de rede:', error);
+  }
+}
+
 async function initTicketDetails() {
   console.log("--- DEBUG: Entrando em initTicketDetails ---");
   // Buscar o ID do chamado do sessionStorage
@@ -838,9 +914,15 @@ async function initTicketDetails() {
       }
       
       // Event listener para o botão de atualização de status
+      // IMPORTANTE: Remove listeners antigos clonando o botão para evitar múltiplos alerts
       const btnAtualizar = $("#btn-atualizar-status");
       if (btnAtualizar) {
-        btnAtualizar.addEventListener("click", async () => {
+        // Remove todos os event listeners clonando o elemento
+        const btnAtualizarNovo = btnAtualizar.cloneNode(true);
+        btnAtualizar.replaceWith(btnAtualizarNovo);
+        
+        // Agora adiciona o listener ao botão limpo
+        btnAtualizarNovo.addEventListener("click", async () => {
           const novoStatusId = $("#t-status-select").value;
           const tecnicoId = chamado.tecnicoId; // Pega o tecnicoId do chamado atual
           console.log(`Atualizando chamado ${ticketId} para Status ID: ${novoStatusId}`);
@@ -858,7 +940,7 @@ async function initTicketDetails() {
             });
             if (updateResponse.ok) {
               toast("Status do chamado atualizado com sucesso!");
-              initTicketDetails(); // Recarrega os detalhes da página
+              await loadTicketData(); // Recarrega APENAS os dados, sem re-adicionar listeners
             } else {
               toast("Erro ao atualizar o status. Tente novamente.");
             }
