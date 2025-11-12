@@ -443,6 +443,10 @@ function atualizarKPIs(chamados) {
    📊 DASHBOARD
    =========================================================== */
 async function initDashboard() {
+  console.log("🚨🚨🚨 INIT DASHBOARD CHAMADO! 🚨🚨🚨");
+  console.log("📍 Página atual:", window.location.pathname);
+  console.log("📍 API_BASE:", typeof API_BASE !== 'undefined' ? API_BASE : "INDEFINIDO!");
+  
   // Verificar se o token de autenticação existe
   let token = sessionStorage.getItem('authToken');
   
@@ -1845,17 +1849,23 @@ function initPasswordToggles() {
    🚀 INICIALIZAÇÃO GLOBAL
    =========================================================== */
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("🎯 DOMContentLoaded disparado!");
   const path = window.location.pathname;
+  console.log("📂 Pathname:", path);
 
   if (path.endsWith("login-desktop.html") || path.endsWith("index.html") || path === "/" || path === "") {
+    console.log("➡️ Inicializando LOGIN");
     initLogin();
     initPasswordToggles();
   } else if (path.endsWith("esqueci-senha-desktop.html")) {
+    console.log("➡️ Inicializando ESQUECI SENHA");
     initEsqueciSenha();
   } else if (path.endsWith("resetar-senha-desktop.html")) {
+    console.log("➡️ Inicializando RESETAR SENHA");
     initResetarSenha();
     initPasswordToggles();
   } else if (path.endsWith("admin-dashboard-desktop.html")) {
+    console.log("➡️ Inicializando ADMIN DASHBOARD");
     initDashboard();
     initConfig();
     atualizarSaudacaoUsuario(); // <-- CHAMADA ADICIONADA
