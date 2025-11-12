@@ -290,8 +290,8 @@ public class UsuariosController : ControllerBase
         }
         else
         {
-            // Email para Técnicos e Admins (Desktop) - usa o link
-            var resetLink = $"http://localhost:8080/resetar-senha-desktop.html?token={token}";
+            // Email para Técnicos e Admins (Desktop) - usa o link do Vercel
+            var resetLink = $"https://sistema-chamados-faculdade.vercel.app/resetar-senha-desktop.html?token={token}";
             message = $@"
                 <h1>Redefinição de Senha</h1>
                 <p>Olá, {usuario.NomeCompleto},</p>
