@@ -6,9 +6,9 @@ const config = {
     apiUrl: 'http://localhost:5246'
   },
   
-  // Para produção (Vercel + Azure/outro host)
+  // Para produção (Vercel + ngrok)
   production: {
-    apiUrl: 'https://seu-backend.azurewebsites.net' // ALTERE AQUI quando fizer deploy do backend
+    apiUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev'
   }
 };
 
