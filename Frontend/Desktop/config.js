@@ -6,9 +6,11 @@ const config = {
     apiUrl: 'http://localhost:5246'
   },
   
-  // Para produção (Vercel + ngrok)
+  // Para produção (Vercel + ngrok ou IP público)
   production: {
-    apiUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev'
+    // Prioridade: IP público > ngrok
+    apiUrl: 'http://172.177.19.255:5000',
+    fallbackUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev'
   }
 };
 
@@ -28,4 +30,5 @@ const API_CONFIG = config[environment];
 const API_BASE = API_CONFIG.apiUrl;
 
 console.log(`🔧 Ambiente: ${environment}`);
+console.log(`🌐 API URL: ${API_BASE}`);
 console.log(`🌐 API URL: ${API_BASE}`);
