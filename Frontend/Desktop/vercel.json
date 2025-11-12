@@ -2,10 +2,22 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/proxy/:path*",
-      "destination": "/api/proxy"
+      "src": "/config.js",
+      "dest": "/config.js"
+    },
+    {
+      "src": "/script-desktop.js",
+      "dest": "/script-desktop.js"
+    },
+    {
+      "src": "/style-desktop.css",
+      "dest": "/style-desktop.css"
+    },
+    {
+      "src": "/api/proxy/(.*)",
+      "dest": "/api/proxy"
     }
   ]
 }
