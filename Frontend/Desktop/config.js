@@ -6,11 +6,11 @@ const config = {
     apiUrl: 'http://localhost:5246'
   },
   
-  // Para produção (Vercel usa HTTPS obrigatoriamente)
-  // Frontend: Usa ngrok HTTPS (compatível com Vercel HTTPS)
-  // Mobile APK: Usa IP público HTTP (sem restrição Mixed Content)
+  // Para produção (Vercel com proxy HTTPS → HTTP)
+  // O proxy Vercel encaminha requisições HTTPS para o backend HTTP
+  // Proxy: https://seu-site.vercel.app/api/proxy → http://172.177.19.255:5000
   production: {
-    apiUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev',
+    apiUrl: 'https://sistema-chamados-faculdade.vercel.app/api/proxy',
     fallbackUrl: 'http://172.177.19.255:5000'
   }
 };
