@@ -1106,7 +1106,7 @@ async function initTicketDetails() {
                    }
                 }
                 // Recarrega os dados da página para garantir consistência
-                initTicketDetails();
+                await loadTicketData();
               } else {
                 toast("Erro ao atualizar o técnico. Tente novamente.");
               }
