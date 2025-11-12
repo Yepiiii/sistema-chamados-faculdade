@@ -6,11 +6,12 @@ const config = {
     apiUrl: 'http://localhost:5246'
   },
   
-  // Para produção (Vercel + ngrok ou IP público)
+  // Para produção (Vercel + ngrok)
+  // IMPORTANTE: Vercel usa HTTPS, então o backend também precisa HTTPS
+  // ngrok fornece HTTPS automaticamente, IP público HTTP causa "Mixed Content"
   production: {
-    // Prioridade: IP público > ngrok
-    apiUrl: 'http://172.177.19.255:5000',
-    fallbackUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev'
+    apiUrl: 'https://unrepudiated-unsolemnised-natalee.ngrok-free.dev',
+    fallbackUrl: 'http://172.177.19.255:5000'
   }
 };
 
