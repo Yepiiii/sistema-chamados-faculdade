@@ -682,21 +682,6 @@ async function initNewTicket() {
 /* ===========================================================
    🧩 DETALHES DO CHAMADO (Atualizado para API v2)
    =========================================================== */
-// Função auxiliar para carregar dados do chamado (SEM adicionar event listeners)
-async function loadTicketData() {
-  const ticketId = sessionStorage.getItem('currentTicketId');
-  if (!ticketId) {
-    console.error("loadTicketData: ID do chamado não encontrado no sessionStorage.");
-    toast("Chamado não encontrado. Retornando ao dashboard.");
-    return go(document.referrer.includes("tecnico") ? "tecnico-dashboard.html" : "user-dashboard-desktop.html"); 
-  }
-  
-  const token = sessionStorage.getItem('authToken');
-  if (!token) {
-    console.log("loadTicketData: Token não encontrado, redirecionando para login.");
-    toast("Sessão expirada. Faça login novamente.");
-    return go("/");
-  }
 // Função auxiliar para APENAS carregar/atualizar dados do chamado (SEM adicionar event listeners)
 async function loadTicketData() {
   const ticketId = sessionStorage.getItem('currentTicketId');
