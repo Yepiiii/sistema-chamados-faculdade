@@ -1931,17 +1931,21 @@ function initPasswordToggles() {
         return;
       }
       
-      // Toggle usando CSS em vez de mudar o type
-      const isHidden = input.classList.contains('password-visible');
+      // Toggle usando apenas CSS - SEM substituir o input
+      const isVisible = input.classList.contains('password-visible');
       
-      if (isHidden) {
+      if (isVisible) {
+        // Ocultar senha
         input.classList.remove('password-visible');
+        input.setAttribute('type', 'password');
         btn.textContent = "👁️";
-        console.log("✅ Senha OCULTA via CSS");
+        console.log("✅ Senha OCULTA");
       } else {
+        // Mostrar senha
         input.classList.add('password-visible');
+        input.setAttribute('type', 'text');
         btn.textContent = "🙈";
-        console.log("✅ Senha VISÍVEL via CSS");
+        console.log("✅ Senha VISÍVEL");
       }
     });
   });
