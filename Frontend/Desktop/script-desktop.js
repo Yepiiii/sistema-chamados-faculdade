@@ -354,8 +354,8 @@ async function initResetarSenha() {
     }
   });
 
-  // Inicializar toggles de senha
-  initPasswordToggles();
+  // NOTA: initPasswordToggles() já é chamado no DOMContentLoaded
+  // Não precisa chamar aqui para evitar duplicação
 }
 
 /* ===========================================================
