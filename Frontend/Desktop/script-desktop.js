@@ -1915,38 +1915,33 @@ async function initCadastrarTecnico() {
    👁️ MOSTRAR / OCULTAR SENHA
    =========================================================== */
 function initPasswordToggles() {
-  console.log("👁️ initPasswordToggles chamado!");
   const toggleButtons = $$(".toggle-btn");
-  console.log("🔍 Botões toggle encontrados:", toggleButtons.length);
   
-  toggleButtons.forEach((btn, index) => {
-    console.log(`Botão ${index}:`, btn, "Target:", btn.dataset.target);
+  toggleButtons.forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
+      
       const id = btn.dataset.target;
       const input = document.getElementById(id);
-      console.log("🎯 Clicou no toggle! ID:", id, "Input:", input);
+      
       if (!input) {
         console.error("❌ Input não encontrado para ID:", id);
         return;
       }
       
-      // Toggle usando apenas CSS - SEM substituir o input
-      const isVisible = input.classList.contains('password-visible');
+      // Verifica estado atual
+      const isPassword = input.type === 'password';
       
-      if (isVisible) {
-        // Ocultar senha
-        input.classList.remove('password-visible');
-        input.setAttribute('type', 'password');
-        btn.textContent = "👁️";
-        console.log("✅ Senha OCULTA");
-      } else {
-        // Mostrar senha
-        input.classList.add('password-visible');
-        input.setAttribute('type', 'text');
-        btn.textContent = "🙈";
-        console.log("✅ Senha VISÍVEL");
-      }
+      // Alterna tipo usando propriedade direta (não setAttribute)
+      input.type = isPassword ? 'text' : 'password';
+      
+      // Atualiza ícone do botão
+      btn.textContent = isPassword ? "🙈" : "👁️";
+      btn.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Mostrar senha');
+      
+      // Log para debug
+      console.log(`Toggle: ${id} → ${input.type}`);
     });
   });
 }

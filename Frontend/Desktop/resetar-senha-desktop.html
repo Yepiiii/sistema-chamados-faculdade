@@ -28,7 +28,18 @@
         </p>
 
         <!-- Formulário -->
-        <form id="resetar-senha-form">
+        <form id="resetar-senha-form" autocomplete="off">
+          <!-- Campo de username oculto para acessibilidade -->
+          <input 
+            type="text" 
+            name="username" 
+            autocomplete="username" 
+            style="display:none;" 
+            tabindex="-1" 
+            aria-hidden="true"
+            value="email@domain.com"
+          />
+          
           <!-- Campo de nova senha -->
           <div class="form-group password-wrapper">
             <label for="nova-senha">Nova Senha</label>
@@ -46,6 +57,7 @@
               class="toggle-btn"
               data-target="nova-senha"
               title="Mostrar/ocultar senha"
+              aria-label="Mostrar senha"
             >
               👁️
             </button>
