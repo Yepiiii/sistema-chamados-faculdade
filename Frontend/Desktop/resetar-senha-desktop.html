@@ -44,13 +44,15 @@
           <div class="form-group password-wrapper">
             <label for="nova-senha">Nova Senha</label>
             <input
-              type="password"
+              type="text"
               id="nova-senha"
               name="nova-senha"
               placeholder="Digite sua nova senha"
               required
               minlength="6"
               autocomplete="new-password"
+              class="password-field"
+              data-password-hidden="true"
             />
             <button
               type="button"
@@ -67,13 +69,15 @@
           <div class="form-group password-wrapper">
             <label for="confirmar-senha">Confirmar Nova Senha</label>
             <input
-              type="password"
+              type="text"
               id="confirmar-senha"
               name="confirmar-senha"
               placeholder="Confirme sua nova senha"
               required
               minlength="6"
               autocomplete="new-password"
+              class="password-field"
+              data-password-hidden="true"
             />
             <button
               type="button"

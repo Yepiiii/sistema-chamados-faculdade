@@ -1930,18 +1930,17 @@ function initPasswordToggles() {
         return;
       }
       
-      // Verifica estado atual
-      const isPassword = input.type === 'password';
+      // Verifica estado atual usando data-attribute
+      const isHidden = input.getAttribute('data-password-hidden') === 'true';
       
-      // Alterna tipo usando propriedade direta (não setAttribute)
-      input.type = isPassword ? 'text' : 'password';
+      // Alterna o estado
+      input.setAttribute('data-password-hidden', isHidden ? 'false' : 'true');
       
       // Atualiza ícone do botão
-      btn.textContent = isPassword ? "🙈" : "👁️";
-      btn.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Mostrar senha');
+      btn.textContent = isHidden ? "🙈" : "👁️";
+      btn.setAttribute('aria-label', isHidden ? 'Ocultar senha' : 'Mostrar senha');
       
-      // Log para debug
-      console.log(`Toggle: ${id} → ${input.type}`);
+      console.log(`Toggle: ${id} → ${isHidden ? 'VISÍVEL' : 'OCULTA'}`);
     });
   });
 }

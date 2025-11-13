@@ -183,6 +183,21 @@ textarea:focus {
   padding-right: 40px;
 }
 
+/* Campo de senha customizado (type="text" com bullets via CSS) */
+.password-field[data-password-hidden="true"] {
+  -webkit-text-security: disc !important;
+  -moz-text-security: disc !important;
+  text-security: disc !important;
+  font-family: text-security-disc !important;
+}
+
+.password-field[data-password-hidden="false"] {
+  -webkit-text-security: none !important;
+  -moz-text-security: none !important;
+  text-security: none !important;
+  font-family: inherit !important;
+}
+
 /* Força exibição de senha quando a classe password-visible está presente */
 .password-wrapper input.password-visible {
   -webkit-text-security: none !important;
