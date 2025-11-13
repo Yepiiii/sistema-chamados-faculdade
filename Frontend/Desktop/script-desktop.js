@@ -1922,7 +1922,7 @@ function initPasswordToggles() {
   toggleButtons.forEach((btn, index) => {
     console.log(`Botão ${index}:`, btn, "Target:", btn.dataset.target);
     btn.addEventListener("click", (e) => {
-      e.preventDefault(); // Previne qualquer comportamento padrão
+      e.preventDefault();
       const id = btn.dataset.target;
       const input = document.getElementById(id);
       console.log("🎯 Clicou no toggle! ID:", id, "Input:", input);
@@ -1931,19 +1931,18 @@ function initPasswordToggles() {
         return;
       }
       
-      const isPassword = input.getAttribute('type') === 'password';
-      console.log("📊 Estado atual:", isPassword ? "password" : "text");
+      // Toggle usando CSS em vez de mudar o type
+      const isHidden = input.classList.contains('password-visible');
       
-      // Remove e recria o input para forçar mudança
-      const parent = input.parentNode;
-      const newInput = input.cloneNode(true);
-      newInput.type = isPassword ? 'text' : 'password';
-      newInput.value = input.value;
-      
-      parent.replaceChild(newInput, input);
-      
-      btn.textContent = isPassword ? "🙈" : "👁️";
-      console.log("✅ Input recriado com tipo:", newInput.type);
+      if (isHidden) {
+        input.classList.remove('password-visible');
+        btn.textContent = "👁️";
+        console.log("✅ Senha OCULTA via CSS");
+      } else {
+        input.classList.add('password-visible');
+        btn.textContent = "🙈";
+        console.log("✅ Senha VISÍVEL via CSS");
+      }
     });
   });
 }

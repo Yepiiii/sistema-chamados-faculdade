@@ -182,6 +182,14 @@ textarea:focus {
   flex: 1;
   padding-right: 40px;
 }
+
+/* Força exibição de senha quando a classe password-visible está presente */
+.password-wrapper input.password-visible {
+  -webkit-text-security: none !important;
+  text-security: none !important;
+  font-family: inherit !important;
+}
+
 .toggle-btn {
   position: absolute;
   right: 10px;
