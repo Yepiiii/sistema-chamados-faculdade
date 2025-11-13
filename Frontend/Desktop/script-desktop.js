@@ -1921,7 +1921,8 @@ function initPasswordToggles() {
   
   toggleButtons.forEach((btn, index) => {
     console.log(`Botão ${index}:`, btn, "Target:", btn.dataset.target);
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault(); // Previne qualquer comportamento padrão
       const id = btn.dataset.target;
       const input = document.getElementById(id);
       console.log("🎯 Clicou no toggle! ID:", id, "Input:", input);
@@ -1929,16 +1930,20 @@ function initPasswordToggles() {
         console.error("❌ Input não encontrado para ID:", id);
         return;
       }
-      const show = input.type === "password";
       
-      // Força a mudança de tipo e atualiza o valor para forçar re-render
-      const currentValue = input.value;
-      input.type = show ? "text" : "password";
-      input.value = '';
-      input.value = currentValue;
+      const isPassword = input.getAttribute('type') === 'password';
+      console.log("📊 Estado atual:", isPassword ? "password" : "text");
       
-      btn.textContent = show ? "🙈" : "👁️";
-      console.log("✅ Tipo alterado para:", input.type);
+      // Remove e recria o input para forçar mudança
+      const parent = input.parentNode;
+      const newInput = input.cloneNode(true);
+      newInput.type = isPassword ? 'text' : 'password';
+      newInput.value = input.value;
+      
+      parent.replaceChild(newInput, input);
+      
+      btn.textContent = isPassword ? "🙈" : "👁️";
+      console.log("✅ Input recriado com tipo:", newInput.type);
     });
   });
 }
