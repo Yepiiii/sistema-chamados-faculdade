@@ -1915,14 +1915,24 @@ async function initCadastrarTecnico() {
    👁️ MOSTRAR / OCULTAR SENHA
    =========================================================== */
 function initPasswordToggles() {
-  $$(".toggle-btn").forEach((btn) => {
+  console.log("👁️ initPasswordToggles chamado!");
+  const toggleButtons = $$(".toggle-btn");
+  console.log("🔍 Botões toggle encontrados:", toggleButtons.length);
+  
+  toggleButtons.forEach((btn, index) => {
+    console.log(`Botão ${index}:`, btn, "Target:", btn.dataset.target);
     btn.addEventListener("click", () => {
       const id = btn.dataset.target;
       const input = document.getElementById(id);
-      if (!input) return;
+      console.log("🎯 Clicou no toggle! ID:", id, "Input:", input);
+      if (!input) {
+        console.error("❌ Input não encontrado para ID:", id);
+        return;
+      }
       const show = input.type === "password";
       input.type = show ? "text" : "password";
       btn.textContent = show ? "🙈" : "👁️";
+      console.log("✅ Tipo alterado para:", input.type);
     });
   });
 }
