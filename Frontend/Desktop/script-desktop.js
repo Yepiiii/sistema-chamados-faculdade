@@ -1930,7 +1930,13 @@ function initPasswordToggles() {
         return;
       }
       const show = input.type === "password";
+      
+      // Força a mudança de tipo e atualiza o valor para forçar re-render
+      const currentValue = input.value;
       input.type = show ? "text" : "password";
+      input.value = '';
+      input.value = currentValue;
+      
       btn.textContent = show ? "🙈" : "👁️";
       console.log("✅ Tipo alterado para:", input.type);
     });
