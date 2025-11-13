@@ -45,8 +45,19 @@
           <!-- Campo de senha com botão de mostrar/ocultar -->
           <div class="form-group password-wrapper">
             <label for="password">Senha</label>
+            <!-- Campo username oculto para acessibilidade (navegadores podem associar senha ao username) -->
             <input
-              type="password"
+              type="text"
+              id="username-hidden"
+              name="username"
+              autocomplete="username"
+              style="display: none;"
+              aria-hidden="true"
+            />
+            <input
+              type="text"
+              class="password-field"
+              data-password-hidden="true"
               id="password"
               name="password"
               placeholder="Digite sua senha"
