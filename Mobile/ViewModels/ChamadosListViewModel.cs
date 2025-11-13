@@ -274,25 +274,32 @@ public class ChamadosListViewModel : BaseViewModel
     {
         if (_filtersLoaded)
         {
+            System.Diagnostics.Debug.WriteLine("EnsureFilterOptionsAsync - Filtros já carregados, pulando...");
             return;
         }
 
+        System.Diagnostics.Debug.WriteLine("EnsureFilterOptionsAsync - Iniciando carregamento de filtros...");
+
         if (!Categorias.Any())
         {
+            System.Diagnostics.Debug.WriteLine("EnsureFilterOptionsAsync - Carregando Categorias...");
             await LoadCategoriasAsync();
         }
 
         if (!Statuses.Any())
         {
+            System.Diagnostics.Debug.WriteLine("EnsureFilterOptionsAsync - Carregando Status...");
             await LoadStatusesAsync();
         }
 
         if (!Prioridades.Any())
         {
+            System.Diagnostics.Debug.WriteLine("EnsureFilterOptionsAsync - Carregando Prioridades...");
             await LoadPrioridadesAsync();
         }
 
         _filtersLoaded = true;
+        System.Diagnostics.Debug.WriteLine($"EnsureFilterOptionsAsync - Completo! Categorias: {Categorias.Count}, Status: {Statuses.Count}, Prioridades: {Prioridades.Count}");
     }
 
     private ChamadoQueryParameters BuildQueryParameters()
@@ -433,19 +440,26 @@ public class ChamadosListViewModel : BaseViewModel
     {
         try
         {
+            System.Diagnostics.Debug.WriteLine("LoadPrioridadesAsync - Iniciando chamada ao serviço...");
             var prioridades = await _prioridadeService.GetAll();
+            System.Diagnostics.Debug.WriteLine($"LoadPrioridadesAsync - Recebeu resposta: {prioridades?.Count() ?? 0} prioridades");
+            
             Prioridades.Clear();
             if (prioridades != null)
             {
                 foreach (var pri in prioridades)
                 {
+                    System.Diagnostics.Debug.WriteLine($"  - Prioridade: {pri.Id} - {pri.Nome} (Nível: {pri.Nivel})");
                     Prioridades.Add(pri);
                 }
             }
+            System.Diagnostics.Debug.WriteLine($"LoadPrioridadesAsync - Total de {Prioridades.Count} prioridades adicionadas à coleção");
+            OnPropertyChanged(nameof(Prioridades));
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Erro ao carregar prioridades: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"LoadPrioridadesAsync - ERRO: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"LoadPrioridadesAsync - Stack Trace: {ex.StackTrace}");
         }
     }
 
