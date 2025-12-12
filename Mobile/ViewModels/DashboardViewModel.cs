@@ -85,17 +85,16 @@ public partial class DashboardViewModel : ObservableObject
                 TotalAbertos = listaUsuario.Count(c => NormalizeStatus(c) == StatusConstants.Nomes.Aberto);
                 TotalEmAndamento = listaUsuario.Count(c => NormalizeStatus(c) == StatusConstants.Nomes.EmAndamento);
                 
-                // ✅ CORRIGIDO: Aceitar "fechado" OU "resolvido" (como Desktop)
+                // Conta chamados fechados
                 TotalEncerrados = listaUsuario.Count(c => 
-                    NormalizeStatus(c) == StatusConstants.Nomes.Fechado || 
-                    NormalizeStatus(c) == StatusConstants.Nomes.Resolvido
+                    NormalizeStatus(c) == StatusConstants.Nomes.Fechado
                 );
                 
                 TotalViolados = listaUsuario.Count(c => NormalizeStatus(c) == StatusConstants.Nomes.Violado);
 
                 // Calcula tempo médio (chamados encerrados)
                 var encerrados = listaUsuario
-                    .Where(c => (NormalizeStatus(c) == StatusConstants.Nomes.Fechado || NormalizeStatus(c) == StatusConstants.Nomes.Resolvido) && c.DataFechamento.HasValue)
+                    .Where(c => NormalizeStatus(c) == StatusConstants.Nomes.Fechado && c.DataFechamento.HasValue)
                     .ToList();
                 if (encerrados.Any())
                 {

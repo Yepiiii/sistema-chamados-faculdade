@@ -1,0 +1,15 @@
+{
+  "sdk": {
+    "version": "10.0.101",
+    "rollForward": "latestMinor",
+    "allowPrerelease": true
+  },
+  "msbuild-sdks": {
+    "Microsoft.NET.Runtime.MonoAOTCompiler.Task": "10.0.0",
+    "Microsoft.NET.Runtime.MonoTargets.Sdk": "10.0.0",
+    "Microsoft.NETCore.App.Runtime.AOT.Cross.android-x86": "10.0.0",
+    "Microsoft.NETCore.App.Runtime.AOT.Cross.android-x64": "10.0.0",
+    "Microsoft.NETCore.App.Runtime.AOT.Cross.android-arm": "10.0.0",
+    "Microsoft.NETCore.App.Runtime.AOT.Cross.android-arm64": "10.0.0"
+  }
+}

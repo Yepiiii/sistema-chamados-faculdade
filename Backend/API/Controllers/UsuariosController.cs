@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaChamados.Application.DTOs;
 using SistemaChamados.Application.Services;
+using SistemaChamados.Application.Services.Auth;
+using SistemaChamados.Application.Services.Users;
 using SistemaChamados.Core.Entities;
+using SistemaChamados.Core.Interfaces.Auth;
 using SistemaChamados.Data;
 using SistemaChamados.Services;
 using BCrypt.Net;
-using System.Security.Claims;
 using System.Security.Cryptography;
 
 namespace SistemaChamados.API.Controllers;
@@ -21,13 +23,32 @@ public class UsuariosController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IEmailService _emailService;
     private readonly ILogger<UsuariosController> _logger;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IPasswordHasher _passwordHasher;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly IUserRegistrationService _userRegistrationService;
+    private readonly IPasswordResetService _passwordResetService;
 
-    public UsuariosController(ApplicationDbContext context, ITokenService tokenService, IEmailService emailService, ILogger<UsuariosController> logger)
+    public UsuariosController(
+        ApplicationDbContext context, 
+        ITokenService tokenService, 
+        IEmailService emailService, 
+        ILogger<UsuariosController> logger,
+        ICurrentUserService currentUserService,
+        IPasswordHasher passwordHasher,
+        IAuthenticationService authenticationService,
+        IUserRegistrationService userRegistrationService,
+        IPasswordResetService passwordResetService)
     {
         _context = context;
         _tokenService = tokenService;
         _emailService = emailService;
         _logger = logger;
+        _currentUserService = currentUserService;
+        _passwordHasher = passwordHasher;
+        _authenticationService = authenticationService;
+        _userRegistrationService = userRegistrationService;
+        _passwordResetService = passwordResetService;
     }
 
     [HttpPost("registrar-admin")]
@@ -38,37 +59,25 @@ public class UsuariosController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        // Verificar se email já existe
-        if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+        // Delegate registration logic to UserRegistrationService (Phase 3.2)
+        var result = await _userRegistrationService.RegisterAdminAsync(dto.NomeCompleto, dto.Email, dto.Senha);
+
+        if (!result.Success)
         {
-            return BadRequest(new { message = "Email já está em uso" });
+            return BadRequest(new { message = result.ErrorMessage });
         }
-
-        // Criar usuário admin
-        var usuario = new Usuario
-        {
-            NomeCompleto = dto.NomeCompleto,
-            Email = dto.Email,
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
-            TipoUsuario = 3, // Admin
-            DataCadastro = DateTime.Now,
-            Ativo = true
-        };
-
-        _context.Usuarios.Add(usuario);
-        await _context.SaveChangesAsync();
 
         var response = new UsuarioResponseDto
         {
-            Id = usuario.Id,
-            NomeCompleto = usuario.NomeCompleto,
-            Email = usuario.Email,
-            TipoUsuario = usuario.TipoUsuario,
-            DataCadastro = usuario.DataCadastro,
-            Ativo = usuario.Ativo
+            Id = result.UserId!.Value,
+            NomeCompleto = result.NomeCompleto!,
+            Email = result.Email!,
+            TipoUsuario = result.TipoUsuario!.Value,
+            DataCadastro = result.DataCadastro!.Value,
+            Ativo = result.Ativo!.Value
         };
 
-        return CreatedAtAction(nameof(RegistrarAdmin), new { id = usuario.Id }, response);
+        return CreatedAtAction(nameof(RegistrarAdmin), new { id = result.UserId }, response);
     }
 
     [HttpPost("registrar")]
@@ -80,39 +89,29 @@ public class UsuariosController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+        // Delegate registration logic to UserRegistrationService (Phase 3.2)
+        var result = await _userRegistrationService.RegisterUserAsync(dto.NomeCompleto, dto.Email, dto.Senha);
+
+        if (!result.Success)
         {
-            return BadRequest(new { message = "Email já está em uso" });
+            return BadRequest(new { message = result.ErrorMessage });
         }
-
-        var usuario = new Usuario
-        {
-            NomeCompleto = dto.NomeCompleto,
-            Email = dto.Email,
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
-            TipoUsuario = 1, // 1 = Usuário Comum
-            DataCadastro = DateTime.UtcNow,
-            Ativo = true
-        };
-
-        _context.Usuarios.Add(usuario);
-        await _context.SaveChangesAsync();
 
         var response = new UsuarioResponseDto
         {
-            Id = usuario.Id,
-            NomeCompleto = usuario.NomeCompleto,
-            Email = usuario.Email,
-            TipoUsuario = usuario.TipoUsuario,
-            DataCadastro = usuario.DataCadastro,
-            Ativo = usuario.Ativo
+            Id = result.UserId!.Value,
+            NomeCompleto = result.NomeCompleto!,
+            Email = result.Email!,
+            TipoUsuario = result.TipoUsuario!.Value,
+            DataCadastro = result.DataCadastro!.Value,
+            Ativo = result.Ativo!.Value
         };
 
-        return CreatedAtAction(nameof(Registrar), new { id = usuario.Id }, response);
+        return CreatedAtAction(nameof(Registrar), new { id = result.UserId }, response);
     }
 
     [HttpPost("registrar-tecnico")]
-    [Authorize(Policy = "AdminOnly")] // <-- Protege o endpoint
+    [Authorize(Policy = "AdminOnly")]
     public async Task<ActionResult<UsuarioResponseDto>> RegistrarTecnico([FromBody] RegistrarTecnicoDto dto)
     {
         if (!ModelState.IsValid)
@@ -120,119 +119,75 @@ public class UsuariosController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+        // Delegate registration logic to UserRegistrationService (Phase 3.2)
+        var result = await _userRegistrationService.RegisterTechnicianAsync(
+            dto.NomeCompleto, 
+            dto.Email, 
+            dto.Senha, 
+            dto.EspecialidadeCategoriaId);
+
+        if (!result.Success)
         {
-            return BadRequest(new { message = "Email já está em uso" });
+            return BadRequest(new { message = result.ErrorMessage });
         }
-
-        // Valida se a categoria de especialidade existe
-        var categoriaExiste = await _context.Categorias.AnyAsync(c => c.Id == dto.EspecialidadeCategoriaId);
-        if (!categoriaExiste)
-        {
-            return BadRequest(new { message = "ID da Categoria de especialidade inválido." });
-        }
-
-        var usuario = new Usuario
-        {
-            NomeCompleto = dto.NomeCompleto,
-            Email = dto.Email,
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
-            TipoUsuario = 2, // 2 = Técnico
-            Ativo = true,
-            DataCadastro = DateTime.UtcNow,
-            EspecialidadeCategoriaId = dto.EspecialidadeCategoriaId // Define a especialidade
-        };
-
-        _context.Usuarios.Add(usuario);
-        await _context.SaveChangesAsync();
 
         var response = new UsuarioResponseDto
         {
-            Id = usuario.Id,
-            NomeCompleto = usuario.NomeCompleto,
-            Email = usuario.Email,
-            TipoUsuario = usuario.TipoUsuario,
-            DataCadastro = usuario.DataCadastro,
-            Ativo = usuario.Ativo
+            Id = result.UserId!.Value,
+            NomeCompleto = result.NomeCompleto!,
+            Email = result.Email!,
+            TipoUsuario = result.TipoUsuario!.Value,
+            DataCadastro = result.DataCadastro!.Value,
+            Ativo = result.Ativo!.Value
         };
 
-        return CreatedAtAction(nameof(Registrar), new { id = usuario.Id }, response);
+        return CreatedAtAction(nameof(Registrar), new { id = result.UserId }, response);
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto loginRequest)
     {
-        _logger.LogInformation("Tentativa de login recebida para o email: {Email}", loginRequest.Email); // LOG 1
-        
         if (!ModelState.IsValid)
         {
-            _logger.LogWarning("Modelo inválido para o email: {Email}", loginRequest.Email); // LOG 2
             return BadRequest(ModelState);
         }
 
-        // Buscar usuário pelo email
-        var usuario = await _context.Usuarios
-            .FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
+        // Delegate authentication logic to AuthenticationService (Phase 3.1)
+        var result = await _authenticationService.AuthenticateAsync(loginRequest.Email, loginRequest.Senha);
 
-        if (usuario == null)
+        if (!result.Success)
         {
-            _logger.LogWarning("Usuário não encontrado para o email: {Email}", loginRequest.Email); // LOG 3
-            return Unauthorized("Email ou senha inválidos.");
+            return Unauthorized(result.ErrorMessage);
         }
 
-        _logger.LogInformation("Usuário encontrado: ID {UserId}, Email {UserEmail}", usuario.Id, usuario.Email); // LOG 4
-
-        // Verificar senha
-        bool senhaValida = false;
-        try
-        {
-            // LOG ADICIONAL 1: Ver a senha recebida ANTES da verificação
-            _logger.LogInformation("Verificando senha recebida: '{SenhaRecebida}' contra o hash do usuário ID {UserId}", loginRequest.Senha, usuario.Id);
-            senhaValida = BCrypt.Net.BCrypt.Verify(loginRequest.Senha, usuario.SenhaHash);
-            // LOG ADICIONAL 2: Confirma o resultado IMEDIATAMENTE após
-            _logger.LogInformation("Resultado IMEDIATO do BCrypt.Verify para usuário ID {UserId}: {SenhaValida}", usuario.Id, senhaValida);
-            _logger.LogInformation("Resultado da verificação de senha para o usuário ID {UserId}: {SenhaValida}", usuario.Id, senhaValida); // LOG 5
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro durante a verificação de senha para o usuário ID {UserId}", usuario.Id); // LOG 6
-            return StatusCode(500, "Erro interno ao verificar a senha.");
-        }
-
-        if (!senhaValida)
-        {
-            _logger.LogWarning("Senha inválida para o usuário ID {UserId}", usuario.Id); // LOG 7
-            return Unauthorized("Email ou senha inválidos.");
-        }
-
-        // Verificar se usuário está ativo
-        if (!usuario.Ativo)
-        {
-            _logger.LogWarning("Tentativa de login por usuário inativo: ID {UserId}", usuario.Id); // LOG 8
-            return Unauthorized("Usuário inativo.");
-        }
-
-        // Gerar token JWT
-        var token = _tokenService.GenerateToken(usuario);
-        _logger.LogInformation("Login bem-sucedido e token gerado para o usuário ID {UserId}", usuario.Id); // LOG 9
-
-        return Ok(new LoginResponseDto { Token = token, TipoUsuario = usuario.TipoUsuario });
+        return Ok(new LoginResponseDto { Token = result.Token!, TipoUsuario = result.TipoUsuario!.Value });
     }
 
     [HttpGet("perfil")]
     [Authorize]
     public IActionResult ObterPerfilUsuario()
     {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null)
+        // ✅ REFATORADO: Usando ICurrentUserService (Anti-Corruption Layer)
+        // Antes: User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        // Agora: Abstraído do mecanismo JWT
+        if (!_currentUserService.IsAuthenticated)
         {
             return Unauthorized();
         }
-        return Ok($"Acesso autorizado. Perfil do usuário com ID: {userId}.");
+
+        var userId = _currentUserService.UserId;
+        var userEmail = _currentUserService.Email;
+        
+        return Ok(new 
+        { 
+            message = "Acesso autorizado", 
+            userId = userId,
+            email = userEmail 
+        });
     }
 
     [HttpPost("esqueci-senha")]
-    [AllowAnonymous] // Permite que usuários não logados acessem este endpoint
+    [AllowAnonymous]
     public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaDto request)
     {
         if (!ModelState.IsValid)
@@ -240,85 +195,15 @@ public class UsuariosController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == request.Email);
-        
-        // Por segurança, não informamos se o usuário foi encontrado ou não.
-        // Apenas retornamos Ok para não permitir que alguém descubra e-mails válidos no sistema.
-        if (usuario == null)
+        // Delegate password reset initiation to PasswordResetService (Phase 3.3)
+        var result = await _passwordResetService.InitiatePasswordResetAsync(request.Email);
+
+        if (!result.Success)
         {
-            return Ok(new { message = "Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado." });
+            return StatusCode(500, new { message = result.ErrorMessage });
         }
 
-        // 1. Gerar um token seguro e aleatório
-        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(64));
-
-        // 2. Salvar o token e a data de expiração no registro do usuário
-        usuario.PasswordResetToken = token;
-        usuario.ResetTokenExpires = DateTime.UtcNow.AddMinutes(30); // Token expira em 30 minutos
-
-        _context.Usuarios.Update(usuario);
-        await _context.SaveChangesAsync();
-
-        // 3. Verificar o tipo de usuário para determinar o formato do email
-        // TipoUsuario 1 = Cliente (usa Mobile - precisa do token no corpo)
-        // TipoUsuario 2 = Técnico (usa Desktop - usa o link)
-        // TipoUsuario 3 = Admin (usa Desktop - usa o link)
-        var subject = "Redefinição de Senha - Sistema de Chamados";
-        string message;
-
-        if (usuario.TipoUsuario == 1)
-        {
-            // Email para Clientes (Mobile) - inclui o token no corpo
-            message = $@"
-                <h1>Redefinição de Senha</h1>
-                <p>Olá, {usuario.NomeCompleto},</p>
-                <p>Você solicitou a redefinição da sua senha no aplicativo mobile.</p>
-                <p>Use o código abaixo no aplicativo para criar uma nova senha:</p>
-                <div style='background-color: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; font-family: monospace; font-size: 14px; word-break: break-all;'>
-                    <strong>Código de Redefinição:</strong><br/>
-                    {token}
-                </div>
-                <p><strong>Instruções:</strong></p>
-                <ol>
-                    <li>Abra o aplicativo Sistema de Chamados</li>
-                    <li>Vá para a tela de redefinição de senha</li>
-                    <li>Cole o código acima no campo indicado</li>
-                    <li>Digite sua nova senha</li>
-                </ol>
-                <p>Se você não solicitou isso, por favor, ignore este e-mail.</p>
-                <p><em>Este código expirará em 30 minutos.</em></p>";
-        }
-        else
-        {
-            // Email para Técnicos e Admins (Desktop) - usa o link do Vercel
-            var resetLink = $"https://sistema-chamados-faculdade.vercel.app/resetar-senha-desktop.html?token={token}";
-            message = $@"
-                <h1>Redefinição de Senha</h1>
-                <p>Olá, {usuario.NomeCompleto},</p>
-                <p>Você solicitou a redefinição da sua senha. Por favor, clique no link abaixo para criar uma nova senha:</p>
-                <p style='margin: 20px 0;'>
-                    <a href='{resetLink}' style='background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;'>Redefinir Minha Senha</a>
-                </p>
-                <p>Ou copie e cole o seguinte link no seu navegador:</p>
-                <p style='background-color: #f0f0f0; padding: 10px; border-radius: 5px; word-break: break-all;'>{resetLink}</p>
-                <p>Se você não solicitou isso, por favor, ignore este e-mail.</p>
-                <p><em>Este link expirará em 30 minutos.</em></p>";
-        }
-
-        try
-        {
-            await _emailService.SendEmailAsync(usuario.Email, subject, message);
-            var tipoUsuarioNome = usuario.TipoUsuario == 1 ? "Cliente/Mobile" : usuario.TipoUsuario == 2 ? "Técnico/Desktop" : "Admin/Desktop";
-            _logger.LogInformation("Email de redefinição de senha enviado com sucesso para {Email} (Tipo: {TipoUsuario})", usuario.Email, tipoUsuarioNome);
-        }
-        catch (Exception ex)
-        {
-            // Log do erro usando o logger apropriado
-            _logger.LogError(ex, "Erro ao enviar email de redefinição de senha para o usuário ID {UserId}", usuario.Id);
-            return StatusCode(500, new { message = "Erro ao enviar email", error = ex.Message });
-        }
-
-        return Ok(new { message = "Se um usuário com este e-mail existir, um link de redefinição de senha foi enviado." });
+        return Ok(new { message = result.Message });
     }
 
     [HttpPost("resetar-senha")]
@@ -330,27 +215,15 @@ public class UsuariosController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        // 1. Encontra o usuário pelo token de redefinição de senha
-        var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.PasswordResetToken == request.Token);
-        
-        // 2. Valida o token
-        if (usuario == null || usuario.ResetTokenExpires < DateTime.UtcNow)
+        // Delegate password reset completion to PasswordResetService (Phase 3.3)
+        var result = await _passwordResetService.ResetPasswordAsync(request.Token, request.NovaSenha);
+
+        if (!result.Success)
         {
-            return BadRequest(new { message = "Token inválido ou expirado." });
+            return BadRequest(new { message = result.ErrorMessage });
         }
-        
-        // 3. Cria o hash da nova senha
-        var novoSenhaHash = BCrypt.Net.BCrypt.HashPassword(request.NovaSenha);
-        
-        // 4. Atualiza a senha do usuário e limpa os campos do token
-        usuario.SenhaHash = novoSenhaHash;
-        usuario.PasswordResetToken = null;
-        usuario.ResetTokenExpires = null;
-        
-        _context.Usuarios.Update(usuario);
-        await _context.SaveChangesAsync();
-        
-        return Ok(new { message = "Senha redefinida com sucesso." });
+
+        return Ok(new { message = result.Message });
     }
 
     [HttpGet("tecnicos")]

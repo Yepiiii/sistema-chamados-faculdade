@@ -1,28 +1,42 @@
 using SistemaChamados.Core.Entities;
+using SistemaChamados.Core.Interfaces.Auth;
 using SistemaChamados.Data;
 
 namespace SistemaChamados.Data.Seed;
 
-public static class DatabaseSeed
+/// <summary>
+/// Classe de seed de dados do banco de dados.
+/// REFATORADO: Agora usa IPasswordHasher (DIP) em vez de BCrypt estático.
+/// </summary>
+public class DatabaseSeed
 {
-    public static void Seed(ApplicationDbContext context)
+    private readonly ApplicationDbContext _context;
+    private readonly IPasswordHasher _passwordHasher;
+
+    public DatabaseSeed(ApplicationDbContext context, IPasswordHasher passwordHasher)
+    {
+        _context = context;
+        _passwordHasher = passwordHasher;
+    }
+
+    public void Seed()
     {
         // ✅ MODIFICAÇÃO TEMPORÁRIA: Separar seed de Categorias/Prioridades/Status de Usuários
         
         // Seed de entidades base (só executa se não existirem)
-        if (!context.Categorias.Any())
+        if (!_context.Categorias.Any())
         {
-            SeedBaseEntities(context);
+            SeedBaseEntities();
         }
         
         // Seed de usuários (executa se não existirem usuários)
-        if (!context.Usuarios.Any())
+        if (!_context.Usuarios.Any())
         {
-            SeedUsuarios(context);
+            SeedUsuarios();
         }
     }
 
-    private static void SeedBaseEntities(ApplicationDbContext context)
+    private void SeedBaseEntities()
     {
         var categorias = new[]
         {
@@ -31,8 +45,8 @@ public static class DatabaseSeed
             new Categoria { Nome = "Redes", Descricao = "Problemas de conectividade e internet", Ativo = true, DataCadastro = DateTime.UtcNow },
             new Categoria { Nome = "Infraestrutura", Descricao = "Problemas com servidores e infraestrutura", Ativo = true, DataCadastro = DateTime.UtcNow }
         };
-        context.Categorias.AddRange(categorias);
-        context.SaveChanges();
+        _context.Categorias.AddRange(categorias);
+        _context.SaveChanges();
 
         var prioridades = new[]
         {
@@ -41,8 +55,8 @@ public static class DatabaseSeed
             new Prioridade { Nome = "Alta", Nivel = 3, Descricao = "Requer atenção urgente", TempoRespostaHoras = 24, Ativo = true, DataCadastro = DateTime.UtcNow },
             new Prioridade { Nome = "Crítica", Nivel = 4, Descricao = "Emergência imediata", TempoRespostaHoras = 4, Ativo = true, DataCadastro = DateTime.UtcNow }
         };
-        context.Prioridades.AddRange(prioridades);
-        context.SaveChanges();
+        _context.Prioridades.AddRange(prioridades);
+        _context.SaveChanges();
 
         var status = new[]
         {
@@ -52,14 +66,14 @@ public static class DatabaseSeed
             new Status { Nome = "Resolvido", Descricao = "Problema solucionado", Ativo = true, DataCadastro = DateTime.UtcNow },
             new Status { Nome = "Fechado", Descricao = "Chamado finalizado", Ativo = true, DataCadastro = DateTime.UtcNow }
         };
-        context.Status.AddRange(status);
-        context.SaveChanges();
+        _context.Status.AddRange(status);
+        _context.SaveChanges();
     }
 
-    private static void SeedUsuarios(ApplicationDbContext context)
+    private void SeedUsuarios()
     {
         // Buscar categorias existentes para atribuir especialidades aos técnicos
-        var categorias = context.Categorias.OrderBy(c => c.Id).ToList();
+        var categorias = _context.Categorias.OrderBy(c => c.Id).ToList();
         
         if (categorias.Count < 3)
         {
@@ -71,20 +85,20 @@ public static class DatabaseSeed
         { 
             NomeCompleto = "Carlos Mendes", 
             Email = "admin@neurohelp.com.br", 
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+            SenhaHash = _passwordHasher.HashPassword("Admin@123"),
             TipoUsuario = 3, // Administrador
             IsInterno = true, 
             Ativo = true, 
             DataCadastro = DateTime.UtcNow 
         };
-        context.Usuarios.Add(admin);
+        _context.Usuarios.Add(admin);
 
         // Técnico Hardware
         var tecnicoHardware = new Usuario 
         { 
             NomeCompleto = "Rafael Costa", 
             Email = "rafael.costa@neurohelp.com.br", 
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("Tecnico@123"),
+            SenhaHash = _passwordHasher.HashPassword("Tecnico@123"),
             TipoUsuario = 2, // Tecnico
             IsInterno = true, 
             Especialidade = "Hardware", 
@@ -92,14 +106,14 @@ public static class DatabaseSeed
             Ativo = true, 
             DataCadastro = DateTime.UtcNow 
         };
-        context.Usuarios.Add(tecnicoHardware);
+        _context.Usuarios.Add(tecnicoHardware);
 
         // Técnico Software
         var tecnicoSoftware = new Usuario 
         { 
             NomeCompleto = "Ana Paula Silva", 
             Email = "ana.silva@neurohelp.com.br", 
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("Tecnico@123"),
+            SenhaHash = _passwordHasher.HashPassword("Tecnico@123"),
             TipoUsuario = 2, // Tecnico
             IsInterno = true, 
             Especialidade = "Software", 
@@ -107,14 +121,14 @@ public static class DatabaseSeed
             Ativo = true, 
             DataCadastro = DateTime.UtcNow 
         };
-        context.Usuarios.Add(tecnicoSoftware);
+        _context.Usuarios.Add(tecnicoSoftware);
 
         // Técnico Redes
         var tecnicoRedes = new Usuario 
         { 
             NomeCompleto = "Bruno Ferreira", 
             Email = "bruno.ferreira@neurohelp.com.br", 
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("Tecnico@123"),
+            SenhaHash = _passwordHasher.HashPassword("Tecnico@123"),
             TipoUsuario = 2, // Tecnico
             IsInterno = true, 
             Especialidade = "Redes", 
@@ -122,35 +136,35 @@ public static class DatabaseSeed
             Ativo = true, 
             DataCadastro = DateTime.UtcNow 
         };
-        context.Usuarios.Add(tecnicoRedes);
+        _context.Usuarios.Add(tecnicoRedes);
 
         // Usuário comum - Financeiro
         var usuarioFinanceiro = new Usuario 
         { 
             NomeCompleto = "Juliana Martins", 
             Email = "juliana.martins@neurohelp.com.br", 
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("User@123"),
+            SenhaHash = _passwordHasher.HashPassword("User@123"),
             TipoUsuario = 1, // Usuário comum
             IsInterno = false, 
             Ativo = true, 
             DataCadastro = DateTime.UtcNow 
         };
-        context.Usuarios.Add(usuarioFinanceiro);
+        _context.Usuarios.Add(usuarioFinanceiro);
 
         // Usuário comum - RH
         var usuarioRH = new Usuario 
         { 
             NomeCompleto = "Marcelo Santos", 
             Email = "marcelo.santos@neurohelp.com.br", 
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("User@123"),
+            SenhaHash = _passwordHasher.HashPassword("User@123"),
             TipoUsuario = 1, // Usuário comum
             IsInterno = false, 
             Ativo = true, 
             DataCadastro = DateTime.UtcNow 
         };
-        context.Usuarios.Add(usuarioRH);
+        _context.Usuarios.Add(usuarioRH);
 
-        context.SaveChanges();
+        _context.SaveChanges();
         
         Console.WriteLine("✅ Seed de Usuários NeuroHelp concluído!");
         Console.WriteLine("   - 6 Usuários criados (1 Admin, 3 Técnicos, 2 Usuários)");

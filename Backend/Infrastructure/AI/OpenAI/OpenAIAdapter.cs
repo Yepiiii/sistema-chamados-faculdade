@@ -1,24 +1,42 @@
-using Microsoft.EntityFrameworkCore;
 using SistemaChamados.Application.DTOs;
-using SistemaChamados.Data;
+using SistemaChamados.Core.Interfaces.AI;
+using SistemaChamados.Core.Repositories;
 using System.Text;
 using System.Text.Json;
 
-namespace SistemaChamados.Services
+namespace SistemaChamados.Infrastructure.AI.OpenAI
 {
-    public class OpenAIService : IOpenAIService
+    /// <summary>
+    /// Adapter para OpenAI que implementa a interface genérica IAIAnalysisService.
+    /// Configurado como Typed Client do IHttpClientFactory para reutilização de conexões.
+    /// </summary>
+    public class OpenAIAdapter : IAIAnalysisService
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
-        private readonly ApplicationDbContext _context;
-        private readonly ILogger<OpenAIService> _logger;
+        private readonly IUserRepository _userRepository;
+        private readonly AIPromptBuilder _promptBuilder;
+        private readonly ILogger<OpenAIAdapter> _logger;
 
-        public OpenAIService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context, ILogger<OpenAIService> logger)
+        /// <summary>
+        /// Construtor que recebe HttpClient via IHttpClientFactory (injeção automática).
+        /// </summary>
+        public OpenAIAdapter(
+            HttpClient httpClient, 
+            IConfiguration configuration, 
+            IUserRepository userRepository,
+            AIPromptBuilder promptBuilder,
+            ILogger<OpenAIAdapter> logger)
         {
             _httpClient = httpClient;
             _configuration = configuration;
-            _context = context;
+            _userRepository = userRepository;
+            _promptBuilder = promptBuilder;
             _logger = logger;
+            
+            // Configuração base do HttpClient para OpenAI
+            _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
         public async Task<AnaliseChamadoResponseDto?> AnalisarChamadoAsync(string descricaoProblema)
@@ -32,7 +50,7 @@ namespace SistemaChamados.Services
 
             try
             {
-                var prompt = await CriarPromptAnalise(descricaoProblema);
+                var prompt = await _promptBuilder.CriarPromptAnaliseAsync(descricaoProblema);
 
                 var requestBody = new OpenAIRequest
                 {
@@ -48,9 +66,11 @@ namespace SistemaChamados.Services
                 var jsonContent = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+                // Configurar Bearer Token por requisição
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
-                var response = await _httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+                var response = await _httpClient.PostAsync("chat/completions", content);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -73,19 +93,14 @@ namespace SistemaChamados.Services
                 
                 if (analise != null)
                 {
-                    // Nova Lógica: Buscar técnico especialista (TipoUsuario == 2)
-                    var tecnicoEspecialista = await _context.Usuarios
-                        .FirstOrDefaultAsync(u => 
-                            u.TipoUsuario == 2 && // <-- CORRIGIDO para 2
-                            u.EspecialidadeCategoriaId == analise.CategoriaId && 
-                            u.Ativo);
+                    // Buscar técnico especialista usando Repository
+                    var tecnicoEspecialista = await _userRepository.GetTecnicoEspecialistaAsync(analise.CategoriaId);
                     
-                    // Se não encontrar especialista, busca qualquer técnico (TipoUsuario == 2) como fallback
+                    // Se não encontrar especialista, busca qualquer técnico como fallback
                     if (tecnicoEspecialista == null)
                     {
-                        _logger.LogWarning("Nenhum técnico especialista (Tipo 2) encontrado para CategoriaId {CategoriaId}. Procurando técnico geral (Tipo 2).", analise.CategoriaId);
-                        tecnicoEspecialista = await _context.Usuarios
-                            .FirstOrDefaultAsync(u => u.TipoUsuario == 2 && u.Ativo); // <-- Busca qualquer técnico Tipo 2
+                        _logger.LogWarning("Nenhum técnico especialista encontrado para CategoriaId {CategoriaId}. Procurando técnico geral.", analise.CategoriaId);
+                        tecnicoEspecialista = await _userRepository.GetTecnicoAtivoAsync();
                     }
 
                     if (tecnicoEspecialista != null)
@@ -96,8 +111,7 @@ namespace SistemaChamados.Services
                     }
                     else
                     {
-                        _logger.LogWarning("Nenhum técnico (TipoUsuario == 2) encontrado no sistema para atribuição.");
-                        // Se nenhum técnico for encontrado, analise.TecnicoId permanecerá nulo
+                        _logger.LogWarning("Nenhum técnico encontrado no sistema para atribuição.");
                     }
                 }
                 
@@ -110,33 +124,29 @@ namespace SistemaChamados.Services
             }
         }
 
-        private async Task<string> CriarPromptAnalise(string descricaoProblema)
+        #region OpenAI DTOs
+        private class OpenAIRequest
         {
-            var categorias = await _context.Categorias.Where(c => c.Ativo).ToListAsync();
-            var prioridades = await _context.Prioridades.Where(p => p.Ativo).ToListAsync();
-
-            var categoriasTexto = string.Join("\n", categorias.Select(c => $"- ID: {c.Id}, Nome: {c.Nome}"));
-            var prioridadesTexto = string.Join("\n", prioridades.Select(p => $"- ID: {p.Id}, Nome: {p.Nome}"));
-
-            return $@"Analise o problema de TI a seguir e classifique-o.
-
-Descrição do Problema: ""{descricaoProblema}""
-
-Categorias Disponíveis:
-{categoriasTexto}
-
-Prioridades Disponíveis:
-{prioridadesTexto}
-
-Responda APENAS com um JSON no seguinte formato, sem texto adicional:
-{{
-  ""CategoriaId"": <ID da categoria>,
-  ""CategoriaNome"": ""<Nome da categoria>"",
-  ""PrioridadeId"": <ID da prioridade>,
-  ""PrioridadeNome"": ""<Nome da prioridade>"",
-  ""TituloSugerido"": ""<Um título curto e claro para o chamado>"",
-  ""Justificativa"": ""<Uma breve justificativa para a sua escolha>""
-}}";
+            public string model { get; set; } = string.Empty;
+            public List<OpenAIMessage> messages { get; set; } = new();
+            public double temperature { get; set; }
         }
+
+        private class OpenAIMessage
+        {
+            public string role { get; set; } = string.Empty;
+            public string content { get; set; } = string.Empty;
+        }
+
+        private class OpenAIResponse
+        {
+            public List<OpenAIChoice>? choices { get; set; }
+        }
+
+        private class OpenAIChoice
+        {
+            public OpenAIMessage? message { get; set; }
+        }
+        #endregion
     }
 }

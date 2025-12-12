@@ -5,9 +5,16 @@ using Microsoft.IdentityModel.Tokens;
 using SistemaChamados.Application.Services;
 using SistemaChamados.Services;
 using SistemaChamados.Data;
-using SistemaChamados.Data.Seed;
 using SistemaChamados.Configuration;
 using SistemaChamados.Core.Entities;
+using SistemaChamados.Core.Interfaces.AI;
+using SistemaChamados.Core.Repositories;
+using SistemaChamados.Core.UseCases.Tickets;
+using SistemaChamados.Infrastructure.AI.OpenAI;
+using SistemaChamados.Infrastructure.Persistence.Repositories;
+using SistemaChamados.Infrastructure.Persistence.Seeders;
+using SistemaChamados.Infrastructure.Persistence.Seed;
+using SistemaChamados.Infrastructure.Extensions;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,18 +40,80 @@ else
         options.UseSqlServer(connectionString));
 }
     
-// Registrar serviços
+// ========================================
+// REFATORAÇÃO: Clean Architecture DI
+// ========================================
+
+// MediatR (CQRS Pattern)
+builder.Services.AddMediatR(cfg => 
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+// Identity & Authentication Services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<SistemaChamados.Core.Interfaces.IUserContextService, 
+    SistemaChamados.Infrastructure.Identity.UserContextService>();
+// NEW: Anti-Corruption Layer for User Context (AUDITORIA_ARQUITETURAL_NEUROHELP.md - Phase 4.1)
+builder.Services.AddScoped<SistemaChamados.Core.Interfaces.Auth.ICurrentUserService,
+    SistemaChamados.Infrastructure.Identity.CurrentUserService>();
+builder.Services.AddScoped<SistemaChamados.Core.Interfaces.Auth.IPasswordHasher,
+    SistemaChamados.Infrastructure.Identity.BCryptPasswordHasher>();
+
+// Domain Services (Pure Business Logic)
+builder.Services.AddScoped<SistemaChamados.Core.Domain.Services.SlaCalculationService>();
+
+// Repositories (Data Access Layer)
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+// Phase 2.4 - Separated metadata repositories
+builder.Services.AddScoped<IStatusRepository, StatusRepository>();
+builder.Services.AddScoped<IPriorityRepository, PriorityRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+
+// Context Mapping Services (Bridge between Bounded Contexts)
+// AUDITORIA_ARQUITETURAL_NEUROHELP.md - Phase 4.2 (Context Mapping)
+builder.Services.AddScoped<SistemaChamados.Core.Tickets.Interfaces.IUserLookupService,
+    SistemaChamados.Infrastructure.Services.UserLookupService>();
+
+// Use Cases (Business Logic Layer - DEPRECATED: use MediatR Handlers instead)
+builder.Services.AddScoped<CreateTicketWithAIAnalysisUseCase>();
+
+// Application Services (Use Case Orchestration - Phase 3)
+// Phase 3.1 - Authentication Service
+builder.Services.AddScoped<SistemaChamados.Application.Services.Auth.IAuthenticationService,
+    SistemaChamados.Application.Services.Auth.AuthenticationService>();
+// Phase 3.2 - User Registration Service
+builder.Services.AddScoped<SistemaChamados.Application.Services.Users.IUserRegistrationService,
+    SistemaChamados.Application.Services.Users.UserRegistrationService>();
+// Phase 3.3 - Password Reset Service
+builder.Services.AddScoped<SistemaChamados.Application.Services.Auth.IPasswordResetService,
+    SistemaChamados.Application.Services.Auth.PasswordResetService>();
+
+// External Services (Infrastructure Layer)
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 
-// Configurar HttpClient para o OpenAIService
-builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
+// AI Services (Typed Client com IHttpClientFactory)
+builder.Services.AddScoped<AIPromptBuilder>(); // Phase 2.2 - Prompt builder separated from adapter
+builder.Services.AddHttpClient<IAIAnalysisService, OpenAIAdapter>(client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
-// Configura a seção Email do appsettings.json
+// Email Services
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
-
-// Registra o EmailService para injeção de dependência
 builder.Services.AddTransient<IEmailService, EmailService>();
+
+// ========================================
+// Database Seeding Infrastructure (AUDITORIA_ARQUITETURAL_NEUROHELP.md - Phase 4.3)
+// Modular Seeding System: IContextSeeder + DatabaseSeedRunner
+// ========================================
+builder.Services.AddDatabaseSeeding(); // Registers all seeders automatically:
+                                       // - DatabaseSeedRunner (orchestrator)
+                                       // - AuthContextSeeder (Order 1)
+                                       // - TicketMetadataSeeder (Order 2)
+                                       // - TicketDemoDataSeeder (Order 3)
+// ========================================
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -122,13 +191,12 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Criar banco de dados e popular com dados iniciais
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate(); // Aplica migrations pendentes
-    DatabaseSeed.Seed(context); // Popula dados iniciais
-}
+// ========================================
+// REFATORAÇÃO: Database Initialization & Seeding
+// Modular Seeding Infrastructure (AUDITORIA_ARQUITETURAL_NEUROHELP.md - Phase 4.3)
+// ========================================
+await app.UseDatabaseSeedingAsync();
+// ========================================
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
